@@ -28,10 +28,9 @@ class DepStatus:
 
 # Human-facing install hints (kept English per project convention).
 _BINARY_HINTS = {
-    "ffmpeg": "Install ffmpeg and add it to PATH (https://ffmpeg.org/download.html "
-    "or `winget install Gyan.FFmpeg`).",
-    "yt-dlp": "Install yt-dlp: `uv tool install yt-dlp` or `pipx install yt-dlp`.",
-    "tesseract": "Optional OCR fallback. Install Tesseract-OCR and add it to PATH.",
+    "ffmpeg": "Install ffmpeg and put it on PATH. win: winget install Gyan.FFmpeg | linux: apt install ffmpeg (or dnf install ffmpeg) | macos: brew install ffmpeg",
+    "yt-dlp": "Install yt-dlp on PATH. win: winget install yt-dlp.yt-dlp (or uv tool install yt-dlp) | linux: uv tool install yt-dlp (or apt install yt-dlp) | macos: brew install yt-dlp",
+    "tesseract": "Optional OCR fallback on PATH. win: winget install UB-Mannheim.TesseractOCR | linux: apt install tesseract-ocr (or dnf install tesseract) | macos: brew install tesseract",
 }
 _PYTHON_HINTS = {
     "faster_whisper": 'Install run extras: `uv pip install "lectural[run]"`.',
