@@ -3,7 +3,7 @@ name = "lectural"
 version = "0.1.0"
 description = "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, every scene."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 # Heavy runtime deps are imported lazily inside functions so the package
 # imports and unit-tests run offline without these installed.
 dependencies = []
@@ -14,14 +14,23 @@ run = [
     "yt-dlp>=2024.1.0",
     "youtube-transcript-api>=0.6.2",
     "faster-whisper>=1.0.0",
-    "opencv-python>=4.8.0",
-    "numpy>=1.24",
-    "paddleocr>=2.7.0",
+    "opencv-python>=4.5,<=4.6.0.66",
+    "numpy>=1.24,<2",
+    "paddleocr>=2.7,<3",
+    "paddlepaddle>=2.6,<3",
     "pytesseract>=0.3.10",
     "Pillow>=10.0.0",
     "webrtcvad>=2.0.10",
 ]
 test = ["pytest>=7.0", "numpy>=1.24"]
+# Keep transitive runtime providers inside the approved WU-1 matrix without
+# making alternate cv2 providers part of LecturAL's direct runtime contract.
+[tool.uv]
+constraint-dependencies = [
+    "opencv-contrib-python<=4.6.0.66",
+    "opencv-python-headless<=4.6.0.66",
+    "onnxruntime<1.24",
+]
 
 [project.scripts]
 lectural = "lectural.cli:main"
