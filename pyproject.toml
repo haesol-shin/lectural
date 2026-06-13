@@ -1,0 +1,40 @@
+[project]
+name = "lectural"
+version = "0.1.0"
+description = "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, every scene."
+readme = "README.md"
+requires-python = ">=3.10"
+# Heavy runtime deps are imported lazily inside functions so the package
+# imports and unit-tests run offline without these installed.
+dependencies = []
+
+[project.optional-dependencies]
+# Install with: pip install "lectural[run]"
+run = [
+    "yt-dlp>=2024.1.0",
+    "youtube-transcript-api>=0.6.2",
+    "faster-whisper>=1.0.0",
+    "opencv-python>=4.8.0",
+    "numpy>=1.24",
+    "paddleocr>=2.7.0",
+    "pytesseract>=0.3.10",
+    "Pillow>=10.0.0",
+    "webrtcvad>=2.0.10",
+]
+test = ["pytest>=7.0"]
+
+[project.scripts]
+lectural = "lectural.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["lectural*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "smoke: requires external binaries/models or network (ffmpeg, yt-dlp, faster-whisper, paddleocr); skipped by default",
+]
+addopts = "-m 'not smoke'"

@@ -1,0 +1,127 @@
+{
+  "active": false,
+  "version": 2,
+  "current_phase": "handoff",
+  "skill": "deep-interview",
+  "cwd": "C:\\Users\\haesol\\dev\\LecturAL",
+  "updated_at": "2026-06-13T07:33:49.345Z",
+  "session_id": "019ebfcf-e794-7000-bcbd-0ac31aca96a3",
+  "threshold": 0.05,
+  "threshold_source": "default",
+  "receipt": {
+    "version": 1,
+    "skill": "deep-interview",
+    "owner": "gjc-state-cli",
+    "command": "gjc state deep-interview handoff --to ralplan",
+    "state_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\skill-active-state.json",
+    "storage_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\deep-interview-state.json",
+    "mutated_at": "2026-06-13T07:33:49.345Z",
+    "fresh_until": "2026-06-13T08:03:49.345Z",
+    "status": "fresh",
+    "mutation_id": "deep-interview:handoff:ralplan:2026-06-13T07:33:49.345Z",
+    "content_sha256": {
+      "algorithm": "sha256",
+      "value": "5debab83b1743698e5f28494ebdffc8108d65047380b01b48264511bd4021f44",
+      "covered_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\deep-interview-state.json",
+      "computed_at": "2026-06-13T07:33:49.414Z"
+    }
+  },
+  "interview_id": "li-2026-0613",
+  "type": "greenfield",
+  "initial_idea": "YouTube 강의 영상 URL을 받아 모든 발화(STT/자막), 모든 화면 텍스트(OCR), 모든 장면/슬라이드를 빠짐없이 캡처해 markdown 학습 정리본으로 만드는 Claude Code/Codex SKILL. 토큰 최소화를 위해 비-LLM 모듈(STT+OCR+키프레임 dedup) 우선, LLM은 최종 합성에만. 완전성은 hooks로 강제. 환경: Windows 11, Intel Core Ultra 5, 강력한 NVIDIA GPU 없음.",
+  "rounds": [
+    {
+      "n": 8,
+      "component": "synthesis",
+      "dimension": "criteria",
+      "q": "산출물 위치/포맷",
+      "a": "폴더 구조(./output/<video>/): transcript.md(raw)+summary.md+frames/+coverage.json. summary.md 상단에 목차+커버리지 요약, 각 섹션이 타임스탬프·슬라이드 링크.",
+      "ambiguity": 0.048,
+      "scores": {
+        "goal": 0.95,
+        "constraints": 0.95,
+        "criteria": 0.95
+      }
+    }
+  ],
+  "current_ambiguity": 0.048,
+  "language": {
+    "code": "ko",
+    "instruction": "All user-facing announcements, topology confirmation, option labels, interview questions, progress reports, and spec prose MUST be in Korean. Keep code identifiers, file paths, commands, JSON keys, and quoted source text unchanged."
+  },
+  "topology": {
+    "status": "confirmed",
+    "components": [
+      {
+        "id": "completeness",
+        "name": "완전성 강제",
+        "status": "active",
+        "clarity_scores": {
+          "goal": 0.85,
+          "constraints": 0.8,
+          "criteria": 0.9,
+          "context": null
+        },
+        "weakest_dimension": "constraints"
+      }
+    ]
+  },
+  "challenge_modes_used": [
+    "contrarian",
+    "simplifier"
+  ],
+  "ontology_snapshots": [
+    {
+      "round": 8,
+      "entities": [
+        {
+          "name": "LectureVideo",
+          "type": "core domain"
+        },
+        {
+          "name": "Transcript",
+          "type": "core domain"
+        },
+        {
+          "name": "Frame",
+          "type": "core domain"
+        },
+        {
+          "name": "RawTranscriptDoc",
+          "type": "core domain"
+        },
+        {
+          "name": "StructuredSummary",
+          "type": "core domain"
+        },
+        {
+          "name": "BatchJob",
+          "type": "supporting"
+        },
+        {
+          "name": "CoverageCheck",
+          "type": "supporting"
+        },
+        {
+          "name": "CorePipeline",
+          "type": "supporting"
+        },
+        {
+          "name": "Skill",
+          "type": "supporting"
+        },
+        {
+          "name": "Synthesizer",
+          "type": "supporting"
+        }
+      ],
+      "stability_ratio": 1,
+      "matching_reasoning": "수렴 유지(3라운드 연속 100%)."
+    }
+  ],
+  "auto_researched_rounds": [],
+  "auto_answered_rounds": [],
+  "architect_failures": 0,
+  "handoff_to": "ralplan",
+  "handoff_at": "2026-06-13T07:33:49.345Z"
+}
