@@ -73,3 +73,12 @@ def test_run_starts_fresh_session_each_invocation(tmp_path):
 
 def test_runstate_read_missing_is_none(tmp_path):
     assert runstate.read_state(str(tmp_path / "nope.json")) is None
+
+def test_main_exit_2_on_coverage_failure(monkeypatch):
+    monkeypatch.setattr(cli, "run", lambda *a, **k: [{"output_dir": "x", "overall_pass": False}])
+    assert cli.main(["https://youtu.be/x"]) == 2
+
+
+def test_main_exit_0_on_success(monkeypatch):
+    monkeypatch.setattr(cli, "run", lambda *a, **k: [{"output_dir": "x", "overall_pass": True}])
+    assert cli.main(["https://youtu.be/x"]) == 0
