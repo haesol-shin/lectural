@@ -89,7 +89,7 @@ def run(
 
 def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str) -> dict:
     """Real pipeline for one video (lazy heavy deps; smoke-tested, not unit)."""
-    from .acquisition import acquire_speech, extract_video_id
+    from .acquisition import acquire_speech, extract_video_id, fetch_video_metadata
     from .coverage import build_coverage, coverage_inputs_from_extraction, write_coverage
     from .deps import assert_acquisition_ready
     from .ocr import ocr_frames
@@ -106,21 +106,29 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     assert_acquisition_ready()
     out_root = os.path.dirname(out_dir_hint) or "."
 
-    # 1. Speech track (captions-first, STT fallback).
-    track = acquire_speech(url, out_dir_hint, force_stt=force_stt)
-    title = track.meta.get("title") or extract_video_id(url) or "video"
-    out_dir = output_dir_for(out_root, title)
+    # 1. Metadata first: it determines the real artifact directory before any
+    # captions/STT path can be selected.
+    metadata = fetch_video_metadata(url)
+    fallback_title = metadata.get("video_id") or extract_video_id(url) or "video"
+    title_seed = metadata.get("title") or fallback_title
+    out_dir = output_dir_for(out_root, title_seed, fallback=fallback_title)
     frames_dir = os.path.join(out_dir, "frames")
     os.makedirs(frames_dir, exist_ok=True)
 
-    # 2. Visual track: extract RAW candidate frames, dedupe to slides, OCR.
+    # 2. Speech track (captions-first, STT fallback) writes into the final
+    # title/video-id directory, not the provisional batch slot.
+    track = acquire_speech(url, out_dir, force_stt=force_stt)
+    track.meta.update({k: v for k, v in metadata.items() if v not in (None, "")})
+    title = track.meta.get("title") or fallback_title
+
+    # 3. Visual track: extract RAW candidate frames, dedupe to slides, OCR.
     video_path = _download_video(url, out_dir)
     raw_frames = extract_candidate_frames(video_path, frames_dir)
     slides = dedupe_frames(raw_frames)
     slide_frames, ocr_engine = ocr_frames(slides)
 
-    duration = float(track.meta.get("duration", 0.0))
-    audio_path = track.meta.get("audio_path", os.path.join(out_dir_hint, "audio.wav"))
+    duration = float(track.meta.get("duration") or 0.0)
+    audio_path = track.meta.get("audio_path", os.path.join(out_dir, "audio.wav"))
     speech_spans = detect_speech_spans(audio_path, duration) if os.path.isfile(audio_path) else [(0.0, duration)]
 
     video = {"title": title, "url": url, "duration_sec": duration,
@@ -132,7 +140,7 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
                     "frame": _frame_link(f.image_path, out_dir),
                     "ocr_text": f.ocr_text, "is_slide": True} for f in slide_frames]
 
-    # 3. Synthesis (deterministic, token-zero).
+    # 4. Synthesis (deterministic, token-zero).
     si = build_synthesis_input(video, segments, slide_dicts)
     transcript_path = os.path.join(out_dir, "transcript.md")
     summary_path = os.path.join(out_dir, "summary.md")
@@ -140,7 +148,7 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     write_text(transcript_md, transcript_path)
     write_synthesis_input(si, os.path.join(out_dir, "synthesis_input.json"))
 
-    # 4. Coverage (raw sample times enforce the carry-cap contract). Render the
+    # 5. Coverage (raw sample times enforce the carry-cap contract). Render the
     # summary first so the artifact check judges the rendered content, not file
     # write ordering: build a coverage view to render the summary header, then
     # finalize coverage with the actual rendered transcript/summary text.

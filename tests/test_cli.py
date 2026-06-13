@@ -1,8 +1,9 @@
 """Unit tests for CLI orchestration (AC-1, AC-2, AC-11). Offline, injected processor."""
 
 import json
+import os
 
-from lectural import cli, runstate
+from lectural import acquisition, cli, deps, ocr, runstate, visual
 
 
 def test_slugify():
@@ -73,6 +74,92 @@ def test_run_starts_fresh_session_each_invocation(tmp_path):
 
 def test_runstate_read_missing_is_none(tmp_path):
     assert runstate.read_state(str(tmp_path / "nope.json")) is None
+
+
+def _install_default_processor_fakes(monkeypatch, tmp_path, metadata):
+    calls: dict[str, str] = {}
+    monkeypatch.setattr(deps, "assert_acquisition_ready", lambda: None)
+    monkeypatch.setattr(acquisition, "fetch_video_metadata", lambda url: dict(metadata))
+
+    def fake_acquire_speech(url, out_dir, force_stt=False):
+        calls["acquire_out_dir"] = out_dir
+        return acquisition.SpeechTrack(
+            segments=[
+                acquisition.Segment(0.0, "첫 번째 문장입니다"),
+                acquisition.Segment(30.0, "두 번째 문장입니다"),
+                acquisition.Segment(60.0, "세 번째 문장입니다"),
+            ],
+            source="caption",
+            meta={"audio_path": os.path.join(out_dir, "audio.wav")},
+        )
+
+    def fake_download_video(url, out_dir):
+        calls["download_out_dir"] = out_dir
+        return str(tmp_path / "video.mp4")
+
+    def fake_extract_candidate_frames(video_path, frames_dir):
+        calls["frames_dir"] = frames_dir
+        return [visual.Frame(timestamp=5.0, image_path=os.path.join(frames_dir, "frame_00001.png"))]
+
+    def fake_ocr_frames(frames):
+        for frame in frames:
+            frame.ocr_text = "슬라이드 제목"
+            frame.is_slide = True
+        return frames, "none"
+
+    monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire_speech)
+    monkeypatch.setattr(cli, "_download_video", fake_download_video)
+    monkeypatch.setattr(visual, "extract_candidate_frames", fake_extract_candidate_frames)
+    monkeypatch.setattr(visual, "dedupe_frames", lambda frames: frames)
+    monkeypatch.setattr(ocr, "ocr_frames", fake_ocr_frames)
+    return calls
+
+
+def test_default_processor_uses_title_slug_before_acquiring_speech(tmp_path, monkeypatch):
+    metadata = {
+        "title": "운영체제 1강: 프로세스/스레드",
+        "duration": 120.0,
+        "video_id": "dQw4w9WgXcQ",
+    }
+    calls = _install_default_processor_fakes(monkeypatch, tmp_path, metadata)
+
+    result = cli._default_processor(
+        "https://youtu.be/dQw4w9WgXcQ",
+        str(tmp_path / "video_01"),
+        force_stt=False,
+        model="tiny",
+    )
+
+    expected_dir = os.path.join(str(tmp_path), "운영체제-1강-프로세스-스레드")
+    assert calls["acquire_out_dir"] == expected_dir
+    assert calls["download_out_dir"] == expected_dir
+    assert calls["frames_dir"] == os.path.join(expected_dir, "frames")
+    assert result["output_dir"] == expected_dir
+    assert "video_01" not in calls["acquire_out_dir"]
+
+    coverage = json.loads((tmp_path / "운영체제-1강-프로세스-스레드" / "coverage.json").read_text(encoding="utf-8"))
+    assert coverage["video_title"] == "운영체제 1강: 프로세스/스레드"
+    assert coverage["duration_sec"] == 120.0
+
+
+def test_default_processor_falls_back_to_video_id_when_title_missing(tmp_path, monkeypatch):
+    calls = _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        {"duration": 45.0, "video_id": "dQw4w9WgXcQ"},
+    )
+
+    result = cli._default_processor(
+        "https://youtu.be/dQw4w9WgXcQ",
+        str(tmp_path / "video_01"),
+        force_stt=False,
+        model="tiny",
+    )
+
+    expected_dir = os.path.join(str(tmp_path), "dQw4w9WgXcQ")
+    assert calls["acquire_out_dir"] == expected_dir
+    assert result["output_dir"] == expected_dir
+    assert "video_01" not in result["output_dir"]
 
 def test_main_exit_2_on_coverage_failure(monkeypatch):
     monkeypatch.setattr(cli, "run", lambda *a, **k: [{"output_dir": "x", "overall_pass": False}])

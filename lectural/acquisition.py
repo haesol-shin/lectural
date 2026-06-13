@@ -55,6 +55,56 @@ def extract_video_id(url: str) -> str | None:
             return m.group(1)
     return None
 
+def _metadata_text(value: object) -> str | None:
+    text = str(value).strip() if value is not None else ""
+    return text or None
+
+
+def _positive_float(value: object) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def parse_ytdlp_metadata(text: str) -> dict:
+    """Parse `yt-dlp --dump-json` output into the metadata LecturAL needs."""
+    data = json.loads(text)
+    if not isinstance(data, dict):
+        raise ValueError("yt-dlp metadata JSON must be an object")
+
+    metadata: dict = {}
+    title = _metadata_text(data.get("title"))
+    if title:
+        metadata["title"] = title
+
+    duration = _positive_float(data.get("duration"))
+    if duration is not None:
+        metadata["duration"] = duration
+
+    video_id = _metadata_text(data.get("id") or data.get("display_id"))
+    if video_id:
+        metadata["video_id"] = video_id
+
+    return metadata
+
+
+def fetch_video_metadata(url: str) -> dict:
+    """Fetch title/duration/video id via yt-dlp without downloading media."""
+    proc = subprocess.run(
+        ["yt-dlp", "--skip-download", "--dump-json", url],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    metadata = parse_ytdlp_metadata(proc.stdout)
+    fallback_id = extract_video_id(url)
+    if fallback_id:
+        metadata.setdefault("video_id", fallback_id)
+    return metadata
 
 # --- Pure subtitle parsers --------------------------------------------------
 

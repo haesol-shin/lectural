@@ -1,10 +1,15 @@
 """Unit tests for subtitle parsing + source selection (AC-3). Pure, offline."""
+import json
 
+
+from lectural import acquisition
 from lectural.acquisition import (
     captions_are_usable,
     extract_video_id,
+    fetch_video_metadata,
     parse_json3,
     parse_vtt,
+    parse_ytdlp_metadata,
 )
 
 
@@ -13,6 +18,50 @@ def test_extract_video_id_variants():
     assert extract_video_id("https://youtu.be/dQw4w9WgXcQ?t=10") == "dQw4w9WgXcQ"
     assert extract_video_id("dQw4w9WgXcQ") == "dQw4w9WgXcQ"
     assert extract_video_id("not a url") is None
+
+
+def test_parse_ytdlp_metadata_extracts_title_duration_and_id():
+    payload = json.dumps(
+        {
+            "title": "운영체제 1강: 프로세스/스레드",
+            "duration": 3723,
+            "id": "dQw4w9WgXcQ",
+        }
+    )
+
+    assert parse_ytdlp_metadata(payload) == {
+        "title": "운영체제 1강: 프로세스/스레드",
+        "duration": 3723.0,
+        "video_id": "dQw4w9WgXcQ",
+    }
+
+
+def test_fetch_video_metadata_uses_skip_download(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_run(cmd, *, check, capture_output, text):
+        captured["cmd"] = cmd
+        captured["check"] = check
+        captured["capture_output"] = capture_output
+        captured["text"] = text
+
+        class Proc:
+            stdout = json.dumps({"title": "Lecture", "duration": 12.5, "id": "abc123XYZ09"})
+
+        return Proc()
+
+    monkeypatch.setattr(acquisition.subprocess, "run", fake_run)
+
+    metadata = fetch_video_metadata("https://youtu.be/abc123XYZ09")
+
+    cmd = captured["cmd"]
+    assert metadata == {"title": "Lecture", "duration": 12.5, "video_id": "abc123XYZ09"}
+    assert cmd == ["yt-dlp", "--skip-download", "--dump-json", "https://youtu.be/abc123XYZ09"]
+    assert "--skip-download" in cmd
+    assert "-x" not in cmd and "--audio-format" not in cmd
+    assert captured["check"] is True
+    assert captured["capture_output"] is True
+    assert captured["text"] is True
 
 
 def test_parse_vtt_basic():
