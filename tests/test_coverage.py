@@ -57,6 +57,38 @@ def test_artifact_check(tmp_path):
     res_ok = artifact_check(str(t), str(s))
     assert res_ok["pass"] is True
 
+def test_artifact_check_judges_nonempty_from_rendered_text(tmp_path):
+    # Decouples the gate from file write ordering: rendered content passes even
+    # when the summary file has not been written yet (the real-run regression).
+    t = tmp_path / "transcript.md"
+    s = tmp_path / "summary.md"  # intentionally never written
+    res = artifact_check(
+        str(t), str(s),
+        transcript_text="[00:00:00] hi", summary_text="# notes\nbody",
+    )
+    assert res["transcript_nonempty"] is True
+    assert res["summary_nonempty"] is True
+    assert res["pass"] is True
+    # Empty rendered text is still caught.
+    empty = artifact_check(str(t), str(s), transcript_text="x", summary_text="   ")
+    assert empty["summary_nonempty"] is False
+    assert empty["pass"] is False
+
+
+def test_build_coverage_passes_with_rendered_text_before_files_exist(tmp_path):
+    inp = CoverageInputs(
+        video_title="L", duration_sec=300.0, speech_spans=[(0, 300)],
+        segment_times=[30 * i for i in range(10)],
+        frame_times=[float(i) for i in range(0, 300)],
+        transcript_path=str(tmp_path / "transcript.md"),
+        summary_path=str(tmp_path / "summary.md"),  # not written
+        ocr_engine="paddleocr", slide_frames_total=1, slide_frames_with_text=1,
+        transcript_text="[00:00:00] hi", summary_text="# notes",
+    )
+    cov = build_coverage(inp)
+    assert cov["artifacts"]["summary_nonempty"] is True
+    assert cov["overall_pass"] is True
+
 
 def test_build_and_write_coverage(tmp_path):
     t = tmp_path / "transcript.md"

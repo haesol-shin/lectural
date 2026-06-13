@@ -199,7 +199,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
 
     # Lazy product imports (mirror cli._default_processor sequence, no edits to product).
     from lectural.acquisition import acquire_speech, extract_video_id
-    from lectural.cli import _download_video, output_dir_for
+    from lectural.cli import _download_video, _frame_link, output_dir_for
     from lectural.coverage import build_coverage, coverage_inputs_from_extraction, write_coverage
     from lectural.deps import assert_acquisition_ready
     from lectural.ocr import ocr_frames
@@ -246,7 +246,8 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
         video = {"title": title, "url": url, "duration_sec": duration,
                  "language": track.language, "source": track.source}
         segments = [s.as_dict() for s in track.segments]
-        slide_dicts = [{"t": f.timestamp, "frame": os.path.relpath(f.image_path, out_dir),
+        slide_dicts = [{"t": f.timestamp,
+                        "frame": _frame_link(f.image_path, out_dir),
                         "ocr_text": f.ocr_text, "is_slide": True} for f in slide_frames]
 
         transcript_path = os.path.join(out_dir, "transcript.md")
@@ -254,28 +255,39 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
 
         def _synth():
             si = build_synthesis_input(video, segments, slide_dicts)
-            write_text(render_transcript_md(video, segments), transcript_path)
+            transcript_md = render_transcript_md(video, segments)
+            write_text(transcript_md, transcript_path)
             write_synthesis_input(si, os.path.join(out_dir, "synthesis_input.json"))
-            return si
+            return si, transcript_md
 
-        si, _ = timed("synthesis", _synth)
+        (si, transcript_md), _ = timed("synthesis", _synth)
 
         def _coverage():
-            cov_inputs = coverage_inputs_from_extraction(
-                video_title=title, duration_sec=duration, speech_spans=speech_spans,
-                segment_times=[s["t"] for s in segments],
-                raw_sample_times=[f.timestamp for f in raw_frames],
-                slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
-                ocr_engine=ocr_engine,
-            )
-            cov = build_coverage(cov_inputs)
-            write_text(render_summary_md(si, cov), summary_path)
+            def _cov_inputs(summary_md_text):
+                return coverage_inputs_from_extraction(
+                    video_title=title, duration_sec=duration, speech_spans=speech_spans,
+                    segment_times=[s["t"] for s in segments],
+                    raw_sample_times=[f.timestamp for f in raw_frames],
+                    slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
+                    ocr_engine=ocr_engine,
+                    transcript_text=transcript_md, summary_text=summary_md_text,
+                )
+
+            summary_md = render_summary_md(si, build_coverage(_cov_inputs("")))
+            cov = build_coverage(_cov_inputs(summary_md))
+            write_text(summary_md, summary_path)
             write_coverage(cov, os.path.join(out_dir, "coverage.json"))
             return cov
 
         coverage, _ = timed("coverage", _coverage)
         overall_pass = bool(coverage["overall_pass"])
-        update_run(0, status="done", output_dir=out_dir)
+        update_run(
+            0,
+            status="complete",
+            output_dir=out_dir,
+            coverage_json=os.path.join(out_dir, "coverage.json"),
+            summary_md=summary_path,
+        )
 
         def _hook():
             r = subprocess.run([sys.executable, os.path.join(_REPO_ROOT, "scripts", "completeness_hook.py")],

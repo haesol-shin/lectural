@@ -22,8 +22,8 @@
     "transcript_md": "./output/perf-smoke\\19vYXnpDIyg\\transcript.md",
     "summary_md": "./output/perf-smoke\\19vYXnpDIyg\\summary.md",
     "transcript_nonempty": true,
-    "summary_nonempty": false,
-    "pass": false
+    "summary_nonempty": true,
+    "pass": true
   },
-  "overall_pass": false
+  "overall_pass": true
 }

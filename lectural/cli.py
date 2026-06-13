@@ -32,6 +32,10 @@ def output_dir_for(out_root: str, title: str, fallback: str = "video") -> str:
     """Pure: ./out_root/<slug> path for a video's artifacts (AC-12)."""
     return os.path.join(out_root, slugify(title, fallback))
 
+def _frame_link(image_path: str, out_dir: str) -> str:
+    """Pure: relative slide-image path as a POSIX markdown link (Windows-safe)."""
+    return os.path.relpath(image_path, out_dir).replace(os.sep, "/")
+
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="lectural", description="YouTube lecture -> complete study notes")
@@ -122,26 +126,37 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     video = {"title": title, "url": url, "duration_sec": duration,
              "language": track.language, "source": track.source}
     segments = [s.as_dict() for s in track.segments]
-    slide_dicts = [{"t": f.timestamp, "frame": os.path.relpath(f.image_path, out_dir),
+    # Frame links are markdown/web paths -> always POSIX separators (so the
+    # slide-link check and rendered links work on Windows too).
+    slide_dicts = [{"t": f.timestamp,
+                    "frame": _frame_link(f.image_path, out_dir),
                     "ocr_text": f.ocr_text, "is_slide": True} for f in slide_frames]
 
     # 3. Synthesis (deterministic, token-zero).
     si = build_synthesis_input(video, segments, slide_dicts)
     transcript_path = os.path.join(out_dir, "transcript.md")
     summary_path = os.path.join(out_dir, "summary.md")
-    write_text(render_transcript_md(video, segments), transcript_path)
+    transcript_md = render_transcript_md(video, segments)
+    write_text(transcript_md, transcript_path)
     write_synthesis_input(si, os.path.join(out_dir, "synthesis_input.json"))
 
-    # 4. Coverage (raw sample times enforce the carry-cap contract).
-    cov_inputs = coverage_inputs_from_extraction(
-        video_title=title, duration_sec=duration, speech_spans=speech_spans,
-        segment_times=[s["t"] for s in segments],
-        raw_sample_times=[f.timestamp for f in raw_frames],
-        slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
-        ocr_engine=ocr_engine,
-    )
-    coverage = build_coverage(cov_inputs)
-    write_text(render_summary_md(si, coverage), summary_path)
+    # 4. Coverage (raw sample times enforce the carry-cap contract). Render the
+    # summary first so the artifact check judges the rendered content, not file
+    # write ordering: build a coverage view to render the summary header, then
+    # finalize coverage with the actual rendered transcript/summary text.
+    def _cov_inputs(summary_md_text: str | None) -> "object":
+        return coverage_inputs_from_extraction(
+            video_title=title, duration_sec=duration, speech_spans=speech_spans,
+            segment_times=[s["t"] for s in segments],
+            raw_sample_times=[f.timestamp for f in raw_frames],
+            slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
+            ocr_engine=ocr_engine,
+            transcript_text=transcript_md, summary_text=summary_md_text,
+        )
+
+    summary_md = render_summary_md(si, build_coverage(_cov_inputs("")))
+    coverage = build_coverage(_cov_inputs(summary_md))
+    write_text(summary_md, summary_path)
     coverage_path = write_coverage(coverage, os.path.join(out_dir, "coverage.json"))
 
     return {

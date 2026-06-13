@@ -15,6 +15,16 @@ def test_output_dir_for():
     import os
     assert cli.output_dir_for("./output", "OS Lecture") == os.path.join("./output", "OS-Lecture")
 
+def test_frame_link_is_posix_separated():
+    import os
+    out_dir = os.path.join("output", "lecture")
+    image = os.path.join(out_dir, "frames", "frame_00001.png")
+    link = cli._frame_link(image, out_dir)
+    # Markdown/web links must use forward slashes on every OS (Windows regression:
+    # backslash links broke the completeness hook's "frames/" slide-link check).
+    assert link == "frames/frame_00001.png"
+    assert "\\" not in link
+
 
 def test_parse_args_single_and_batch():
     a = cli.parse_args(["https://youtu.be/abc"])

@@ -97,10 +97,28 @@ def scene_coverage(
     }
 
 
-def artifact_check(transcript_path: str, summary_path: str) -> dict:
-    """Both artifacts must exist and be non-empty."""
-    t_ok = os.path.isfile(transcript_path) and os.path.getsize(transcript_path) > 0
-    s_ok = os.path.isfile(summary_path) and os.path.getsize(summary_path) > 0
+def artifact_check(
+    transcript_path: str,
+    summary_path: str,
+    *,
+    transcript_text: str | None = None,
+    summary_text: str | None = None,
+) -> dict:
+    """Both artifacts must be non-empty.
+
+    When the rendered text is supplied (`transcript_text` / `summary_text`),
+    non-emptiness is judged from that content, decoupling the check from file
+    write ordering. Otherwise it falls back to a filesystem stat (used by the
+    Stop hook, which only ever sees the written files).
+    """
+    if transcript_text is not None:
+        t_ok = bool(transcript_text.strip())
+    else:
+        t_ok = os.path.isfile(transcript_path) and os.path.getsize(transcript_path) > 0
+    if summary_text is not None:
+        s_ok = bool(summary_text.strip())
+    else:
+        s_ok = os.path.isfile(summary_path) and os.path.getsize(summary_path) > 0
     return {
         "transcript_md": transcript_path,
         "summary_md": summary_path,
@@ -122,6 +140,8 @@ class CoverageInputs:
     ocr_engine: str = "none"
     slide_frames_total: int = 0
     slide_frames_with_text: int = 0
+    transcript_text: str | None = None
+    summary_text: str | None = None
 
     @property
     def raw_frame_times(self) -> list[float]:
@@ -140,6 +160,8 @@ def coverage_inputs_from_extraction(
     transcript_path: str,
     summary_path: str,
     ocr_engine: str = "none",
+    transcript_text: str | None = None,
+    summary_text: str | None = None,
 ) -> "CoverageInputs":
     """Enforce the scene-coverage contract at the call site (the orchestrator).
 
@@ -162,6 +184,8 @@ def coverage_inputs_from_extraction(
         ocr_engine=ocr_engine,
         slide_frames_total=slide_total,
         slide_frames_with_text=slide_with_text,
+        transcript_text=transcript_text,
+        summary_text=summary_text,
     )
 
 
@@ -175,7 +199,12 @@ def build_coverage(inp: CoverageInputs) -> dict:
         slide_frames_total=inp.slide_frames_total,
         slide_frames_with_text=inp.slide_frames_with_text,
     )
-    artifacts = artifact_check(inp.transcript_path, inp.summary_path)
+    artifacts = artifact_check(
+        inp.transcript_path,
+        inp.summary_path,
+        transcript_text=inp.transcript_text,
+        summary_text=inp.summary_text,
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "video_title": inp.video_title,
