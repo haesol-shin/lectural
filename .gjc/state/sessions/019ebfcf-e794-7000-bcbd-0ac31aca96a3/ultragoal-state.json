@@ -4,7 +4,7 @@
   "current_phase": "active",
   "skill": "ultragoal",
   "cwd": "C:\\Users\\haesol\\dev\\LecturAL",
-  "updated_at": "2026-06-13T08:26:49.838Z",
+  "updated_at": "2026-06-13T08:57:32.976Z",
   "session_id": "019ebfcf-e794-7000-bcbd-0ac31aca96a3",
   "receipt": {
     "version": 1,
@@ -13,19 +13,19 @@
     "command": "gjc ultragoal (reconcile)",
     "state_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\skill-active-state.json",
     "storage_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\ultragoal-state.json",
-    "mutated_at": "2026-06-13T08:26:49.838Z",
-    "fresh_until": "2026-06-13T08:56:49.838Z",
+    "mutated_at": "2026-06-13T08:57:32.976Z",
+    "fresh_until": "2026-06-13T09:27:32.976Z",
     "status": "fresh",
-    "mutation_id": "ultragoal:reconcile:2026-06-13T08:26:49.838Z",
+    "mutation_id": "ultragoal:reconcile:2026-06-13T08:57:32.976Z",
     "verb": "reconcile",
     "forced": true,
     "from_phase": "active",
     "to_phase": "active",
     "content_sha256": {
       "algorithm": "sha256",
-      "value": "4315794fbb6be507551b894905522ecd949cf37e7b4f40b19df058f852e64b91",
+      "value": "84a409c89e18cc7c3cb01c8d1d72811f5ef19e8bbfba0090be0c4600a4d01c95",
       "covered_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\ultragoal-state.json",
-      "computed_at": "2026-06-13T08:26:49.839Z"
+      "computed_at": "2026-06-13T08:57:32.978Z"
     }
   },
   "status": "active",
@@ -38,24 +38,24 @@
     {
       "id": "G002",
       "title": "합성·커버리지 산출물과 계약",
-      "status": "active"
+      "status": "complete"
     },
     {
       "id": "G003",
       "title": "스킬 패키징·완료 훅·검증 매트릭스",
-      "status": "pending"
+      "status": "active"
     }
   ],
   "counts": {
-    "pending": 1,
+    "pending": 0,
     "active": 1,
-    "complete": 1,
+    "complete": 2,
     "failed": 0,
     "blocked": 0,
     "review_blocked": 0,
     "superseded": 0
   },
-  "active_goal_id": "G002",
+  "active_goal_id": "G003",
   "ledger_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\ledger.jsonl",
   "brief_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\brief.md",
   "goals_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\goals.json",

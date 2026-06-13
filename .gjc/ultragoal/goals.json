@@ -42,20 +42,46 @@
       "id": "G002",
       "title": "합성·커버리지 산출물과 계약",
       "objective": "P7~P8 구현. synthesis.py(synthesis_input.json with SCHEMA_VERSION=1 + 결정론적 baseline summary.md[TOC+coverage 헤더+섹션별 timestamp/slide 링크] + transcript.md) + coverage.py(coverage.json {gapCheck, sceneCoverage, artifactExists, ocr_engine}) + synthesis_contract.md(schema_version 문서화). 단위테스트: test_summary_anchors(앵커 존재), test_coverage(3검사 정확). 출력 레이아웃 ./output/<video-title>/. AC-7, AC-8, AC-12, AC-13(부분).",
-      "status": "active",
+      "status": "complete",
       "createdAt": "2026-06-13T07:56:18.076Z",
-      "updatedAt": "2026-06-13T08:26:49.830Z",
-      "startedAt": "2026-06-13T08:26:49.830Z"
+      "updatedAt": "2026-06-13T08:57:32.956Z",
+      "startedAt": "2026-06-13T08:26:49.830Z",
+      "completedAt": "2026-06-13T08:57:32.956Z",
+      "evidence": "G002 synthesis+coverage complete; 78 offline tests pass (artifacts/g002-pytest.txt); deterministic raw transcript.md + baseline summary.md (anchors, no segment drops) + synthesis_input.json + coverage.json; architect CLEAR/CLEAR/CLEAR+APPROVE (.gjc/plans/ralplan/2026-06-13-0738-79e5/stage-13-architect.md).",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "bef4ef17-af80-4f26-b289-99ff3f1d8b84",
+        "verifiedAt": "2026-06-13T08:57:32.956Z",
+        "goalId": "G002",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "6f618c65f9904b8acf710cc43b6d7cbc95682c51de351693b91915b7c882dbea",
+        "gjcGoalSnapshotHash": "f483c66209cfab617313115e137f675f3a68f0b09343b406ed4fd08079a095ab",
+        "planGeneration": "7319777d6fe8a9c58f236e34c8b71ab6cdd470e52c489ca2031fcc7abd271457",
+        "basis": {
+          "planHashBeforeCheckpoint": "8c703e3b28b0b83930d88f0694bfc092133642a63ba913e329f7892babc89e3d",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "c4f8372c-c272-459e-aee4-466baa08b0cc",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-13T08:57:32.956Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G002"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "1d695edcab0645ac2dee6cb13cebe4b74bc6926c56e255b30cc3c8096b84652c"
+        },
+        "checkpointLedgerEventId": "6aacc161-f65f-4fd3-9ccf-a8ab8d9d3eb1"
+      }
     },
     {
       "id": "G003",
       "title": "스킬 패키징·완료 훅·검증 매트릭스",
       "objective": "P9~P11 구현. cli.py(lectural <url...> [--force-stt] [--model] [--out], 단일+순차 배치) + runstate.py(active-run 포인터: env + state 파일, 세션 내 전 run 추적) + .claude/skills/lectural/SKILL.md(frontmatter+body) + references/ + .claude/settings.json(Stop 훅 wiring) + scripts/completeness_hook.py(runstate로 대상 run 식별, 비-LecturAL run no-op exit0, 3검사+summary 앵커 검증, 실패 exit2, 인터프리터 sys.executable/py-3 해석). AC-1..AC-13 검증 매트릭스 전수 실행(오프라인 단위테스트 기준, 실영상 스모크는 별도 표시). AC-2, AC-10, AC-11, AC-13.",
-      "status": "pending",
+      "status": "active",
       "createdAt": "2026-06-13T07:56:18.076Z",
-      "updatedAt": "2026-06-13T07:56:18.076Z"
+      "updatedAt": "2026-06-13T08:57:32.970Z",
+      "startedAt": "2026-06-13T08:57:32.970Z"
     }
   ],
   "createdAt": "2026-06-13T07:56:18.076Z",
-  "updatedAt": "2026-06-13T08:26:49.830Z"
+  "updatedAt": "2026-06-13T08:57:32.970Z"
 }

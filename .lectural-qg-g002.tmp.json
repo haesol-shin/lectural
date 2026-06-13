@@ -1,0 +1,52 @@
+{
+  "architectReview": {
+    "architectureStatus": "CLEAR",
+    "productStatus": "CLEAR",
+    "codeStatus": "CLEAR",
+    "recommendation": "APPROVE",
+    "evidence": "Architect re-reviews stage-10..13: summary.md drops fixed (intro section + single-owner assignment, incl t==duration); scene_coverage capped carry-forward detects mid/tail/pre-first-keyframe stalls while passing static slides on dense raw samples; titles escaped; empty intro skipped without dropping speech; raw-samples contract enforced at library boundary via coverage_inputs_from_extraction. Final CLEAR/CLEAR/CLEAR + APPROVE, 0 blockers; all MEDIUM/LOW RESOLVED.",
+    "commands": [".gjc/plans/ralplan/2026-06-13-0738-79e5/stage-12-architect.md", ".gjc/plans/ralplan/2026-06-13-0738-79e5/stage-13-architect.md"],
+    "blockers": []
+  },
+  "executorQa": {
+    "status": "passed",
+    "e2eStatus": "passed",
+    "redTeamStatus": "passed",
+    "evidence": "Executor red-team added tests/test_redteam_synthesis.py (12 cases incl. de-xfailed no-drop property). Suite 78 passed. Surface = algorithm/library via pytest; GUI/web/api not applicable for G002.",
+    "e2eCommands": ["uv run --with pytest --with numpy pytest -q"],
+    "redTeamCommands": ["uv run --with pytest --with numpy pytest -q tests/test_redteam_synthesis.py tests/test_coverage.py tests/test_summary_anchors.py"],
+    "artifactRefs": [
+      {"id": "g002-pytest", "kind": "failure-mode-test", "path": "artifacts/g002-pytest.txt", "description": "Full pytest run (78 passed) incl. synthesis/coverage adversarial cases"},
+      {"id": "g002-redteam", "kind": "failure-mode-test", "path": "artifacts/g002-redteam.txt", "description": "Targeted synthesis+coverage red-team run (29 passed)"}
+    ],
+    "contractCoverage": [
+      {"id": "cc-allspeech", "contractRef": "AC-7 capture ALL speech", "obligation": "transcript.md and summary.md must not drop any in-duration utterance", "status": "covered", "surfaceEvidenceRefs": ["surface-algorithm"], "adversarialCaseRefs": ["case-no-drop", "case-pre-slide"]},
+      {"id": "cc-anchors", "contractRef": "AC-8 summary structure", "obligation": "summary.md carries TOC + coverage header + per-section timestamp + slide links, stable under special chars", "status": "covered", "surfaceEvidenceRefs": ["surface-algorithm"], "adversarialCaseRefs": ["case-anchor-stability", "case-title-escape"]},
+      {"id": "cc-coverage", "contractRef": "AC-13 coverage gate inputs", "obligation": "gap/scene/artifact checks; static slide passes, stall fails, slide-without-text fails", "status": "covered", "surfaceEvidenceRefs": ["surface-algorithm"], "adversarialCaseRefs": ["case-stall", "case-static-pass"]},
+      {"id": "cc-outputs", "contractRef": "AC-12 output layout/schema", "obligation": "synthesis_input.json/coverage.json carry schema_version=1; round-trip", "status": "covered", "surfaceEvidenceRefs": ["surface-algorithm"], "adversarialCaseRefs": ["case-schema"]},
+      {"id": "cc-gui", "contractRef": "non-developer UI", "obligation": "GUI surface", "status": "not_applicable", "reason": "G002 is deterministic synthesis/coverage library; UI deferred per spec non-goals."}
+    ],
+    "surfaceEvidence": [
+      {"id": "surface-algorithm", "contractRef": "G002 synthesis+coverage pure functions", "surface": "algorithm", "invocation": "uv run --with pytest --with numpy pytest -q", "verdict": "passed", "artifactRefs": ["g002-pytest", "g002-redteam"]},
+      {"id": "surface-gui", "contractRef": "non-developer UI", "surface": "gui", "status": "not_applicable", "reason": "No GUI in G002; deferred."},
+      {"id": "surface-cli", "contractRef": "lectural CLI", "surface": "cli", "status": "not_applicable", "reason": "CLI entrypoint is G003; G002 is library only."}
+    ],
+    "adversarialCases": [
+      {"id": "case-no-drop", "contractRef": "AC-7", "scenario": "segments at t=0, before first slide, exactly at duration", "expectedBehavior": "every in-duration segment appears exactly once in summary.md", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-pre-slide", "contractRef": "AC-7", "scenario": "pre-first-slide speech with first slide starting >0", "expectedBehavior": "intro section renders pre-slide speech; not dropped", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-anchor-stability", "contractRef": "AC-8", "scenario": "no slides / empty ocr_text / unicode+markdown-special titles", "expectedBehavior": "required anchors always present", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-title-escape", "contractRef": "AC-8", "scenario": "OCR title with brackets/pipe/newlines", "expectedBehavior": "TOC link text/heading not broken by special chars", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-stall", "contractRef": "AC-13", "scenario": "mid/tail keyframe-less stall beyond carry cap", "expectedBehavior": "uncovered speech bins -> scene coverage fails", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-static-pass", "contractRef": "AC-13", "scenario": "single static slide with dense raw samples", "expectedBehavior": "scene coverage passes (no false fail)", "verdict": "passed", "artifactRefs": ["g002-pytest"]},
+      {"id": "case-schema", "contractRef": "AC-12", "scenario": "write+reload synthesis_input.json/coverage.json", "expectedBehavior": "schema_version==1 round-trips", "verdict": "passed", "artifactRefs": ["g002-pytest"]}
+    ],
+    "blockers": []
+  },
+  "iteration": {
+    "status": "passed",
+    "evidence": "Initial G002 review surfaced a real blocker (summary segment drop) + MEDIUMs; resolved across commits (no-drop assignment, capped carry-forward, title escaping, raw-samples contract helper); full loop rerun cleanly to 78 passed and architect reached CLEAR/CLEAR/CLEAR + APPROVE.",
+    "fullRerun": true,
+    "rerunCommands": ["uv run --with pytest --with numpy pytest -q"],
+    "blockers": []
+  }
+}

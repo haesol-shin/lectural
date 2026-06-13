@@ -3,7 +3,7 @@
   "active": true,
   "skill": "ralplan",
   "phase": "architect",
-  "updated_at": "2026-06-13T08:47:53.063Z",
+  "updated_at": "2026-06-13T08:50:52.354Z",
   "active_skills": [
     {
       "skill": "deep-interview",
@@ -52,11 +52,11 @@
       "skill": "ralplan",
       "phase": "architect",
       "active": true,
-      "activated_at": "2026-06-13T08:47:53.063Z",
-      "updated_at": "2026-06-13T08:47:53.063Z",
+      "activated_at": "2026-06-13T08:50:52.354Z",
+      "updated_at": "2026-06-13T08:50:52.354Z",
       "hud": {
         "version": 1,
-        "summary": "persisted architect stage 12",
+        "summary": "persisted architect stage 13",
         "chips": [
           {
             "label": "stage",
@@ -65,31 +65,31 @@
           },
           {
             "label": "iter",
-            "value": "12",
+            "value": "13",
             "priority": 30
           }
         ],
-        "updated_at": "2026-06-13T08:47:53.060Z"
+        "updated_at": "2026-06-13T08:50:52.352Z"
       }
     },
     {
       "skill": "ultragoal",
       "phase": "active",
       "active": true,
-      "activated_at": "2026-06-13T08:26:49.849Z",
-      "updated_at": "2026-06-13T08:26:49.849Z",
+      "activated_at": "2026-06-13T08:57:32.989Z",
+      "updated_at": "2026-06-13T08:57:32.989Z",
       "session_id": "019ebfcf-e794-7000-bcbd-0ac31aca96a3",
       "hud": {
         "version": 1,
         "chips": [
           {
             "label": "goals",
-            "value": "1/3",
+            "value": "2/3",
             "priority": 10
           },
           {
             "label": "current",
-            "value": "G002:합성·커버리지 산출물과 계약",
+            "value": "G003:스킬 패키징·완료 훅·검증 매트릭스",
             "priority": 20
           },
           {
@@ -98,7 +98,7 @@
             "priority": 30
           }
         ],
-        "updated_at": "2026-06-13T08:26:49.848Z"
+        "updated_at": "2026-06-13T08:57:32.987Z"
       },
       "receipt": {
         "version": 1,
@@ -107,10 +107,10 @@
         "command": "gjc ultragoal (reconcile)",
         "state_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\skill-active-state.json",
         "storage_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\ultragoal-state.json",
-        "mutated_at": "2026-06-13T08:26:49.838Z",
-        "fresh_until": "2026-06-13T08:56:49.838Z",
+        "mutated_at": "2026-06-13T08:57:32.976Z",
+        "fresh_until": "2026-06-13T09:27:32.976Z",
         "status": "fresh",
-        "mutation_id": "ultragoal:reconcile:2026-06-13T08:26:49.838Z",
+        "mutation_id": "ultragoal:reconcile:2026-06-13T08:57:32.976Z",
         "verb": "reconcile",
         "forced": true,
         "from_phase": "active",
