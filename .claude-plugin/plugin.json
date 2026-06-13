@@ -1,0 +1,16 @@
+{
+  "name": "lectural",
+  "version": "0.1.0",
+  "description": "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, and every scene. Ships a deterministic Python core, a skill, and a completeness Stop hook.",
+  "keywords": [
+    "youtube",
+    "lecture",
+    "transcript",
+    "ocr",
+    "study-notes"
+  ],
+  "homepage": "<GITHUB_REPO_URL>",
+  "repository": "<GITHUB_REPO_URL>",
+  "license": "UNLICENSED",
+  "hooks": "./hooks/hooks.json"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "lectural",
+  "owner": {
+    "name": "LecturAL maintainer",
+    "url": "<GITHUB_REPO_URL>"
+  },
+  "plugins": [
+    {
+      "name": "lectural",
+      "source": "./",
+      "description": "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, and every scene, with a completeness gate that blocks premature done."
+    }
+  ]
+}
