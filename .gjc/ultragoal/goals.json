@@ -76,12 +76,39 @@
       "id": "G003",
       "title": "스킬 패키징·완료 훅·검증 매트릭스",
       "objective": "P9~P11 구현. cli.py(lectural <url...> [--force-stt] [--model] [--out], 단일+순차 배치) + runstate.py(active-run 포인터: env + state 파일, 세션 내 전 run 추적) + .claude/skills/lectural/SKILL.md(frontmatter+body) + references/ + .claude/settings.json(Stop 훅 wiring) + scripts/completeness_hook.py(runstate로 대상 run 식별, 비-LecturAL run no-op exit0, 3검사+summary 앵커 검증, 실패 exit2, 인터프리터 sys.executable/py-3 해석). AC-1..AC-13 검증 매트릭스 전수 실행(오프라인 단위테스트 기준, 실영상 스모크는 별도 표시). AC-2, AC-10, AC-11, AC-13.",
-      "status": "active",
+      "status": "complete",
       "createdAt": "2026-06-13T07:56:18.076Z",
-      "updatedAt": "2026-06-13T08:57:32.970Z",
-      "startedAt": "2026-06-13T08:57:32.970Z"
+      "updatedAt": "2026-06-13T09:16:56.591Z",
+      "startedAt": "2026-06-13T08:57:32.970Z",
+      "completedAt": "2026-06-13T09:16:56.591Z",
+      "evidence": "G003 packaging+hook complete; 112 offline tests pass (artifacts/g003-pytest.txt); CLI + runstate + SKILL.md + Stop-hook wiring + completeness_hook.py; both gate-bypass blockers fixed (pre-registered runs, fail-closed hook) verified by real invocation (artifacts/g003-hook-smoke.txt: 0/0/2/2); AC-1..13 matrix docs/ac_verification.md; architect CLEAR/CLEAR/CLEAR+APPROVE (.gjc/plans/ralplan/2026-06-13-0738-79e5/stage-15-architect.md).",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "0cdbce3f-1823-468e-bec7-7c6dd2bced1f",
+        "verifiedAt": "2026-06-13T09:16:56.591Z",
+        "goalId": "G003",
+        "receiptKind": "final-aggregate",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "c183ef200d0eb322226ad64ab361dc58507437f87f674c41cb5ea88e5eb1b7a2",
+        "gjcGoalSnapshotHash": "f3c6d0b22bf4ebd8e09d71503d8a939f190b973c19df969a5607bb4a2b00a6d4",
+        "planGeneration": "595289c732268217c0ccaf8029c5be81ffafc2171fc55f42b7a669491f8f6da8",
+        "basis": {
+          "planHashBeforeCheckpoint": "96b95804e7817a163789deb7788365e705fde6b890b187dc9b0c01ede341a84e",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "7dc0807f-f0b1-47c6-8ccb-8679745b9455",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-13T09:16:56.591Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G001",
+            "G002",
+            "G003"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "c2ac1e834b337d135ef98428adaf1babc9eee500917e04caab7a83096a21d7dc"
+        },
+        "checkpointLedgerEventId": "cbabfdf6-48c3-435c-9c74-60de8fd8977e"
+      }
     }
   ],
   "createdAt": "2026-06-13T07:56:18.076Z",
-  "updatedAt": "2026-06-13T08:57:32.970Z"
+  "updatedAt": "2026-06-13T09:16:56.591Z"
 }

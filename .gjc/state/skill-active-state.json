@@ -71,51 +71,6 @@
         ],
         "updated_at": "2026-06-13T09:14:45.259Z"
       }
-    },
-    {
-      "skill": "ultragoal",
-      "phase": "active",
-      "active": true,
-      "activated_at": "2026-06-13T08:57:32.989Z",
-      "updated_at": "2026-06-13T08:57:32.989Z",
-      "session_id": "019ebfcf-e794-7000-bcbd-0ac31aca96a3",
-      "hud": {
-        "version": 1,
-        "chips": [
-          {
-            "label": "goals",
-            "value": "2/3",
-            "priority": 10
-          },
-          {
-            "label": "current",
-            "value": "G003:스킬 패키징·완료 훅·검증 매트릭스",
-            "priority": 20
-          },
-          {
-            "label": "status",
-            "value": "active",
-            "priority": 30
-          }
-        ],
-        "updated_at": "2026-06-13T08:57:32.987Z"
-      },
-      "receipt": {
-        "version": 1,
-        "skill": "ultragoal",
-        "owner": "gjc-runtime",
-        "command": "gjc ultragoal (reconcile)",
-        "state_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\skill-active-state.json",
-        "storage_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ebfcf-e794-7000-bcbd-0ac31aca96a3\\ultragoal-state.json",
-        "mutated_at": "2026-06-13T08:57:32.976Z",
-        "fresh_until": "2026-06-13T09:27:32.976Z",
-        "status": "fresh",
-        "mutation_id": "ultragoal:reconcile:2026-06-13T08:57:32.976Z",
-        "verb": "reconcile",
-        "forced": true,
-        "from_phase": "active",
-        "to_phase": "active"
-      }
     }
   ],
   "active_subskills": []
