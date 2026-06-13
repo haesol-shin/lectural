@@ -150,4 +150,11 @@ def detect_speech_spans(audio_path: str, duration: float, noise_db: int = -30, m
         capture_output=True,
         text=True,
     )
+    if proc.returncode != 0:
+        # Surface the real ffmpeg failure instead of silently returning
+        # "all speech" (which would cause a spurious completeness FAIL).
+        raise RuntimeError(
+            f"ffmpeg silencedetect failed (code {proc.returncode}): "
+            f"{proc.stderr.strip()[-500:]}"
+        )
     return parse_silencedetect(proc.stderr, duration)

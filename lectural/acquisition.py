@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import warnings
 from dataclasses import dataclass, field
 
 
@@ -177,19 +178,33 @@ def acquire_speech(
     if not video_id:
         raise ValueError(f"Could not extract a YouTube video id from: {url!r}")
 
-    if not force_stt:
+    fallback_reason: str | None = None
+    if force_stt:
+        fallback_reason = "force_stt requested"
+    else:
         try:
             segs = fetch_caption_segments(video_id, languages)
             if captions_are_usable(segs):
                 return SpeechTrack(segments=segs, source="caption", meta={"video_id": video_id})
-        except Exception as exc:  # noqa: BLE001 - fall through to STT
-            # Captions unavailable/blocked -> STT path.
-            _ = exc
+            fallback_reason = f"captions present but unusable ({len(segs)} cues)"
+        except Exception as exc:  # noqa: BLE001
+            # youtube-transcript-api raises several distinct types
+            # (NoTranscriptFound, TranscriptsDisabled, network errors) that
+            # cannot be imported without the optional dep, so we catch broadly
+            # here -- but the reason is preserved and surfaced, never discarded.
+            fallback_reason = f"caption fetch failed: {type(exc).__name__}: {exc}"
 
-    # STT fallback (heavy; delegated to speech.py).
+    # STT fallback (heavy; delegated to speech.py). Make the degradation
+    # observable, mirroring the OCR Paddle->Tesseract fallback warning.
+    warnings.warn(
+        f"Captions unavailable; falling back to CPU STT. Reason: {fallback_reason}",
+        RuntimeWarning,
+        stacklevel=2,
+    )
     from .speech import transcribe_audio
 
     audio_path = download_audio(url, out_dir)
     track = transcribe_audio(audio_path)
     track.meta.setdefault("video_id", video_id)
+    track.meta["caption_fallback_reason"] = fallback_reason
     return track

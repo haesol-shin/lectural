@@ -100,16 +100,42 @@ def _pair_metrics(path_a: str, path_b: str) -> tuple[float, float]:
     return (hist_corr, ssim)
 
 
-def _ssim(a, b, np) -> float:
-    """Global SSIM between two grayscale arrays. Pure given numpy."""
-    mu_a, mu_b = a.mean(), b.mean()
-    va, vb = a.var(), b.var()
-    cov = ((a - mu_a) * (b - mu_b)).mean()
+def _ssim(a, b, np, win: int = 7) -> float:
+    """Mean of windowed SSIM map between two grayscale arrays. Pure given numpy.
+
+    Uses a `win`x`win` box filter to compute local statistics (spatially
+    sensitive), unlike a single global window which is blind to layout changes
+    that share global luminance stats. Returns the mean local SSIM.
+    """
     c1 = (0.01 * 255) ** 2
     c2 = (0.03 * 255) ** 2
-    num = (2 * mu_a * mu_b + c1) * (2 * cov + c2)
-    den = (mu_a**2 + mu_b**2 + c1) * (va + vb + c2)
-    return float(num / den) if den else 1.0
+
+    def box(x):
+        # Separable box filter via cumulative sums; pure numpy, no scipy.
+        k = win
+        pad = k // 2
+        xp = np.pad(x, pad, mode="edge")
+        cs = np.cumsum(np.cumsum(xp, axis=0), axis=1)
+        cs = np.pad(cs, ((1, 0), (1, 0)), mode="constant")
+        h, w = x.shape
+        s = (
+            cs[k:k + h, k:k + w]
+            - cs[0:h, k:k + w]
+            - cs[k:k + h, 0:w]
+            + cs[0:h, 0:w]
+        )
+        return s / (k * k)
+
+    mu_a = box(a)
+    mu_b = box(b)
+    mu_a2, mu_b2, mu_ab = mu_a * mu_a, mu_b * mu_b, mu_a * mu_b
+    va = box(a * a) - mu_a2
+    vb = box(b * b) - mu_b2
+    cov = box(a * b) - mu_ab
+    num = (2 * mu_ab + c1) * (2 * cov + c2)
+    den = (mu_a2 + mu_b2 + c1) * (va + vb + c2)
+    smap = num / den
+    return float(np.clip(smap.mean(), -1.0, 1.0))
 
 
 def dedupe_frames(frames: list[Frame]) -> list[Frame]:
