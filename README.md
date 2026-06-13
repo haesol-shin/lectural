@@ -3,8 +3,6 @@
 > YouTube 강의 영상 하나를 받아 **모든 발화·모든 화면 텍스트·모든 슬라이드**를 빠짐없이 잡아 markdown 학습 정리본으로 만드는 Claude Code 플러그인 + 재사용 Python CLI.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![tests](https://img.shields.io/badge/tests-112%20passing-brightgreen.svg)](#개발테스트)
-[![cost](https://img.shields.io/badge/external%20LLM%20tokens-0-success.svg)](#왜-lectural인가)
 
 임의 요약으로 건너뛰지 않고, 빠진 게 없는지 **완전성 검증 훅이 자동으로 강제**합니다.
 
