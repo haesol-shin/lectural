@@ -66,13 +66,16 @@ context.
 
 ## Completeness gate (must pass)
 
-The plugin ships a Stop hook (`hooks/hooks.json`) that runs
-`python "${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py"`. The hook inspects
-every run registered in this session — its `coverage.json` and `summary.md`
-anchors — and blocks "done" with exit 2 if any run fails. When the gate blocks,
-do not work around it with arbitrary summarization; resolve the root cause
-(caption gaps, uncovered scenes, empty artifacts). On Windows without `python`,
-use `py -3` for the same script.
+Completeness is enforced in two layers. Layer 1 (primary, agent-agnostic): the
+`lectural` CLI exit code. `cli.main` ANDs every processed run's `overall_pass`
+and returns a non-zero exit (2) when any run fails its coverage checks (speech
+gap, scene coverage, non-empty artifacts). Any agent wrapping the CLI MUST treat
+a non-zero exit as a hard failure and must not work around it with arbitrary
+summarization. Layer 2 (additional, Claude Code only): the Stop hook
+(`scripts/completeness_hook.py`) is a session-final verifier that independently
+reads run state (rejecting failed/pending runs), `coverage.json`, and validates
+`summary.md` anchors and slide-frame links; it does not call the CLI. On Windows
+without `python`, use `py -3` for the hook script.
 
 ## Scope
 
