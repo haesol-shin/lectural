@@ -40,6 +40,15 @@ def _first_line(text: str, fallback: str) -> str:
             return line[:80]
     return fallback
 
+def _safe_title(text: str) -> str:
+    """Pure: make a title safe inside markdown link text / headings.
+
+    Strips newlines and neutralizes characters that would break a
+    `[text](#anchor)` link or a heading (``[`` ``]`` ``|``).
+    """
+    t = " ".join((text or "").split())
+    return t.replace("[", "(").replace("]", ")").replace("|", "/")
+
 
 def build_section_hints(slides: list[dict], duration: float) -> list[dict]:
     """Pure: derive section windows from slide timestamps.
@@ -152,20 +161,30 @@ def render_summary_md(synthesis_input: dict, coverage: dict) -> str:
         "",
     ]
 
+    # Determine which sections to render. Skip a synthetic intro section
+    # (no frame) that ended up with no pre-slide speech, but never skip the
+    # only section. Every segment is assigned to exactly one section (no drops).
+    buckets = assign_segments_to_sections(segments, hints)
+
+    def _renderable(h: dict) -> bool:
+        if len(hints) == 1:
+            return True
+        return bool(h.get("frame")) or bool(buckets.get(h["index"]))
+
+    shown = [h for h in hints if _renderable(h)]
+
     # Table of contents (anchor) with intra-doc links
     out += [TOC_ANCHOR]
-    for h in hints:
+    for h in shown:
         out.append(
-            f"- [{format_timestamp(h['t'])} · {h['title']}](#sec-{h['index']})"
+            f"- [{format_timestamp(h['t'])} · {_safe_title(h['title'])}](#sec-{h['index']})"
         )
     out.append("")
 
     # Sections: each has a timestamp anchor + slide link (when present) + body.
-    # Every segment is assigned to exactly one section (no drops).
-    buckets = assign_segments_to_sections(segments, hints)
-    for h in hints:
+    for h in shown:
         out.append(f'<a id="sec-{h["index"]}"></a>')
-        out.append(f"{SECTION_PREFIX} {h['index'] + 1}. [{format_timestamp(h['t'])}] {h['title']}")
+        out.append(f"{SECTION_PREFIX} {h['index'] + 1}. [{format_timestamp(h['t'])}] {_safe_title(h['title'])}")
         if h.get("frame"):
             out.append(f"![슬라이드 {h['index'] + 1}]({h['frame']})")
         body = buckets.get(h["index"], [])

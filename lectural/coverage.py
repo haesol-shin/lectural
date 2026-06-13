@@ -15,7 +15,7 @@ import json
 import os
 from dataclasses import dataclass
 
-from .config import MAX_GAP_SEC, SCENE_BINS_N, SCHEMA_VERSION
+from .config import FRAME_CARRY_MAX_SEC, MAX_GAP_SEC, SCENE_BINS_N, SCHEMA_VERSION
 from .vad import Span, max_non_silence_untranscribed_gap, transcript_coverage_spans
 
 
@@ -49,42 +49,45 @@ def scene_coverage(
     bins: int = SCENE_BINS_N,
     slide_frames_total: int = 0,
     slide_frames_with_text: int = 0,
+    carry_max_sec: float = FRAME_CARRY_MAX_SEC,
 ) -> dict:
-    """Pure: every speech bin must be covered by a keyframe (carry-forward).
+    """Pure: every speech bin must be covered by a keyframe (capped carry).
 
     A bin "contains speech" when any speech span overlaps its time range. A
-    keyframe covers its own bin AND every later bin until the next keyframe
-    (carry-forward): a slide stays on screen until it changes, so a single
-    slide shown for a long static stretch correctly covers that whole stretch.
-    The only uncovered speech bins are those BEFORE the first keyframe (i.e.
-    speech the visual pass never reached). `pass` also requires every
+    keyframe covers its own bin AND carries forward to later bins, but only for
+    up to `carry_max_sec`. So a static slide passes when the visual pass feeds
+    dense RAW samples (~SAMPLE_FPS), while a stretch with NO keyframe for longer
+    than the cap (an extractor stall, mid-video OR tail, or speech before the
+    first keyframe) stays uncovered and FAILs. `pass` also requires every
     slide-classified frame to carry OCR text.
 
-    `frame_times` are keyframe/slide start times; deduped slide times are fine
-    because of carry-forward.
+    `frame_times` MUST be the RAW sampled keyframe times (pre-dedup); the cap is
+    what makes a missing/stalled visual pass detectable.
     """
     bins = max(bins, 1)
-    frame_bins = {_bin_of(t, duration, bins) for t in frame_times if 0 <= t <= duration}
-    first_frame_bin = min(frame_bins) if frame_bins else None
+    times = sorted(t for t in frame_times if 0 <= t <= duration)
 
     speech_bins: set[int] = set()
+    covered: set[int] = set()
     if duration > 0:
         bin_width = duration / bins
+        import bisect
+
         for b in range(bins):
             b0, b1 = b * bin_width, (b + 1) * bin_width
-            if any(s < b1 and e > b0 for s, e in speech_spans):
-                speech_bins.add(b)
+            if not any(s < b1 and e > b0 for s, e in speech_spans):
+                continue
+            speech_bins.add(b)
+            # Most recent keyframe at or before this bin's end.
+            idx = bisect.bisect_right(times, b1) - 1
+            if idx >= 0 and (b0 - times[idx]) <= carry_max_sec:
+                covered.add(b)
 
-    # Carry-forward: a speech bin is covered if a keyframe started at or before
-    # it. Uncovered = speech bins before the first keyframe (or all, if none).
-    if first_frame_bin is None:
-        covered = set()
-    else:
-        covered = {b for b in speech_bins if b >= first_frame_bin}
     uncovered = sorted(b for b in speech_bins if b not in covered)
     slides_ok = slide_frames_with_text >= slide_frames_total  # every slide has text
     return {
         "bins": bins,
+        "carry_max_sec": carry_max_sec,
         "speech_bins": sorted(speech_bins),
         "covered_speech_bins": sorted(covered),
         "uncovered_speech_bins": uncovered,

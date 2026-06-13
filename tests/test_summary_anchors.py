@@ -88,3 +88,37 @@ def test_summary_md_assigns_segments_to_sections():
     # 200s utterance must land under section 2 (starts 180s), not section 1.
     sec2_idx = md.index("섹션 2")
     assert md.index("스케줄링 알고리즘") > sec2_idx
+
+
+def test_summary_escapes_markdown_special_titles():
+    video = {"title": "x", "url": "u", "duration_sec": 100.0, "source": "stt"}
+    segments = [{"t": 0.0, "text": "\ubcf8\ubb38"}]
+    slides = [{"t": 0.0, "frame": "frames/a.png",
+               "ocr_text": "Topic [draft] | v2\n\uc138\ubd80", "is_slide": True}]
+    si = build_synthesis_input(video, segments, slides)
+    coverage = {"duration_sec": 100.0, "ocr_engine": "none",
+                "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
+                "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [],
+                                   "slide_frames_total": 1, "slide_frames_with_text": 1, "pass": True},
+                "artifacts": {"transcript_nonempty": True, "summary_nonempty": True, "pass": True}}
+    md = render_summary_md(si, coverage)
+    toc_line = next(ln for ln in md.splitlines() if ln.startswith("- [00:00:00"))
+    link_text = toc_line.split("](")[0]
+    assert "]" not in link_text.split("\u00b7 ", 1)[1]
+    assert "|" not in link_text
+
+
+def test_summary_skips_empty_intro_section_but_keeps_pre_slide_speech():
+    video = {"title": "x", "url": "u", "duration_sec": 200.0, "source": "stt"}
+    slides = [{"t": 60.0, "frame": "frames/a.png", "ocr_text": "Slide", "is_slide": True}]
+    si = build_synthesis_input(video, [{"t": 120.0, "text": "\ud6c4\ubc18\ubd80"}], slides)
+    cov = {"duration_sec": 200.0, "ocr_engine": "none",
+           "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
+           "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [],
+                              "slide_frames_total": 1, "slide_frames_with_text": 1, "pass": True},
+           "artifacts": {"transcript_nonempty": True, "summary_nonempty": True, "pass": True}}
+    md = render_summary_md(si, cov)
+    assert "\ub3c4\uc785" not in md
+    si2 = build_synthesis_input(video, [{"t": 5.0, "text": "\ub3c4\uc785\ubd80 \ubc1c\ud654"}, {"t": 120.0, "text": "\ud6c4\ubc18\ubd80"}], slides)
+    md2 = render_summary_md(si2, cov)
+    assert "\ub3c4\uc785\ubd80 \ubc1c\ud654" in md2

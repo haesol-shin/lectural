@@ -82,3 +82,23 @@ def test_build_and_write_coverage(tmp_path):
     assert os.path.isfile(out)
     reloaded = json.loads((tmp_path / "coverage.json").read_text(encoding="utf-8"))
     assert reloaded["schema_version"] == 1
+
+
+def test_scene_coverage_mid_video_stall_detected_by_carry_cap():
+    # Dense samples then a long stall (no keyframe) in the middle -> FAIL.
+    frames = [float(i) for i in range(0, 100)] + [590.0, 595.0]
+    res = scene_coverage(frames, [(0, 600)], duration=600, bins=20,
+                         slide_frames_total=2, slide_frames_with_text=2,
+                         carry_max_sec=120.0)
+    assert res["pass"] is False
+    assert res["uncovered_speech_bins"]
+
+
+def test_scene_coverage_static_slide_passes_with_dense_raw_samples():
+    # One static slide for the whole 600s, but raw sampling kept dense frames.
+    frames = [float(i) for i in range(0, 600, 1)]
+    res = scene_coverage(frames, [(0, 600)], duration=600, bins=20,
+                         slide_frames_total=1, slide_frames_with_text=1,
+                         carry_max_sec=120.0)
+    assert res["pass"] is True
+    assert res["uncovered_speech_bins"] == []
