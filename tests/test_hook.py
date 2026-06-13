@@ -51,8 +51,10 @@ def test_hook_passes_when_coverage_and_anchors_good(tmp_path, monkeypatch):
     out.mkdir()
     _good_summary(out / "summary.md")
     _coverage(out / "coverage.json", overall_pass=True)
-    runstate.start_session(str(rs))
-    runstate.record_run(str(out), str(out / "coverage.json"), str(out / "summary.md"), str(rs))
+    runstate.start_session(["u"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        summary_md=str(out / "summary.md"), path=str(rs))
     hook = _load_hook()
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert hook.main() == 0
@@ -65,8 +67,10 @@ def test_hook_blocks_when_coverage_fails(tmp_path, monkeypatch, capsys):
     out.mkdir()
     _good_summary(out / "summary.md")
     _coverage(out / "coverage.json", overall_pass=False)  # failing coverage
-    runstate.start_session(str(rs))
-    runstate.record_run(str(out), str(out / "coverage.json"), str(out / "summary.md"), str(rs))
+    runstate.start_session(["u"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        summary_md=str(out / "summary.md"), path=str(rs))
     hook = _load_hook()
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert hook.main() == 2  # exit 2 blocks "done"
@@ -79,8 +83,10 @@ def test_hook_blocks_when_summary_anchor_missing(tmp_path, monkeypatch):
     out.mkdir()
     (out / "summary.md").write_text("# no anchors here", encoding="utf-8")  # missing anchors
     _coverage(out / "coverage.json", overall_pass=True)
-    runstate.start_session(str(rs))
-    runstate.record_run(str(out), str(out / "coverage.json"), str(out / "summary.md"), str(rs))
+    runstate.start_session(["u"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        summary_md=str(out / "summary.md"), path=str(rs))
     hook = _load_hook()
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert hook.main() == 2
@@ -89,13 +95,15 @@ def test_hook_blocks_when_summary_anchor_missing(tmp_path, monkeypatch):
 def test_hook_blocks_when_one_of_batch_fails(tmp_path, monkeypatch):
     rs = tmp_path / "runstate.json"
     monkeypatch.setenv("LECTURAL_RUNSTATE", str(rs))
-    runstate.start_session(str(rs))
+    runstate.start_session(["u0", "u1"], str(rs))
     for i, ok in enumerate([True, False]):  # second run fails -> whole gate fails (AC-2)
         out = tmp_path / f"run{i}"
         out.mkdir()
         _good_summary(out / "summary.md")
         _coverage(out / "coverage.json", overall_pass=ok)
-        runstate.record_run(str(out), str(out / "coverage.json"), str(out / "summary.md"), str(rs))
+        runstate.update_run(i, status="complete", output_dir=str(out),
+                            coverage_json=str(out / "coverage.json"),
+                            summary_md=str(out / "summary.md"), path=str(rs))
     hook = _load_hook()
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert hook.main() == 2

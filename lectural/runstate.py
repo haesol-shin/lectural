@@ -1,9 +1,12 @@
 """Active-run pointer so the completeness hook knows what to validate.
 
-A single CLI invocation (one URL or a sequential batch) writes a fresh run
-state file listing every output directory it produced this session. The Stop
-hook reads this file and validates ALL listed runs (AC-2). When the file is
-absent, the current agent turn was not a LecturAL run and the hook is a no-op.
+A single CLI invocation (one URL or a sequential batch) opens a fresh session
+and PRE-REGISTERS every requested URL as a `pending` run. As each video is
+processed the entry is updated to `complete` (with artifact paths) or `failed`.
+
+The Stop hook validates EVERY entry, so a failed or never-produced video stays
+visible and blocks "done" (it cannot be hidden by aborting early). When the
+run-state file is absent, the turn was not a LecturAL run and the hook no-ops.
 """
 
 from __future__ import annotations
@@ -23,31 +26,58 @@ def runstate_path() -> str:
     )
 
 
-def start_session(path: str | None = None) -> dict:
-    """Begin a fresh batch session, replacing any previous run-state file."""
+def start_session(urls: list[str] | None = None, path: str | None = None) -> dict:
+    """Begin a fresh batch session, pre-registering each URL as `pending`."""
     path = path or runstate_path()
     state = {
         "session_id": uuid.uuid4().hex,
         "started_at": time.time(),
         "tool": "lectural",
-        "runs": [],
+        "runs": [
+            {
+                "index": i,
+                "url": url,
+                "status": "pending",
+                "output_dir": None,
+                "coverage_json": None,
+                "summary_md": None,
+            }
+            for i, url in enumerate(urls or [])
+        ],
     }
     _write(path, state)
     return state
 
 
-def record_run(output_dir: str, coverage_path: str, summary_path: str, path: str | None = None) -> dict:
-    """Append a completed run's artifact locations to the run-state file."""
+def update_run(
+    index: int,
+    *,
+    status: str,
+    output_dir: str | None = None,
+    coverage_json: str | None = None,
+    summary_md: str | None = None,
+    error: str | None = None,
+    path: str | None = None,
+) -> dict:
+    """Update a pre-registered run by index (or append if out of range)."""
     path = path or runstate_path()
-    state = read_state(path) or start_session(path)
-    state["runs"].append(
-        {
-            "output_dir": output_dir,
-            "coverage_json": coverage_path,
-            "summary_md": summary_path,
-            "recorded_at": time.time(),
-        }
-    )
+    state = read_state(path) or start_session([], path)
+    entry = {
+        "index": index,
+        "status": status,
+        "output_dir": output_dir,
+        "coverage_json": coverage_json,
+        "summary_md": summary_md,
+        "error": error,
+        "updated_at": time.time(),
+    }
+    runs = state.setdefault("runs", [])
+    for r in runs:
+        if r.get("index") == index:
+            r.update({k: v for k, v in entry.items() if v is not None or k == "status"})
+            break
+    else:
+        runs.append(entry)
     _write(path, state)
     return state
 

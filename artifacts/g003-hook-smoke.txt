@@ -1,0 +1,18 @@
+# LecturAL completeness hook â€” real invocation evidence
+## no runstate -> no-op
+exit=0
+## complete good run -> pass
+LecturAL ¿ÏÀü¼º °ÔÀÌÆ® Åë°ú: 1°³ run ¸ğµÎ ¿ÏÀü.
+exit=0
+## failed/pending batch -> block (no bypass)
+LecturAL ¿ÏÀü¼º °ÔÀÌÆ® ½ÇÆĞ \u2014 ¾ÆÁ÷ '¿Ï·á'ÇÒ ¼ö ¾ø½À´Ï´Ù:
+[None]
+  - Ã³¸® ½ÇÆĞÇÑ ¿µ»ó: download error
+[None]
+  - Ã³¸®µÇÁö ¾ÊÀº ¿µ»ó(pending): u2
+exit=2
+## malformed runstate -> block (fail closed)
+LecturAL ¿ÏÀü¼º °ÔÀÌÆ® ½ÇÆĞ \u2014 ¾ÆÁ÷ '¿Ï·á'ÇÒ ¼ö ¾ø½À´Ï´Ù:
+[C:\Users\haesol\dev\LecturAL/.hs3/bad.json]
+  - Ã³¸® ½ÇÆĞÇÑ ¿µ»ó: unreadable run-state: C:\Users\haesol\dev\LecturAL/.hs3/bad.json
+exit=2

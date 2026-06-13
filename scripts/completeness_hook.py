@@ -24,16 +24,37 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Anchors: import from the package, else fall back to literals. This MUST NOT
+# affect run-state reading (a completeness gate must not fail open).
 try:
-    from lectural.runstate import read_state
     from lectural.synthesis import COVERAGE_ANCHOR, ENRICH_MARKER, TOC_ANCHOR
-except Exception:  # noqa: BLE001 - fall back to literal anchors if import fails
-    read_state = None
+except Exception:  # noqa: BLE001
     ENRICH_MARKER = "<!-- lectural:baseline -->"
     COVERAGE_ANCHOR = "## 커버리지 요약"
     TOC_ANCHOR = "## 목차"
 
+_DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
 _TIMESTAMP_RE = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
+
+
+def _read_runstate() -> dict | None:
+    """Self-contained run-state reader (no lectural import -> fails closed).
+
+    Returns the parsed run-state dict, or None when the file is absent (the
+    turn was not a LecturAL run). A present-but-unreadable file is treated as a
+    failure by returning a sentinel that the gate rejects.
+    """
+    path = os.environ.get("LECTURAL_RUNSTATE") or os.path.join(
+        os.getcwd(), _DEFAULT_RUNSTATE_FILENAME
+    )
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return {"runs": [{"status": "failed", "error": f"unreadable run-state: {path}",
+                          "output_dir": path}]}
 
 
 def _validate_summary_anchors(summary_path: str) -> list[str]:
@@ -61,7 +82,12 @@ def _validate_summary_anchors(summary_path: str) -> list[str]:
 
 def _validate_run(run: dict) -> list[str]:
     problems: list[str] = []
-    cov_path = run.get("coverage_json", "")
+    status = run.get("status")
+    if status == "failed":
+        return [f"처리 실패한 영상: {run.get('error') or run.get('url') or run.get('output_dir')}"]
+    if status == "pending":
+        return [f"처리되지 않은 영상(pending): {run.get('url') or run.get('output_dir')}"]
+    cov_path = run.get("coverage_json") or ""
     if not os.path.isfile(cov_path):
         return [f"coverage.json 없음: {cov_path}"]
     try:
@@ -95,9 +121,9 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         pass
 
-    state = read_state() if read_state else None
-    if not state or not state.get("runs"):
-        # Not a LecturAL run this turn -> no-op.
+    state = _read_runstate()
+    if state is None or not state.get("runs"):
+        # No run-state file (not a LecturAL run) or zero registered runs -> no-op.
         return 0
 
     all_problems: list[str] = []

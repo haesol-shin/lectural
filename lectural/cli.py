@@ -50,22 +50,36 @@ def run(
     processor=None,
     runstate_file: str | None = None,
 ) -> list[dict]:
-    """Sequentially process each URL; record every run for the hook (AC-2).
+    """Sequentially process each URL; pre-register and record EVERY run.
 
     `processor(url, out_dir, force_stt, model) -> dict` is injectable; the
-    default uses the real pipeline. Each result dict must include
-    output_dir, coverage_json, summary_md, transcript_md, and overall_pass.
+    default uses the real pipeline. Each result dict must include output_dir,
+    coverage_json, summary_md, transcript_md, and overall_pass.
+
+    Every URL is pre-registered as `pending` so a failed or unproduced video
+    stays visible to the completeness hook (it cannot be hidden by aborting).
+    A processor failure is recorded and the batch CONTINUES to the next URL.
     """
     processor = processor or _default_processor
-    runstate.start_session(runstate_file)
+    runstate.start_session(urls, runstate_file)
     results: list[dict] = []
     for i, url in enumerate(urls):
         out_dir = os.path.join(out_root, f"video_{i + 1:02d}")  # provisional
-        result = processor(url, out_dir, force_stt, model)
-        runstate.record_run(
-            result["output_dir"], result["coverage_json"], result["summary_md"], runstate_file
-        )
-        results.append(result)
+        try:
+            result = processor(url, out_dir, force_stt, model)
+            runstate.update_run(
+                i,
+                status="complete",
+                output_dir=result["output_dir"],
+                coverage_json=result["coverage_json"],
+                summary_md=result["summary_md"],
+                path=runstate_file,
+            )
+            results.append(result)
+        except Exception as exc:  # noqa: BLE001 - record + continue, do not hide failures
+            runstate.update_run(i, status="failed", error=f"{type(exc).__name__}: {exc}", path=runstate_file)
+            results.append({"output_dir": out_dir, "url": url, "overall_pass": False,
+                            "error": f"{type(exc).__name__}: {exc}"})
     return results
 
 
