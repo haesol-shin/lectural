@@ -48,16 +48,25 @@ def build_section_hints(slides: list[dict], duration: float) -> list[dict]:
     With no slides, a single whole-video section is produced.
     """
     if not slides:
-        return [{"index": 0, "t": 0.0, "t_end": duration, "title": "전체", "frame": None}]
+        return [{"index": 0, "t": 0.0, "win_start": 0.0, "t_end": duration,
+                 "title": "전체", "frame": None}]
     ordered = sorted(slides, key=lambda s: s.get("t", 0.0))
     hints: list[dict] = []
+    # If the first slide starts after 0, prepend an intro section so speech
+    # before the first slide is never dropped from the summary (capture-ALL).
+    if float(ordered[0].get("t", 0.0)) > 0.0:
+        hints.append({"index": 0, "t": 0.0, "win_start": 0.0,
+                      "t_end": float(ordered[0].get("t", 0.0)),
+                      "title": "도입", "frame": None})
+    base = len(hints)
     for i, sl in enumerate(ordered):
         t = float(sl.get("t", 0.0))
         t_end = float(ordered[i + 1]["t"]) if i + 1 < len(ordered) else duration
         hints.append(
             {
-                "index": i,
+                "index": base + i,
                 "t": t,
+                "win_start": t,
                 "t_end": t_end,
                 "title": _first_line(sl.get("ocr_text", ""), f"슬라이드 {i + 1}"),
                 "frame": sl.get("frame"),
@@ -82,8 +91,28 @@ def build_synthesis_input(
     }
 
 
-def _segments_in_window(segments: list[dict], t0: float, t1: float) -> list[dict]:
-    return [s for s in segments if t0 <= float(s.get("t", 0.0)) < t1]
+def assign_segments_to_sections(segments: list[dict], hints: list[dict]) -> dict[int, list[dict]]:
+    """Pure: assign EVERY segment to exactly one section (no drops).
+
+    Each segment is owned by the last section whose win_start <= t. Segments
+    before the first section (t < 0) fall to the first section; segments past
+    the last win_start (incl. t == duration) fall to the last section. The
+    union of all buckets equals the input, so summary.md drops nothing.
+    """
+    if not hints:
+        return {}
+    ordered = sorted(hints, key=lambda h: h.get("win_start", h.get("t", 0.0)))
+    buckets: dict[int, list[dict]] = {h["index"]: [] for h in hints}
+    for s in segments:
+        t = float(s.get("t", 0.0))
+        owner = ordered[0]
+        for h in ordered:
+            if h.get("win_start", h.get("t", 0.0)) <= t:
+                owner = h
+            else:
+                break
+        buckets[owner["index"]].append(s)
+    return buckets
 
 
 def render_transcript_md(video: dict, segments: list[dict]) -> str:
@@ -131,13 +160,15 @@ def render_summary_md(synthesis_input: dict, coverage: dict) -> str:
         )
     out.append("")
 
-    # Sections: each has a timestamp anchor + slide link (when present) + body
+    # Sections: each has a timestamp anchor + slide link (when present) + body.
+    # Every segment is assigned to exactly one section (no drops).
+    buckets = assign_segments_to_sections(segments, hints)
     for h in hints:
         out.append(f'<a id="sec-{h["index"]}"></a>')
         out.append(f"{SECTION_PREFIX} {h['index'] + 1}. [{format_timestamp(h['t'])}] {h['title']}")
         if h.get("frame"):
             out.append(f"![슬라이드 {h['index'] + 1}]({h['frame']})")
-        body = _segments_in_window(segments, h["t"], h.get("t_end", h["t"] + 1e9))
+        body = buckets.get(h["index"], [])
         if body:
             out.append("")
             for s in body:
