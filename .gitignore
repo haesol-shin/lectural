@@ -19,3 +19,7 @@ output/
 # OS
 .DS_Store
 Thumbs.db
+
+ffmpeg.exe
+ffprobe.exe
+/output/

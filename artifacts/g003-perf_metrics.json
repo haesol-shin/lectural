@@ -1,0 +1,78 @@
+{
+  "harness": "scripts/perf_smoke.py",
+  "command": "uv run --with psutil python scripts/perf_smoke.py --url https://www.youtube.com/watch?v=19vYXnpDIyg --sample-interval 0.2 --out ./output/perf-smoke",
+  "url": "https://www.youtube.com/watch?v=19vYXnpDIyg",
+  "started_at": "2026-06-13T23:01:41",
+  "machine": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "python": "3.10.12",
+    "cpu_count": 8
+  },
+  "dependency_versions": {
+    "yt_dlp": "unknown",
+    "faster_whisper": "MISSING (ModuleNotFoundError)",
+    "cv2": "4.6.0",
+    "paddleocr": "2.7.3",
+    "webrtcvad": "MISSING (ModuleNotFoundError)",
+    "numpy": "1.26.4",
+    "psutil": "7.2.2",
+    "ffmpeg (binary)": "ffmpeg version 8.1.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "yt-dlp (binary)": "MISSING"
+  },
+  "sample_interval_sec": 0.2,
+  "status": "partial",
+  "output_dir": "./output/perf-smoke\\19vYXnpDIyg",
+  "overall_pass": false,
+  "completeness_hook_exit": 2,
+  "stage_wall_seconds": {
+    "acquisition": 1.085,
+    "video_download": 2.245,
+    "visual_extract": 4.107,
+    "visual_dedupe": 165.294,
+    "ocr": 71.11,
+    "vad": 0.0,
+    "synthesis": 0.002,
+    "coverage": 0.002,
+    "completeness_hook": 0.085
+  },
+  "stage_resource_usage": {
+    "acquisition": {
+      "cpu_pct_avg": 11.4,
+      "cpu_pct_peak": 28.7,
+      "rss_mb_avg": 249.1,
+      "rss_mb_peak": 253.4,
+      "n_samples": 5
+    },
+    "video_download": {
+      "cpu_pct_avg": 6.4,
+      "cpu_pct_peak": 7.7,
+      "rss_mb_avg": 309.8,
+      "rss_mb_peak": 319.3,
+      "n_samples": 10
+    },
+    "visual_extract": {
+      "cpu_pct_avg": 5.5,
+      "cpu_pct_peak": 15.8,
+      "rss_mb_avg": 373.8,
+      "rss_mb_peak": 384.8,
+      "n_samples": 16
+    },
+    "visual_dedupe": {
+      "cpu_pct_avg": 101.7,
+      "cpu_pct_peak": 149.8,
+      "rss_mb_avg": 316.6,
+      "rss_mb_peak": 360.6,
+      "n_samples": 752
+    },
+    "ocr": {
+      "cpu_pct_avg": 242.3,
+      "cpu_pct_peak": 698.9,
+      "rss_mb_avg": 547.0,
+      "rss_mb_peak": 832.8,
+      "n_samples": 152
+    }
+  },
+  "stage_errors": {},
+  "finished_at": "2026-06-13T23:06:00"
+}

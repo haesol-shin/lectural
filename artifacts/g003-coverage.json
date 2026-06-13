@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "video_title": "19vYXnpDIyg",
+  "duration_sec": 0.0,
+  "ocr_engine": "paddleocr",
+  "gap_check": {
+    "max_untranscribed_speech_gap_sec": 0.0,
+    "threshold_sec": 60.0,
+    "pass": true
+  },
+  "scene_coverage": {
+    "bins": 20,
+    "carry_max_sec": 120.0,
+    "speech_bins": [],
+    "covered_speech_bins": [],
+    "uncovered_speech_bins": [],
+    "slide_frames_total": 20,
+    "slide_frames_with_text": 20,
+    "pass": true
+  },
+  "artifacts": {
+    "transcript_md": "./output/perf-smoke\\19vYXnpDIyg\\transcript.md",
+    "summary_md": "./output/perf-smoke\\19vYXnpDIyg\\summary.md",
+    "transcript_nonempty": true,
+    "summary_nonempty": false,
+    "pass": false
+  },
+  "overall_pass": false
+}
