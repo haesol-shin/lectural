@@ -50,14 +50,22 @@ def scene_coverage(
     slide_frames_total: int = 0,
     slide_frames_with_text: int = 0,
 ) -> dict:
-    """Pure: speech bins must each contain at least one keyframe.
+    """Pure: every speech bin must be covered by a keyframe (carry-forward).
 
-    A bin "contains speech" when any speech span overlaps the bin's time range.
-    `pass` is True when no speech bin lacks a keyframe AND every slide frame
-    carries OCR text.
+    A bin "contains speech" when any speech span overlaps its time range. A
+    keyframe covers its own bin AND every later bin until the next keyframe
+    (carry-forward): a slide stays on screen until it changes, so a single
+    slide shown for a long static stretch correctly covers that whole stretch.
+    The only uncovered speech bins are those BEFORE the first keyframe (i.e.
+    speech the visual pass never reached). `pass` also requires every
+    slide-classified frame to carry OCR text.
+
+    `frame_times` are keyframe/slide start times; deduped slide times are fine
+    because of carry-forward.
     """
     bins = max(bins, 1)
     frame_bins = {_bin_of(t, duration, bins) for t in frame_times if 0 <= t <= duration}
+    first_frame_bin = min(frame_bins) if frame_bins else None
 
     speech_bins: set[int] = set()
     if duration > 0:
@@ -67,12 +75,18 @@ def scene_coverage(
             if any(s < b1 and e > b0 for s, e in speech_spans):
                 speech_bins.add(b)
 
-    uncovered = sorted(b for b in speech_bins if b not in frame_bins)
+    # Carry-forward: a speech bin is covered if a keyframe started at or before
+    # it. Uncovered = speech bins before the first keyframe (or all, if none).
+    if first_frame_bin is None:
+        covered = set()
+    else:
+        covered = {b for b in speech_bins if b >= first_frame_bin}
+    uncovered = sorted(b for b in speech_bins if b not in covered)
     slides_ok = slide_frames_with_text >= slide_frames_total  # every slide has text
     return {
         "bins": bins,
         "speech_bins": sorted(speech_bins),
-        "covered_speech_bins": sorted(speech_bins & frame_bins),
+        "covered_speech_bins": sorted(covered),
         "uncovered_speech_bins": uncovered,
         "slide_frames_total": slide_frames_total,
         "slide_frames_with_text": slide_frames_with_text,

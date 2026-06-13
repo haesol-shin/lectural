@@ -24,8 +24,9 @@ def test_gap_check_pass_and_fail():
 
 
 def test_scene_coverage_uncovered_speech_bin_fails():
-    # Speech across whole 200s, but a keyframe only in the first bin.
-    res = scene_coverage([5.0], [(0, 200)], duration=200, bins=10,
+    # First keyframe only appears at 150s while speech starts at 0 -> the
+    # pre-keyframe bins (speech the visual pass never reached) are uncovered.
+    res = scene_coverage([150.0], [(0, 200)], duration=200, bins=10,
                          slide_frames_total=1, slide_frames_with_text=1)
     assert res["pass"] is False
     assert res["uncovered_speech_bins"]
