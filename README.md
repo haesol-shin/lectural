@@ -1,10 +1,10 @@
 # LecturAL
 
-> YouTube 강의 영상 하나를 받아 **모든 발화·모든 화면 텍스트·모든 슬라이드**를 빠짐없이 잡아 markdown 학습 정리본으로 만드는 Claude Code 플러그인 + 재사용 Python CLI.
+> YouTube 영상 하나를 받아 **모든 발화·모든 화면 텍스트·모든 장면**을 빠짐없이 잡아 markdown 완전 노트로 만드는 Claude Code 플러그인 + 재사용 Python CLI. 강의/슬라이드형 영상에서 가장 빛납니다.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-임의 요약으로 건너뛰지 않고, 빠진 게 없는지 **완전성 검증 훅이 자동으로 강제**합니다.
+임의 요약으로 건너뛰지 않고, 빠진 게 없는지 **완전성 게이트가 자동으로 강제**합니다.
 
 ---
 
@@ -28,7 +28,7 @@ flowchart TD
     E --> F[중복 제거: 히스토그램 / SSIM]
     F --> G[OCR: PaddleOCR → Tesseract 폴백]
     G --> H[합성: transcript.md · summary.md · frames/ · coverage.json]
-    H --> I{완전성 훅}
+    H --> I{완전성 게이트}
     I -->|통과| J[완료]
     I -->|실패 · exit 2| K[누락 원인 해결 후 재시도]
     K --> H
@@ -39,7 +39,7 @@ flowchart TD
 ## 요구 사항
 
 - **Python 3.10+**
-- **ffmpeg**, **yt-dlp** — PATH에 필요 (실제 영상 처리 시)
+- **ffmpeg** — PATH에 필요 (실제 영상 처리 시). **yt-dlp**는 Python 실행 의존성에 포함
 - (선택) **Tesseract** — PaddleOCR가 안 될 때의 폴백 OCR
 - 패키지 관리: [`uv`](https://github.com/astral-sh/uv) 권장
 
@@ -60,14 +60,26 @@ Claude Code에서 marketplace를 추가한 뒤 플러그인을 설치합니다:
 
 ### 2. 런타임 준비 (플러그인이 자동으로 깔지 않는 부분)
 
-플러그인 설치만으로는 **Python 의존성과 ffmpeg가 설치되지 않습니다.** 플러그인 설치 후, 호스트 에이전트(Claude)가 이 README/스킬 안내를 읽고 아래를 준비·검사합니다:
+플러그인 설치만으로는 **Python 의존성, yt-dlp, ffmpeg가 설치되지 않습니다.** 플러그인 설치 후, 호스트 에이전트(Claude)가 이 README/스킬 안내를 읽고 아래를 준비·검사합니다:
 
 ```bash
 # 코어 + 실행 의존성(yt-dlp, faster-whisper, opencv, paddleocr 등) 설치
 uv pip install -e ".[run]"
+```
 
-# ffmpeg는 시스템 바이너리로 별도 설치 (Windows 예시)
+`yt-dlp`는 위 Python 실행 의존성에 포함됩니다. `ffmpeg`는 시스템 바이너리라 OS별로 따로 설치하고 PATH에서 실행 가능해야 합니다:
+
+```bash
+# Windows
 winget install Gyan.FFmpeg
+
+# Linux
+apt install ffmpeg
+# 또는
+dnf install ffmpeg
+
+# macOS
+brew install ffmpeg
 ```
 
 준비 후 의존성 상태를 확인하세요(없으면 설치 안내가 출력됩니다):
@@ -75,6 +87,16 @@ winget install Gyan.FFmpeg
 ```bash
 python -c "from lectural.deps import preflight; [print(s) for s in preflight()]"
 ```
+
+### uvx로 Python 의존성만 즉시 실행
+
+로컬 editable 설치 없이 Python 실행 의존성(run extra)만 받아 CLI를 실행할 수도 있습니다:
+
+```bash
+uvx --from ".[run]" lectural "<url>" --out ./output
+```
+
+`uvx`는 Python 의존성(run extra)만 가져오며, `ffmpeg`는 시스템 바이너리라 별도 설치가 필요합니다(PATH 필수). 따라서 완전 무설치는 불가합니다.
 
 ## 빠른 시작
 
@@ -93,7 +115,7 @@ lectural "<url>" --force-stt --model medium
 
 ```text
 [OK] ./output/운영체제-1강/
-완료 게이트는 Stop 훅(scripts/completeness_hook.py)이 최종 검증합니다.
+완료 게이트는 CLI 종료 코드와 Claude Code Stop 훅(사용 시)이 함께 강제합니다.
 ```
 
 ## 출력 구조
@@ -122,13 +144,12 @@ lectural --help
 
 ## 완전성 게이트 (핵심)
 
-플러그인의 Stop 훅(`hooks/hooks.json`)이 `python "${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py"`를 실행합니다. 이 훅은 이번 실행에서 만든 **모든** run을 검사하고, 하나라도 아래에 걸리면 **exit 2로 "완료"를 차단**합니다:
+LecturAL의 완료 판정은 두 계층입니다.
 
-1. **대사 공백** — 무음을 제외한, 60초 넘는 미전사 발화 구간이 없어야 함
-2. **장면 커버리지** — 영상 전 구간에 키프레임이 있고, 슬라이드로 분류된 프레임엔 OCR 텍스트가 있어야 함
-3. **산출물** — `transcript.md`·`summary.md`가 존재하고 비어있지 않으며, 필수 앵커(목차·커버리지·타임스탬프·슬라이드 링크)를 갖춰야 함
+1. **1계층(주, 에이전트 무관): `lectural` CLI 종료 코드** — CLI는 모든 run의 `overall_pass`를 AND하여 하나라도 실패하면 non-zero(`2`)로 종료합니다. CLI를 감싸는 에이전트는 이 비정상 종료를 하드 실패로 취급해야 합니다.
+2. **2계층(추가, Claude Code 전용): Stop 훅** — `scripts/completeness_hook.py`는 CLI를 호출하지 않고 run 상태(실패/미처리 거부), `coverage.json`, `summary.md`의 앵커와 슬라이드 프레임 링크를 독립 검증합니다. 하나라도 걸리면 exit 2로 "완료"를 차단합니다.
 
-실패한 영상이나 처리되지 않은 영상도 게이트에 잡혀서 통과하지 못합니다(우회 불가, fail-closed). Windows에서 `python`이 없으면 `py -3`로 같은 스크립트를 실행하세요.
+Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude Code Stop 훅은 Claude Code 세션에서 추가로 fail-closed를 보강하는 계층이며, CLI를 감싸는 래퍼가 아닙니다.
 
 ## 플러그인 / 스킬로 쓰기
 
