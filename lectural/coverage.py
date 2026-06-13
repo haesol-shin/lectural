@@ -123,6 +123,47 @@ class CoverageInputs:
     slide_frames_total: int = 0
     slide_frames_with_text: int = 0
 
+    @property
+    def raw_frame_times(self) -> list[float]:
+        """Alias clarifying that frame_times MUST be RAW (pre-dedup) samples."""
+        return self.frame_times
+
+
+def coverage_inputs_from_extraction(
+    *,
+    video_title: str,
+    duration_sec: float,
+    speech_spans: list[Span],
+    segment_times: list[float],
+    raw_sample_times: list[float],
+    slides: list[dict],
+    transcript_path: str,
+    summary_path: str,
+    ocr_engine: str = "none",
+) -> "CoverageInputs":
+    """Enforce the scene-coverage contract at the call site (the orchestrator).
+
+    `raw_sample_times` MUST be the RAW sampled keyframe timestamps from
+    visual.extract_candidate_frames (pre-dedup), NOT dedupe_frames output —
+    the carry cap relies on dense raw samples. `slides` are the DEDUPED slide
+    frame dicts (each with `ocr_text`); their counts drive the slide-text gate.
+    Keyword-only args make it hard to accidentally swap raw samples and slides.
+    """
+    slide_total = len(slides)
+    slide_with_text = sum(1 for s in slides if (s.get("ocr_text") or "").strip())
+    return CoverageInputs(
+        video_title=video_title,
+        duration_sec=duration_sec,
+        speech_spans=speech_spans,
+        segment_times=segment_times,
+        frame_times=list(raw_sample_times),
+        transcript_path=transcript_path,
+        summary_path=summary_path,
+        ocr_engine=ocr_engine,
+        slide_frames_total=slide_total,
+        slide_frames_with_text=slide_with_text,
+    )
+
 
 def build_coverage(inp: CoverageInputs) -> dict:
     """Assemble the full coverage.json structure. Pure (except file stat)."""

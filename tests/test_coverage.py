@@ -102,3 +102,29 @@ def test_scene_coverage_static_slide_passes_with_dense_raw_samples():
                          carry_max_sec=120.0)
     assert res["pass"] is True
     assert res["uncovered_speech_bins"] == []
+
+
+def test_coverage_inputs_from_extraction_routes_raw_times_and_counts(tmp_path):
+    from lectural.coverage import coverage_inputs_from_extraction, build_coverage
+    tp = tmp_path / "transcript.md"; tp.write_text("x", encoding="utf-8")
+    sp = tmp_path / "summary.md"; sp.write_text("y", encoding="utf-8")
+    raw = [float(i) for i in range(0, 600)]  # dense raw samples
+    slides = [
+        {"t": 0.0, "frame": "frames/0.png", "ocr_text": "Slide A"},
+        {"t": 300.0, "frame": "frames/1.png", "ocr_text": ""},  # no text
+    ]
+    inp = coverage_inputs_from_extraction(
+        video_title="L", duration_sec=600.0, speech_spans=[(0, 600)],
+        segment_times=[10 * i for i in range(60)], raw_sample_times=raw,
+        slides=slides, transcript_path=str(tp), summary_path=str(sp),
+        ocr_engine="paddleocr",
+    )
+    # raw sample times are routed to frame_times (not the 2 slides)
+    assert inp.frame_times == raw
+    assert inp.raw_frame_times == raw
+    assert inp.slide_frames_total == 2
+    assert inp.slide_frames_with_text == 1  # one slide had empty ocr_text
+    cov = build_coverage(inp)
+    # dense raw samples -> scene coverage covered; but a slide lacks text -> fail
+    assert cov["scene_coverage"]["uncovered_speech_bins"] == []
+    assert cov["overall_pass"] is False  # slide-text gate fails
