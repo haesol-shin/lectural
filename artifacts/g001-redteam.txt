@@ -1,2 +1,16 @@
-.......................                                                  [100%]
-23 passed in 0.03s
+G001 plugin packaging red-team QA
+Command: uv run --with pytest python -m pytest tests/test_redteam_packaging.py -q
+Exit code: 0
+
+.........                                                                [100%]
+9 passed in 0.10s
+
+Covered checks:
+- plugin.json and marketplace.json parse as strict JSON; package names are lectural; marketplace plugins[].source is exactly ./.
+- hooks/hooks.json parses as strict JSON; Stop command starts with python/py, contains the quoted ${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py path, resolves to the repository script, and runs with a missing runstate as a no-op.
+- Mutated Stop command without interpreter token is rejected.
+- Mutated marketplace source '.' is rejected.
+- Comment-injected hooks JSON mutation is rejected by json.loads.
+- Six English packaging/skill artifacts contain zero Hangul codepoints.
+- SKILL anchor references are symbolic and the required symbols exist in lectural/synthesis.py.
+- Canonical and .claude SKILL bodies have matching sha256 after frontmatter stripping.
