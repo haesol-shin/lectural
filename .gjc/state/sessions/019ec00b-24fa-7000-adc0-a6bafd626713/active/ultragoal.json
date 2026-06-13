@@ -1,0 +1,45 @@
+{
+  "skill": "ultragoal",
+  "phase": "active",
+  "active": true,
+  "activated_at": "2026-06-13T08:14:29.952Z",
+  "updated_at": "2026-06-13T08:14:29.952Z",
+  "session_id": "019ec00b-24fa-7000-adc0-a6bafd626713",
+  "hud": {
+    "version": 1,
+    "chips": [
+      {
+        "label": "goals",
+        "value": "0/3",
+        "priority": 10
+      },
+      {
+        "label": "current",
+        "value": "G001:코어 스캐폴드와 결정론적 파이프라인 모듈",
+        "priority": 20
+      },
+      {
+        "label": "status",
+        "value": "active",
+        "priority": 30
+      }
+    ],
+    "updated_at": "2026-06-13T08:14:29.951Z"
+  },
+  "receipt": {
+    "version": 1,
+    "skill": "ultragoal",
+    "owner": "gjc-runtime",
+    "command": "gjc ultragoal (reconcile)",
+    "state_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ec00b-24fa-7000-adc0-a6bafd626713\\skill-active-state.json",
+    "storage_path": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\state\\sessions\\019ec00b-24fa-7000-adc0-a6bafd626713\\ultragoal-state.json",
+    "mutated_at": "2026-06-13T08:14:29.941Z",
+    "fresh_until": "2026-06-13T08:44:29.941Z",
+    "status": "fresh",
+    "mutation_id": "ultragoal:reconcile:2026-06-13T08:14:29.941Z",
+    "verb": "reconcile",
+    "forced": true,
+    "from_phase": "goal-planning",
+    "to_phase": "active"
+  }
+}

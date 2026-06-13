@@ -640,6 +640,8 @@ run = [
     { name = "yt-dlp" },
 ]
 test = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pytest" },
 ]
 
@@ -647,6 +649,7 @@ test = [
 requires-dist = [
     { name = "faster-whisper", marker = "extra == 'run'", specifier = ">=1.0.0" },
     { name = "numpy", marker = "extra == 'run'", specifier = ">=1.24" },
+    { name = "numpy", marker = "extra == 'test'", specifier = ">=1.24" },
     { name = "opencv-python", marker = "extra == 'run'", specifier = ">=4.8.0" },
     { name = "paddleocr", marker = "extra == 'run'", specifier = ">=2.7.0" },
     { name = "pillow", marker = "extra == 'run'", specifier = ">=10.0.0" },
