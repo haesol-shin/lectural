@@ -130,7 +130,8 @@ def main() -> int:
     for run in state["runs"]:
         probs = _validate_run(run)
         if probs:
-            all_problems.append(f"[{run.get('output_dir')}]")
+            label = run.get("output_dir") or run.get("url") or f"run #{run.get('index')}"
+            all_problems.append(f"[{label}]")
             all_problems.extend(f"  - {p}" for p in probs)
 
     if all_problems:
