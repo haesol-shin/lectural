@@ -28,12 +28,7 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
-          awk -v ver="$version" '
-            index($0, "## [" ver "]") == 1 { flag = 1; next }
-            flag && index($0, "## [") == 1 { exit }
-            flag && /^\[[^]]+\]: / { exit }
-            flag { print }
-          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
+          python3 scripts/changelog_notes.py "$version" > release-notes.md
           if [ ! -s release-notes.md ]; then
             echo "No CHANGELOG.md section found for [$version]; add one before tagging." >&2
             exit 1
