@@ -55,7 +55,7 @@ Offline command: `uv run --with pytest --with numpy pytest -q` (adds CLI exit-co
 | AC-F | One real-video uvx e2e exits 0 + offline tests green | RESOLVED — `[run]` now pins `paddleocr>=2.7,<3` + `paddlepaddle>=2.6,<3` + `numpy<2`; `lectural doctor --json` reports `overall_status: ready`; real-video before/after recorded in `docs/wu6_verification_2026-06-14.md`. | ✅ |
 | AC-G | Language rule (README + contributor docs English; product `notes.md` output + `summary_prompt.md` Korean instruction/few-shot + Korean section-name literals stay Korean; identifiers English) | Hangul over English repo surfaces limited to protected product literals; `tests/test_redteam_readme.py` FORBIDDEN guards | ✅ |
 | AC-H | Work-unit git commits (uv/uvx) | 806b92f, c66f0e2, 49a6723, 5e5bce1, 83ce571, 6940b7a | ✅ |
-| AC-I | README·AGENTS.md·SKILL share the two-layer gate wording; no "hook wraps CLI"/equivalence | grep forbidden phrasing = 0 | ✅ |
+| AC-I | README·AGENTS.md·`commands/` share the two-layer gate wording; no "hook wraps CLI"/equivalence | grep forbidden phrasing = 0 | ✅ |
 | AC-J | `.github/workflows/ci.yml` runs offline suite on win/ubuntu/macos | `.github/workflows/ci.yml` matrix (smoke excluded) | artifact ✅ (CI run pending first push) |
 
 ### AC-F resolution (historical)
