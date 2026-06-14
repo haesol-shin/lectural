@@ -1,16 +1,26 @@
 """Visual track: extract keyframes and dedupe near-identical slides.
 
 ffmpeg extracts candidate frames (I-frames + scene changes, downsampled);
-OpenCV computes per-pair similarity. The *selection* logic is a pure function
-over similarity metrics so over/under-dedup behaviour is unit-tested without
-any binaries.
+perceptual hashes select stable slide changes. Legacy histogram/SSIM helpers
+remain pure and unit-testable, but production dedupe routes through pHash so
+small render noise collapses while real slide changes survive.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
+import re
 
 from .config import DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
+
+
+PHASH_HAMMING_THRESHOLD = 12
+PHASH_CHANGE_PERSISTENCE = 2
+_FRAME_TIMESTAMP_RE = re.compile(
+    r"(?:^|[_-])(?P<value>\d+(?:\.\d+)?)(?P<unit>sec|s)?$",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -30,6 +40,109 @@ def is_same_slide(
 ) -> bool:
     """Pure: two frames are the same slide when BOTH metrics clear threshold."""
     return hist_corr >= hist_thr and ssim >= ssim_thr
+
+
+def _hash_to_int(hash_value: int | str | bytes) -> int:
+    """Normalize supported hash representations to an integer."""
+    if isinstance(hash_value, int):
+        return hash_value
+    if isinstance(hash_value, bytes):
+        return int.from_bytes(hash_value, byteorder="big", signed=False)
+
+    text = str(hash_value).strip().lower().replace("_", "")
+    if not text:
+        return 0
+    if text.startswith(("0x", "0b")):
+        return int(text, 0)
+    base = 16 if any(ch in "abcdef" for ch in text) or len(text) > 10 else 10
+    return int(text, base)
+
+
+def phash_hamming_distance(hash_a: int | str | bytes, hash_b: int | str | bytes) -> int:
+    """Pure Hamming distance between two perceptual hashes."""
+    return (_hash_to_int(hash_a) ^ _hash_to_int(hash_b)).bit_count()
+
+
+def is_same_phash(
+    hash_a: int | str | bytes,
+    hash_b: int | str | bytes,
+    threshold: int = PHASH_HAMMING_THRESHOLD,
+) -> bool:
+    """Two pHashes represent the same slide when distance is within threshold."""
+    return phash_hamming_distance(hash_a, hash_b) <= threshold
+
+
+def select_phash_keyframe_indices(
+    hashes: list[int | str | bytes],
+    threshold: int = PHASH_HAMMING_THRESHOLD,
+    persistence: int = PHASH_CHANGE_PERSISTENCE,
+) -> list[int]:
+    """Pure pHash selection with a consecutive-frame persistence gate.
+
+    Frame 0 is kept. A frame whose hash is farther than `threshold` from the
+    current kept slide starts a candidate change; the candidate's first frame is
+    emitted only after `persistence` consecutive sampled frames match that
+    candidate. One-off visual noise therefore does not create a slide.
+    """
+    if not hashes:
+        return []
+
+    required = max(int(persistence), 1)
+    kept = [0]
+    current_hash = hashes[0]
+    candidate_idx: int | None = None
+    candidate_hash: int | str | bytes | None = None
+    candidate_count = 0
+
+    for idx, hash_value in enumerate(hashes[1:], start=1):
+        if is_same_phash(current_hash, hash_value, threshold):
+            candidate_idx = None
+            candidate_hash = None
+            candidate_count = 0
+            continue
+
+        if candidate_hash is None or not is_same_phash(candidate_hash, hash_value, threshold):
+            candidate_idx = idx
+            candidate_hash = hash_value
+            candidate_count = 1
+        else:
+            candidate_count += 1
+
+        if candidate_count >= required:
+            kept.append(candidate_idx if candidate_idx is not None else idx)
+            current_hash = candidate_hash
+            candidate_idx = None
+            candidate_hash = None
+            candidate_count = 0
+
+    return kept
+
+
+def parse_frame_timestamp_from_filename(
+    image_path: str,
+    fps: float = SAMPLE_FPS,
+) -> tuple[float, str]:
+    """Parse frame timestamp seconds from an extracted frame filename.
+
+    `ffmpeg -frame_pts 1` names files with packet PTS. With the current sampled
+    image sequence, integer PTS values are interpreted against the sampling fps
+    (for example `frame_00042.png` at 2 fps -> 21.0s). Decimal values or values
+    suffixed with `s`/`sec` are already seconds. Unparseable names fall back to
+    0.0 with an explicit source marker.
+    """
+    stem, _ext = os.path.splitext(os.path.basename(image_path))
+    match = _FRAME_TIMESTAMP_RE.search(stem)
+    if match is None:
+        return (0.0, "fallback_unparseable")
+
+    token = match.group("value")
+    value = max(float(token), 0.0)
+    if match.group("unit") or "." in token:
+        return (value, "filename_seconds")
+
+    if fps > 0:
+        return (value / fps, "filename_pts_over_fps")
+    return (value, "filename_pts_no_fps")
 
 
 def select_keyframe_indices(
@@ -54,7 +167,6 @@ def select_keyframe_indices(
 
 def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_FPS) -> list[Frame]:
     """Extract downsampled + scene-change frames with ffmpeg. Lazy/subprocess."""
-    import os
     import subprocess
 
     from .deps import require_binary
@@ -72,7 +184,15 @@ def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_
     frames: list[Frame] = []
     for name in sorted(os.listdir(out_dir)):
         if name.startswith("frame_") and name.endswith(".png"):
-            frames.append(Frame(timestamp=0.0, image_path=os.path.join(out_dir, name)))
+            path = os.path.join(out_dir, name)
+            timestamp, source = parse_frame_timestamp_from_filename(path, fps)
+            frames.append(
+                Frame(
+                    timestamp=timestamp,
+                    image_path=path,
+                    meta={"timestamp_source": source, "sample_fps": fps},
+                )
+            )
     return frames
 
 
@@ -138,13 +258,67 @@ def _ssim(a, b, np, win: int = 7) -> float:
     return float(np.clip(smap.mean(), -1.0, 1.0))
 
 
+def _phash_from_32x32(gray32, np) -> int:
+    """Return a 64-bit DCT perceptual hash from a 32x32 grayscale array."""
+    n = 32
+    x = np.arange(n)
+    k = np.arange(8)[:, None]
+    basis = np.cos((np.pi / (2 * n)) * (2 * x + 1) * k)
+    basis[0, :] *= np.sqrt(1 / n)
+    basis[1:, :] *= np.sqrt(2 / n)
+    coeffs = basis @ gray32.astype(np.float64) @ basis.T
+    flat = coeffs.reshape(-1)
+    median = float(np.median(flat[1:]))
+    bits = flat > median
+
+    value = 0
+    for bit in bits:
+        value = (value << 1) | int(bool(bit))
+    return value
+
+
+def _image_phash(image_path: str) -> int:
+    """Compute a DCT pHash for an image path. Imports image backends lazily."""
+    try:
+        import cv2  # lazy
+        import numpy as np  # lazy
+    except ImportError:
+        try:
+            import numpy as np  # type: ignore[no-redef]  # lazy
+            from PIL import Image  # lazy
+        except ImportError as pil_error:
+            raise RuntimeError(
+                "Image pHash requires OpenCV or Pillow plus numpy"
+            ) from pil_error
+
+        with Image.open(image_path) as img:
+            gray = img.convert("L")
+            crop_h = max(1, int(round(gray.height * 0.60)))
+            gray = gray.crop((0, 0, gray.width, crop_h)).resize((32, 32))
+            return _phash_from_32x32(np.asarray(gray, dtype=np.float64), np)
+
+    gray = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        raise ValueError(f"Unable to read image for pHash: {image_path}")
+    crop_h = max(1, int(round(gray.shape[0] * 0.60)))
+    cropped = gray[:crop_h, :]
+    resized = cv2.resize(cropped, (32, 32), interpolation=cv2.INTER_AREA)
+    return _phash_from_32x32(resized, np)
+
 def dedupe_frames(frames: list[Frame]) -> list[Frame]:
-    """Compute consecutive metrics and keep distinct slides. Orchestration."""
+    """Compute perceptual hashes and keep stable distinct slides."""
     if len(frames) <= 1:
         return list(frames)
-    metrics = [
-        _pair_metrics(frames[i].image_path, frames[i + 1].image_path)
-        for i in range(len(frames) - 1)
-    ]
-    keep = set(select_keyframe_indices(metrics))
-    return [f for i, f in enumerate(frames) if i in keep]
+
+    hashes = [_image_phash(frame.image_path) for frame in frames]
+    for i, (frame, hash_value) in enumerate(zip(frames, hashes)):
+        frame.meta["phash"] = f"{hash_value:016x}"
+        frame.meta["phash_hamming_threshold"] = PHASH_HAMMING_THRESHOLD
+        if i > 0:
+            frame.meta["phash_hamming_from_previous"] = phash_hamming_distance(
+                hashes[i - 1],
+                hash_value,
+            )
+
+    keep = set(select_phash_keyframe_indices(hashes))
+    return [frame for i, frame in enumerate(frames) if i in keep]
