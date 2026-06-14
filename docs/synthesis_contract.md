@@ -34,9 +34,9 @@ The deterministic core writes two markdown outputs with separate ownership:
 | `notes.md` | deterministic 7-section study-note skeleton; owns `NOTES_ENRICH_MARKER`, the seven section anchors, `<!-- 미보강 -->` placeholders, citation deeplinks, and the coverage footer |
 
 For skill-driven runs, after the CLI succeeds, the host agent MUST enrich only
-the prose in `notes.md` 미보강 sections. It MUST preserve
+the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve
 `NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript
-anchors, and the 정리 커버리지 footer. Bare CLI runs do not perform this
+anchors, and the `정리 커버리지` footer. Bare CLI runs do not perform this
 enrichment.
 
 ## `notes.md` required structure (validated by the completeness hook)

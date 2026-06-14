@@ -39,3 +39,10 @@ Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task 
 
 ## Pointers
 See `README.md` and `skills/lectural/SKILL.md`.
+
+## Operations
+
+- Branch, commit, and PR conventions: see `CONTRIBUTING.md`.
+- Release procedure: see `RELEASE.md`.
+- Agent audit policy: commit durable `.gjc/ultragoal`, `.gjc/specs`, and scoped `.gjc/plans`; ignore `.gjc/state`.
+- Gate-run expectation: offline suite green with `uv run --with pytest --with numpy pytest -q` and `lectural doctor` reporting ready.
