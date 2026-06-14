@@ -3,8 +3,9 @@
 import json
 import os
 from pathlib import Path
+import pytest
 
-from lectural import acquisition, cli, coverage, deps, ocr, runstate, visual
+from lectural import acquisition, cli, coverage, deps, doctor, ocr, runstate, visual
 
 
 def test_slugify():
@@ -35,6 +36,23 @@ def test_parse_args_single_and_batch():
     b = cli.parse_args(["u1", "u2", "--force-stt", "--model", "small", "--out", "./o", "--keep-frames"])
     assert b.urls == ["u1", "u2"] and b.force_stt is True and b.model == "small" and b.out == "./o"
     assert b.keep_frames is True
+def test_parse_args_doctor_command():
+    args = cli.parse_args(["doctor", "--fix", "--json"])
+    assert args.command == "doctor"
+    assert args.fix is True
+    assert args.json is True
+
+
+def test_help_works_for_root_and_doctor():
+    with pytest.raises(SystemExit) as root_exit:
+        cli.parse_args(["--help"])
+    assert root_exit.value.code == 0
+
+    with pytest.raises(SystemExit) as doctor_exit:
+        cli.parse_args(["doctor", "--help"])
+    assert doctor_exit.value.code == 0
+
+
 
 
 def _fake_processor(url, out_dir, force_stt, model):
@@ -252,3 +270,10 @@ def test_main_exit_2_on_coverage_failure(monkeypatch):
 def test_main_exit_0_on_success(monkeypatch):
     monkeypatch.setattr(cli, "run", lambda *a, **k: [{"output_dir": "x", "overall_pass": True}])
     assert cli.main(["https://youtu.be/x"]) == 0
+def test_main_dispatches_doctor_json(monkeypatch, capsys):
+    report = {"schema_version": 1, "items": [], "overall_status": "ready", "exit_code": 0}
+    monkeypatch.setattr(doctor, "run", lambda fix=False: report)
+    monkeypatch.setattr(doctor, "print_report", lambda actual, json_output=False: print("json" if json_output else "text"))
+
+    assert cli.main(["doctor", "--json"]) == 0
+    assert capsys.readouterr().out.strip() == "json"

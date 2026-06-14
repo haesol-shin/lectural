@@ -39,9 +39,10 @@ flowchart TD
 ## 요구 사항
 
 - **Python 3.10+**
-- **ffmpeg** — PATH에 필요 (실제 영상 처리 시). **yt-dlp**는 Python 실행 의존성에 포함
+- **uv/uvx 런타임** — Python 실행 의존성(`.[run]`) 설치 또는 일회성 실행에 필요
+- **ffmpeg** — 시스템 바이너리라 별도 설치 및 PATH 등록 필요
+- **yt-dlp** — Python 실행 의존성과 PATH 바이너리 둘 다 `doctor`가 검사
 - (선택) **Tesseract** — PaddleOCR가 안 될 때의 폴백 OCR
-- 패키지 관리: [`uv`](https://github.com/astral-sh/uv) 권장
 
 ## 설치
 
@@ -58,35 +59,46 @@ Claude Code에서 marketplace를 추가한 뒤 플러그인을 설치합니다:
 
 설치하면 LecturAL 스킬과 완전성 Stop 훅이 등록됩니다. 강의 URL을 던지면 에이전트가 자동으로 이 파이프라인을 호출합니다.
 
-### 2. 런타임 준비 (플러그인이 자동으로 깔지 않는 부분)
+### 2. 런타임 준비 (uv/uvx + ffmpeg)
 
-플러그인 설치만으로는 **Python 의존성, yt-dlp, ffmpeg가 설치되지 않습니다.** 플러그인 설치 후, 호스트 에이전트(Claude)가 이 README/스킬 안내를 읽고 아래를 준비·검사합니다:
+플러그인 설치만으로는 **Python 실행 의존성, yt-dlp PATH 바이너리, ffmpeg**가 설치되지 않습니다. 플러그인을 먼저 설치한 뒤, 같은 checkout 또는 배포 루트에서 런타임을 준비합니다:
 
 ```bash
 # 코어 + 실행 의존성(yt-dlp, faster-whisper, opencv, paddleocr 등) 설치
 uv pip install -e ".[run]"
 ```
 
-`yt-dlp`는 위 Python 실행 의존성에 포함됩니다. `ffmpeg`는 시스템 바이너리라 OS별로 따로 설치하고 PATH에서 실행 가능해야 합니다:
+`ffmpeg`는 시스템 바이너리라 OS별로 따로 설치하고 PATH에서 실행 가능해야 합니다:
 
 ```bash
 # Windows
-winget install Gyan.FFmpeg
+winget install --id Gyan.FFmpeg -e
 
 # Linux
-apt install ffmpeg
+sudo apt-get install ffmpeg
 # 또는
-dnf install ffmpeg
+sudo dnf install ffmpeg
 
 # macOS
 brew install ffmpeg
 ```
 
-준비 후 의존성 상태를 확인하세요(없으면 설치 안내가 출력됩니다):
+준비 상태는 `lectural doctor`로 확인합니다. 자동 수정은 안전하고 제한적입니다(`yt-dlp`는 `uv tool install yt-dlp` 시도, `ffmpeg`는 명백한 Windows/macOS 패키지 관리자만 시도하거나 힌트만 출력):
 
 ```bash
-python -c "from lectural.deps import preflight; [print(s) for s in preflight()]"
+lectural doctor
+lectural doctor --fix
+lectural doctor --json
 ```
+일반 manifest 게이트는 `lectural doctor`이며, 예전 dependency check/preflight 개념이 필요하면 `python -c "from lectural.deps import preflight; [print(s) for s in preflight()]"`로 직접 확인할 수 있습니다.
+
+`lectural doctor` 종료 코드는 다음과 같습니다:
+
+| 코드 | 의미 | 에이전트 동작 |
+|------|------|---------------|
+| `0` | 모든 구성 요소 준비 완료 | LecturAL 실행 진행 |
+| `2` | 사용자 조치 필요(누락/불일치) | 첫 번째 항목과 힌트를 사용자에게 전달 후 중단 |
+| `1` | 내부 오류 또는 자동 복구 불가 | doctor 출력 전체를 보고 후 중단 |
 
 ### uvx로 Python 의존성만 즉시 실행
 
@@ -131,13 +143,16 @@ output/<video-title>/
 
 ## CLI 옵션
 
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
+| 명령/옵션 | 설명 | 기본값 |
+|-----------|------|--------|
+| `lectural doctor` | Python 런타임, 외부 바이너리, 플러그인/스킬/훅 manifest 검사 | — |
+| `lectural doctor --fix` | 안전한 범위에서 `yt-dlp`/`ffmpeg` 자동 수정 시도(최대 2패스) | off |
+| `lectural doctor --json` | doctor 결과를 JSON(`schema_version`, `items`, `overall_status`, `exit_code`)으로 출력 | off |
 | `urls` | YouTube URL 1개 이상(순차 처리) | — |
 | `--force-stt` | 자막 무시하고 STT로 전사 | off |
 | `--model` | faster-whisper 모델 크기 | `medium` |
 | `--out` | 출력 루트 디렉터리 | `./output` |
-
+| `--keep-frames` | 원본 샘플 프레임을 `frames/raw/` 아래 보존 | off |
 ```bash
 lectural --help
 ```
@@ -161,7 +176,7 @@ Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude 
 결정론적 로직(중복 제거·대사 공백·OCR 분리·notes.md 구조·커버리지·훅·CLI)은 외부 바이너리/모델 없이 **오프라인 단위 테스트**로 검증됩니다.
 
 ```bash
-uv run --with pytest --with numpy pytest -q     # 112 passed
+uv run --with pytest --with numpy pytest -q
 ```
 
 외부 바이너리/모델이 필요한 실영상 경로는 `smoke`로 표시되어 기본 실행에서 제외됩니다. AC별 검증 현황은 [`docs/ac_verification.md`](docs/ac_verification.md) 참고.

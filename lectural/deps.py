@@ -50,6 +50,9 @@ _PYTHON_HINTS = {
     "paddle": 'Install compatible PaddlePaddle: `uv pip install "paddlepaddle>=2.6,<3"` or install run extras: `uv pip install "lectural[run]"`.',
     "cv2": 'Install compatible OpenCV: `uv pip install "opencv-python>=4.5,<=4.6.0.66"` or install run extras: `uv pip install "lectural[run]"`.',
     "youtube_transcript_api": 'Install run extras: `uv pip install "lectural[run]"`.',
+    "yt_dlp": 'Install run extras: `uv pip install "lectural[run]"` or install the tool binary: `uv tool install yt-dlp`.',
+    "pytesseract": 'Install run extras: `uv pip install "lectural[run]"`.',
+    "PIL": 'Install run extras: `uv pip install "lectural[run]"`.',
     "webrtcvad": 'Optional VAD backend: `uv pip install webrtcvad`.',
 }
 _PYTHON_REQUIREMENTS = {

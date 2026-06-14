@@ -1,6 +1,7 @@
 """`lectural` CLI: turn YouTube lecture URL(s) into complete study notes.
 
 Usage:
+    lectural doctor [--fix] [--json]
     lectural <url> [<url> ...] [--force-stt] [--model medium] [--out ./output]
 
 Single URL or a SEQUENTIAL batch (AC-1, AC-2). The per-video pipeline is the
@@ -38,9 +39,13 @@ def _frame_link(image_path: str, out_dir: str) -> str:
     return os.path.relpath(image_path, out_dir).replace(os.sep, "/")
 
 
-def parse_args(argv: list[str]) -> argparse.Namespace:
-    p = argparse.ArgumentParser(prog="lectural", description="YouTube lecture -> complete study notes")
-    p.add_argument("urls", nargs="+", help="One or more YouTube URLs (processed sequentially)")
+def _run_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="lectural",
+        description="YouTube lecture -> complete study notes",
+        epilog="Command: lectural doctor [--fix] [--json]",
+    )
+    p.add_argument("urls", nargs="*", help="One or more YouTube URLs (processed sequentially)")
     p.add_argument("--force-stt", action="store_true", help="Skip captions; always transcribe with STT")
     p.add_argument("--model", default=DEFAULT_STT_MODEL, help="faster-whisper model size (default: medium)")
     p.add_argument("--out", default="./output", help="Output root directory (default: ./output)")
@@ -49,7 +54,29 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Archive raw sampled frames under frames/raw/ instead of deleting extras",
     )
-    return p.parse_args(argv)
+    return p
+
+
+def _doctor_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="lectural doctor", description="Validate LecturAL runtime and plugin distribution")
+    p.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
+    p.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
+    return p
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    argv = list(argv)
+    if argv and argv[0] == "doctor":
+        args = _doctor_parser().parse_args(argv[1:])
+        args.command = "doctor"
+        return args
+
+    p = _run_parser()
+    args = p.parse_args(argv)
+    args.command = "run"
+    if not args.urls:
+        p.error("the following arguments are required: urls (or use `lectural doctor`)")
+    return args
 
 
 def run(
@@ -225,6 +252,17 @@ def _download_video(url: str, out_dir: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
+    if args.command == "doctor":
+        try:
+            from . import doctor
+
+            report = doctor.run(fix=args.fix)
+            doctor.print_report(report, json_output=args.json)
+            return int(report["exit_code"])
+        except Exception as exc:  # noqa: BLE001 - surface a clean CLI error
+            print(f"lectural doctor: internal failure — {exc}", file=sys.stderr)
+            return 1
+
     try:
         results = run(
             args.urls,

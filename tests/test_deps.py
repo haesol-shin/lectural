@@ -191,6 +191,7 @@ def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
     assert "opencv-contrib-python<=4.6.0.66" in pyproject
     assert "opencv-python-headless<=4.6.0.66" in pyproject
     assert "onnxruntime<1.24" in pyproject
+    assert '"setuptools>=68,<81"' in pyproject
 
     lock = Path("uv.lock").read_text(encoding="utf-8")
     package_versions: dict[str, list[str]] = {}
@@ -207,3 +208,4 @@ def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
         )
     assert all(deps._compare_versions(version, "1.24") < 0 for version in package_versions.get("onnxruntime", []))
     assert "onnxruntime-1.23.2-cp310-cp310-win_amd64.whl" in lock
+    assert '{ name = "setuptools", marker = "extra == \'run\'", specifier = ">=68,<81" }' in lock

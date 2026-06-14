@@ -4,19 +4,19 @@
 Turn a YouTube video into complete notes; lecture/slide content is the sweet spot.
 
 ## Install & preflight
-Run:
+Before the first run in a checkout or plugin installation, run:
 
 ```bash
-python -c "from lectural.deps import preflight; [print(s) for s in preflight()]"
+lectural doctor --fix
 ```
 
-Install the per-OS dependencies named by preflight, then install LecturAL:
+Interpret the exit code exactly:
 
-```bash
-uv pip install -e ".[run]"
-```
+- `0`: proceed with the requested LecturAL run.
+- `2`: surface the first missing/incompatible item and its one-line hint to the user, then stop.
+- `1`: report the internal/unfixable doctor output, then stop.
 
-`ffmpeg` and `yt-dlp` must be on PATH.
+`ffmpeg` must be on PATH. Python runtime deps are installed by the active uv/uvx environment; `doctor --fix` only makes safe bounded attempts for `yt-dlp` and obvious ffmpeg package-manager paths.
 
 ## Run
 

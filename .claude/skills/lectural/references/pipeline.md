@@ -5,7 +5,8 @@ offline):
 
 | Module | Responsibility | AC |
 |--------|----------------|----|
-| `lectural/deps.py` | ffmpeg/yt-dlp/paddleocr preflight with install hints | scaffold |
+| `lectural/doctor.py` | component manifest validation for runtime, plugin files, hooks, and mirrored skill artifacts | distribution |
+| `lectural/deps.py` | ffmpeg/yt-dlp/Python dependency preflight with install hints | scaffold |
 | `lectural/acquisition.py` | captions-first (VTT/json3 parsers) + audio download | AC-1,2,3 |
 | `lectural/speech.py` | faster-whisper medium int8 CPU transcription | AC-3,4 |
 | `lectural/vad.py` | silence mask + speech-gap metric (`silencedetect` parser) | AC-9 |
@@ -14,8 +15,27 @@ offline):
 | `lectural/synthesis.py` | synthesis_input.json + transcript.md + notes.md skeleton | AC-7,8,12 |
 | `lectural/coverage.py` | coverage.json (gap/scene/artifact) + raw-samples contract | AC-13 |
 | `lectural/runstate.py` | active-run pointer for the Stop hook | AC-2 |
-| `lectural/cli.py` | arg parsing, sequential batch, orchestration | AC-1,2,10,11 |
-| `scripts/completeness_hook.py` | Stop hook: block "done" until coverage passes | AC-13 |
+| `lectural/cli.py` | doctor dispatch, arg parsing, sequential batch, orchestration | AC-1,2,10,11 |
+| `scripts/completeness_hook.py` | Stop hook: block done until coverage passes | AC-13 |
+
+## Doctor component manifest
+
+Run `lectural doctor --fix` before the first lecture run in a checkout or Claude
+plugin installation. The doctor validates:
+
+- Python core import/version for `lectural` and runtime Python imports.
+- External binaries: `ffmpeg` and `yt-dlp` on PATH.
+- Agent-side files: `AGENTS.md`, the skill file, `summary_prompt.md`, and
+  `hooks/hooks.json`.
+- Claude plugin manifests: plugin name, marketplace plugin entry, exact
+  marketplace `source` value `./`, and hook path existence.
+- Mirror parity: skill bodies after frontmatter strip and byte parity for
+  `summary_prompt.md` and `pipeline.md` across root and `.claude` trees.
+
+Doctor exit codes are `0` ready, `2` user action needed, and `1` internal or
+unfixable state. `--fix` is bounded and safe: it may attempt `uv tool install
+yt-dlp`, may use obvious Windows/macOS package managers for ffmpeg, and otherwise
+reports a one-line hint.
 
 ## Key invariants
 
