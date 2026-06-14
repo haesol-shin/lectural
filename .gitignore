@@ -23,3 +23,6 @@ Thumbs.db
 ffmpeg.exe
 ffprobe.exe
 /output/
+
+.gjc/
+.tmp/
