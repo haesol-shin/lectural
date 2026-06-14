@@ -38,7 +38,7 @@ external LLM.
 Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
-See `README.md` and `skills/lectural/SKILL.md`.
+See `README.md`, the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations
 

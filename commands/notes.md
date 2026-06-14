@@ -1,5 +1,5 @@
 ---
-description: "[lectural] Run LecturAL on a YouTube lecture URL to produce COMPLETE study notes (raw transcript + structured notes.md) with the completeness gate enforced. Performs heavy work (download, transcription, OCR)."
+description: Turn a YouTube lecture URL into complete study notes.
 argument-hint: <youtube-url> [more-urls...] [--force-stt] [--model medium] [--out ./output]
 ---
 
