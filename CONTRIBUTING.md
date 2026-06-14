@@ -51,6 +51,15 @@ Use Conventional Commits with these common types:
 - `chore:` maintenance without behavior change
 - `refactor:` behavior-preserving code change
 
+## Pull requests
+
+- Title: short imperative summary (about 50-72 characters), no Conventional Commit prefix. Example: `Set up repo operations & distribution model`.
+- Body: include a `## Summary` section and a `## Verification` section; link issues with `Fixes #N` when applicable.
+- Merge strategy:
+  - **Rebase and merge** (default): use when the branch holds clean, individually meaningful Conventional Commits worth preserving in `main` history. Keeps history linear and compare-range release notes accurate.
+  - **Squash and merge**: use when the branch has noisy WIP/fixup commits or is a single logical change. The squash commit message MUST be a Conventional Commit, because it becomes the `main` history entry.
+  - Avoid merge commits; keep `main` linear.
+
 ## Testing
 
 Run the full offline suite without extra environment variables:
