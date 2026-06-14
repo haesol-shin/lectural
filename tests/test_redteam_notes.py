@@ -386,7 +386,7 @@ for name in list(sys.modules):
 import lectural.synthesis  # noqa: F401
 print(json.dumps({name: (name in sys.modules) for name in ['cv2', 'numpy', 'paddleocr', 'paddle', 'PIL']}, sort_keys=True))
 """
-    proc = subprocess.run([sys.executable, "-c", probe], cwd=REPO_ROOT, capture_output=True, text=True, check=True)
+    proc = subprocess.run([sys.executable, "-c", probe], cwd=REPO_ROOT, capture_output=True, text=True, encoding="utf-8", check=True)
     loaded = json.loads(proc.stdout)
     assert loaded == {"PIL": False, "cv2": False, "numpy": False, "paddle": False, "paddleocr": False}
 
@@ -419,7 +419,7 @@ def _invoke_hook(runstate_path: Path, runs: list[dict], *, malformed_runstate: b
     else:
         runstate_path.write_text(json.dumps({"tool": "lectural", "runs": runs}, ensure_ascii=False), encoding="utf-8")
     env = {**os.environ, "LECTURAL_RUNSTATE": str(runstate_path)}
-    return subprocess.run([sys.executable, str(HOOK_PATH)], cwd=REPO_ROOT, input="{}", capture_output=True, text=True, env=env)
+    return subprocess.run([sys.executable, str(HOOK_PATH)], cwd=REPO_ROOT, input="{}", capture_output=True, text=True, encoding="utf-8", env=env)
 
 
 def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
