@@ -57,11 +57,13 @@ Claude Code에서 marketplace를 추가한 뒤 플러그인을 설치합니다:
 /plugin install lectural@lectural
 ```
 
-설치하면 LecturAL 스킬과 완전성 Stop 훅이 등록됩니다. 강의 URL을 던지면 에이전트가 자동으로 이 파이프라인을 호출합니다.
+설치하면 LecturAL 스킬, 완전성 Stop 훅, 그리고 `/lectural:notes`·`/lectural:setup` 슬래시 커맨드가 등록됩니다. 스킬은 명시적 요청에만 발동하도록 보수적으로 설정돼 있어, 떠도는 YouTube 링크에 자동 실행되지 않습니다. 명시적으로 실행하려면 `/lectural:notes <url>`을 쓰세요.
 
-### 2. 런타임 준비 (uv/uvx + ffmpeg)
+### 2. 런타임 준비 — `/lectural:setup`
 
-플러그인 설치만으로는 **Python 실행 의존성, yt-dlp PATH 바이너리, ffmpeg**가 설치되지 않습니다. 플러그인을 먼저 설치한 뒤, 같은 checkout 또는 배포 루트에서 런타임을 준비합니다:
+Claude Code에서는 플러그인 설치 후 **`/lectural:setup`을 한 번 실행**하면 런타임이 준비됩니다. 이 커맨드는 Python 실행 의존성 설치(`uv pip install -e ".[run]"`) → `lectural doctor --fix`(yt-dlp/ffmpeg 점검·수리) → 남은 항목 안내를 차례로 수행합니다.
+
+수동(또는 Codex)으로 준비하려면 같은 작업을 직접 실행합니다. 플러그인 설치만으로는 **Python 실행 의존성, yt-dlp PATH 바이너리, ffmpeg**가 설치되지 않습니다:
 
 ```bash
 # 코어 + 실행 의존성(yt-dlp, faster-whisper, opencv, paddleocr 등) 설치
@@ -181,6 +183,13 @@ uv run --with pytest --with numpy pytest -q
 
 외부 바이너리/모델이 필요한 실영상 경로는 `smoke`로 표시되어 기본 실행에서 제외됩니다. AC별 검증 현황은 [`docs/ac_verification.md`](docs/ac_verification.md) 참고.
 
+플러그인 자체를 레포에서 개발·테스트할 때는 미러 없이 단일 트리를 직접 로드합니다:
+
+```bash
+claude --plugin-dir .   # 설치 없이 이 플러그인 로드
+/reload-plugins         # 수정사항 반영(재시작 없이)
+```
+
 ## 프로젝트 구조
 
 ```text
@@ -188,8 +197,8 @@ lectural/        # 재사용 코어 (acquisition, speech, vad, visual, ocr, synt
 scripts/         # completeness_hook.py (Stop 훅)
 .claude-plugin/  # plugin.json + marketplace.json (플러그인/마켓플레이스 메타데이터)
 skills/          # lectural/SKILL.md + references/ (플러그인에 배포되는 스킬)
+commands/        # notes.md, setup.md (/lectural:notes, /lectural:setup 슬래시 커맨드)
 hooks/           # hooks.json (Stop 훅 wiring)
-.claude/         # 레포 로컬 개발용 skill + settings.json
 docs/            # synthesis_contract.md, ac_verification.md
 tests/           # 오프라인 단위 + 적대적(red-team) 테스트
 ```

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -20,7 +19,6 @@ PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 CANONICAL_SKILL = ROOT / "skills" / "lectural" / "SKILL.md"
-CLAUDE_SKILL = ROOT / ".claude" / "skills" / "lectural" / "SKILL.md"
 PIPELINE_REF = ROOT / "skills" / "lectural" / "references" / "pipeline.md"
 SYNTHESIS = ROOT / "lectural" / "synthesis.py"
 
@@ -29,7 +27,6 @@ ENGLISH_ARTIFACTS = [
     MARKETPLACE_JSON,
     HOOKS_JSON,
     CANONICAL_SKILL,
-    CLAUDE_SKILL,
     PIPELINE_REF,
 ]
 ANCHOR_SYMBOLS = {
@@ -124,16 +121,6 @@ def _synthesis_anchor_values() -> dict[str, str]:
     return values
 
 
-def _strip_frontmatter_bytes(data: bytes) -> bytes:
-    lines = data.splitlines(keepends=True)
-    if not lines or lines[0].strip() != b"---":
-        return data
-    for index, line in enumerate(lines[1:], start=1):
-        if line.strip() == b"---":
-            return b"".join(lines[index + 1 :])
-    raise AssertionError("frontmatter opener exists without a closing delimiter")
-
-
 def test_plugin_and_marketplace_json_are_strict_and_portable():
     plugin = _load_json(PLUGIN_JSON)
     marketplace = _load_json(MARKETPLACE_JSON)
@@ -199,7 +186,7 @@ def test_english_packaging_artifacts_have_zero_hangul_codepoints():
 
 def test_skill_docs_reference_synthesis_anchors_symbolically_only():
     anchor_values = _synthesis_anchor_values()
-    for skill_path in [CANONICAL_SKILL, CLAUDE_SKILL]:
+    for skill_path in [CANONICAL_SKILL]:
         text = _read_text(skill_path)
         for symbol in ANCHOR_SYMBOLS:
             assert symbol in text, f"{skill_path.relative_to(ROOT)} must reference {symbol} symbolically"
@@ -208,14 +195,6 @@ def test_skill_docs_reference_synthesis_anchors_symbolically_only():
                 assert literal not in text, (
                     f"{skill_path.relative_to(ROOT)} embeds literal value for {symbol}; use the symbol name"
                 )
-
-
-def test_skill_bodies_match_after_frontmatter_is_stripped():
-    canonical_body = _strip_frontmatter_bytes(CANONICAL_SKILL.read_bytes())
-    claude_body = _strip_frontmatter_bytes(CLAUDE_SKILL.read_bytes())
-
-    assert hashlib.sha256(canonical_body).hexdigest() == hashlib.sha256(claude_body).hexdigest()
-    assert canonical_body == claude_body
 
 
 def test_hooks_json_rejects_comment_syntax_as_adversarial_mutation():

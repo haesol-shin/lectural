@@ -26,3 +26,6 @@ ffprobe.exe
 
 .gjc/
 .tmp/
+
+# Claude Code local workspace config (use `claude --plugin-dir .` for plugin dev)
+.claude/

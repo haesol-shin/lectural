@@ -1,7 +1,7 @@
 """LecturAL installation doctor.
 
 Validates the Python runtime, external binaries, plugin manifests, agent files,
-and mirrored skill/reference artifacts. The checker is intentionally deterministic
+and agent files. The checker is intentionally deterministic
 and side-effect free unless ``fix=True`` is requested.
 """
 
@@ -91,16 +91,6 @@ def _root(root: str | Path | None) -> Path:
 
 def _rel(root: Path, relative: str) -> Path:
     return root / relative
-
-
-def _strip_frontmatter(data: bytes) -> bytes:
-    lines = data.splitlines(keepends=True)
-    if not lines or lines[0].strip() != b"---":
-        return data
-    for index, line in enumerate(lines[1:], start=1):
-        if line.strip() == b"---":
-            return b"".join(lines[index + 1 :])
-    raise ValueError("frontmatter opener exists without a closing delimiter")
 
 
 def _load_json(path: Path) -> dict:
@@ -362,27 +352,6 @@ def _marketplace_item(root: Path) -> DoctorItem:
     return ok(".claude-plugin/marketplace.json", "plugin", "marketplace entry points at ./")
 
 
-def _parity_item(root: Path, name: str, left: str, right: str, *, strip_frontmatter: bool = False) -> DoctorItem:
-    left_path = _rel(root, left)
-    right_path = _rel(root, right)
-    missing_paths = [path for path in (left_path, right_path) if not path.is_file()]
-    if missing_paths:
-        detail = ", ".join(str(path.relative_to(root)) for path in missing_paths)
-        return missing(name, "mirror", f"missing mirror artifact(s): {detail}", "Restore both root and .claude mirror files from the distribution.")
-    try:
-        left_bytes = left_path.read_bytes()
-        right_bytes = right_path.read_bytes()
-        if strip_frontmatter:
-            left_bytes = _strip_frontmatter(left_bytes)
-            right_bytes = _strip_frontmatter(right_bytes)
-    except Exception as exc:  # noqa: BLE001
-        return unfixable(name, "mirror", f"could not read mirror files: {type(exc).__name__}: {exc}", "Check filesystem permissions and file encoding.")
-    if left_bytes != right_bytes:
-        mode = "body after frontmatter strip" if strip_frontmatter else "bytes"
-        return incompatible(name, "mirror", f"mirror {mode} differ", "Keep the root skill tree and .claude mirror synchronized.")
-    return ok(name, "mirror", "mirror files match")
-
-
 def _items(root: Path) -> list[DoctorItem]:
     items = [_python_core_item()]
     items.extend(_python_dep_item(module, package, specifier) for module, package, specifier in RUN_PYTHON_REQUIREMENTS)
@@ -391,31 +360,6 @@ def _items(root: Path) -> list[DoctorItem]:
     items.append(_hook_command_item(root))
     items.append(_plugin_item(root))
     items.append(_marketplace_item(root))
-    items.append(
-        _parity_item(
-            root,
-            "skill body mirror",
-            "skills/lectural/SKILL.md",
-            ".claude/skills/lectural/SKILL.md",
-            strip_frontmatter=True,
-        )
-    )
-    items.append(
-        _parity_item(
-            root,
-            "summary prompt mirror",
-            "skills/lectural/references/summary_prompt.md",
-            ".claude/skills/lectural/references/summary_prompt.md",
-        )
-    )
-    items.append(
-        _parity_item(
-            root,
-            "pipeline mirror",
-            "skills/lectural/references/pipeline.md",
-            ".claude/skills/lectural/references/pipeline.md",
-        )
-    )
     return items
 
 

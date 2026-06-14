@@ -24,7 +24,6 @@ VALID_HOOKS = {
 
 def _write_distribution(root: Path) -> None:
     (root / "skills/lectural/references").mkdir(parents=True)
-    (root / ".claude/skills/lectural/references").mkdir(parents=True)
     (root / ".claude-plugin").mkdir()
     (root / "hooks").mkdir()
     (root / "scripts").mkdir()
@@ -32,13 +31,10 @@ def _write_distribution(root: Path) -> None:
     (root / "AGENTS.md").write_text("agents\n", encoding="utf-8")
     skill = "---\nname: lectural\n---\n# Skill\nBody\n"
     (root / "skills/lectural/SKILL.md").write_text(skill, encoding="utf-8")
-    (root / ".claude/skills/lectural/SKILL.md").write_text(skill, encoding="utf-8")
     prompt = "prompt\n"
     pipeline = "pipeline\n"
     (root / "skills/lectural/references/summary_prompt.md").write_text(prompt, encoding="utf-8")
-    (root / ".claude/skills/lectural/references/summary_prompt.md").write_text(prompt, encoding="utf-8")
     (root / "skills/lectural/references/pipeline.md").write_text(pipeline, encoding="utf-8")
-    (root / ".claude/skills/lectural/references/pipeline.md").write_text(pipeline, encoding="utf-8")
     (root / "scripts/completeness_hook.py").write_text("print('ok')\n", encoding="utf-8")
     (root / "hooks/hooks.json").write_text(json.dumps(VALID_HOOKS), encoding="utf-8")
     (root / ".claude-plugin/plugin.json").write_text(
@@ -347,25 +343,6 @@ def test_plugin_manifest_hooks_path_pointing_to_missing_file_is_missing(tmp_path
     assert report["exit_code"] == 2
     assert item["status"] == "missing"
     assert "does not exist" in item["detail"]
-
-
-def test_skill_prompt_pipeline_parity_checks(tmp_path, monkeypatch):
-    _write_distribution(tmp_path)
-    _stub_runtime_ok(monkeypatch)
-    (tmp_path / ".claude/skills/lectural/SKILL.md").write_text(
-        "---\nname: other\n---\n# Skill\nBody\n",
-        encoding="utf-8",
-    )
-    (tmp_path / ".claude/skills/lectural/references/summary_prompt.md").write_text("changed\n", encoding="utf-8")
-    (tmp_path / ".claude/skills/lectural/references/pipeline.md").write_text("changed\n", encoding="utf-8")
-
-    report = doctor.build_report(tmp_path)
-
-    statuses = _statuses(report)
-    # Different frontmatter is allowed; body must match after stripping.
-    assert statuses[("mirror", "skill body mirror")] == "ok"
-    assert statuses[("mirror", "summary prompt mirror")] == "incompatible"
-    assert statuses[("mirror", "pipeline mirror")] == "incompatible"
 
 
 def test_fix_missing_yt_dlp_attempts_once_then_rechecks(tmp_path, monkeypatch):

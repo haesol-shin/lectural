@@ -1,12 +1,11 @@
 ---
 name: lectural
 description: >-
-  Use when the user provides a YouTube lecture URL (or several) and wants COMPLETE
-  study notes: every spoken word, every on-screen text, and every slide or scene
-  turned into markdown. Triggers on requests like "summarize this lecture",
-  "transcribe and summarize this lecture", or any YouTube link framed as study
-  material. Produces a raw transcript plus structured notes and refuses to claim
-  done until completeness checks confirm nothing was missed.
+  Turn a YouTube lecture into COMPLETE study notes (raw transcript + structured
+  notes.md). Use ONLY when the user explicitly asks to run LecturAL or invokes the
+  /lectural:notes command. Each run downloads media and may run long CPU
+  transcription and OCR, so do NOT auto-trigger on a bare YouTube link; confirm the
+  user wants a full LecturAL run first. First-time setup is /lectural:setup.
 argument-hint: <youtube-url> [more-urls...] [--force-stt] [--model medium]
 ---
 
