@@ -6,6 +6,29 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-14
+
+### Removed
+- The standalone `lectural` plugin skill (`skills/lectural/SKILL.md`). Only the
+  `/lectural:notes` and `/lectural:setup` slash commands now surface in the
+  Claude Code menu; the enrichment references under `skills/lectural/references/`
+  are retained.
+
+### Changed
+- Shortened the `/lectural:notes` and `/lectural:setup` command descriptions and
+  dropped the `[lectural]` prefix.
+- De-skilled host-agent enrichment wording across `AGENTS.md`, the setup command,
+  and `docs/synthesis_contract.md` (command-driven, not skill-driven).
+
+### Added
+- Advisory, non-blocking `PR Check` workflow plus an `AGENTS.md`/`CONTRIBUTING.md`
+  rule to keep PR bodies aligned with `PULL_REQUEST_TEMPLATE.md`.
+- Release-notes automation: the Release workflow builds the GitHub Release body
+  from the matching `CHANGELOG.md` section via `scripts/changelog_notes.py`.
+- A `claude plugin validate .` CI gate (pinned `@anthropic-ai/claude-code`).
+- Tests guarding version-surface/CHANGELOG consistency and the release-notes
+  extractor.
+
 ## [0.1.0] - 2026-06-14
 
 ### Added
@@ -20,5 +43,6 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Two-layer completeness gate: CLI exit code (structure) plus Stop hook
   (citations, enrichment, per-slide checks).
 
-[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/haesol-shin/lectural/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/haesol-shin/lectural/releases/tag/v0.1.0

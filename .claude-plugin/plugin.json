@@ -1,6 +1,6 @@
 {
   "name": "lectural",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, and every scene. Ships a deterministic Python core, the /lectural:notes and /lectural:setup commands, and a completeness Stop hook.",
   "author": {
     "name": "Haesol Shin",
