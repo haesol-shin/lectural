@@ -1,0 +1,5 @@
+$ uv run pytest tests/test_redteam_notes_contract.py -q
+......................                                                   [100%]
+22 passed in 1.25s
+
+[exit 0]

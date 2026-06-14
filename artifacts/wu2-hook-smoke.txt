@@ -1,5 +1,5 @@
 ## complete-valid-notes
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 0
 actual_exit: 0
 stdout:
@@ -8,67 +8,78 @@ stderr:
 LecturAL 완전성 게이트 통과: 1개 run 모두 완전.
 
 ## missing-notes-marker-line-one
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\missing-marker]
-  - notes.md: NOTES_ENRICH_MARKER line1 누락
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\missing-marker]
+  - notes.md 첫 줄에 lectural notes 마커가 없습니다
 
 ## missing-required-section-anchor
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\missing-anchor]
-  - notes.md: 필수 섹션 앵커 누락: ## 복습 질문
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\missing-anchor]
+  - notes.md 필수 섹션이 없습니다: ## 복습 질문
 
 ## failed-runstate-run
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\failed-run]
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\failed-run]
   - 처리 실패한 영상: forced failure
 
 ## pending-runstate-run
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\pending-run]
-  - 처리되지 않은 영상(pending): C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\pending-run
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\pending-run]
+  - 처리되지 않은 영상(pending): C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\pending-run
 
 ## malformed-runstate-fails-closed
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\malformed-runstate.json]
-  - 처리 실패한 영상: unreadable run-state: C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\malformed-runstate.json
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\malformed-runstate.json]
+  - 처리 실패한 영상: unreadable run-state: C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\malformed-runstate.json
 
 ## frames-present-without-slide-link
-command: C:\Users\haesol\AppData\Local\uv\cache\builds-v0\.tmpZUXIVy\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
 expected_exit: 2
 actual_exit: 2
 stdout:
 
 stderr:
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-828\test_completeness_hook_real_su0\frames-without-link]
-  - notes.md: frames/ 슬라이드 이미지 링크 누락(frames png 존재)
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\frames-without-link]
+  - 상세 노트 슬라이드에 frames/ 이미지 링크가 없습니다: ### [00:00:02](transcript.md#t000002) Hook slide
+
+## bare-unenriched-skeleton
+command: C:\Users\haesol\dev\LecturAL\.venv\Scripts\python.exe C:\Users\haesol\dev\LecturAL\scripts\completeness_hook.py
+expected_exit: 2
+actual_exit: 2
+stdout:
+
+stderr:
+LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
+[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_completeness_hook_real_su0\bare-skeleton]
+  - notes.md에 미보강 마커가 남아 있습니다

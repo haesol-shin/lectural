@@ -3,9 +3,8 @@
 
 Blocks "done" (exit 2) until every LecturAL run produced this session is
 complete. For each run recorded in the run-state file it checks:
-  (a) coverage.json overall_pass (speech-gap + scene coverage + artifacts)
-  (b) notes.md carries the notes marker and all required section anchors
-  (c) notes.md links at least one slide image when frames/*.png exists
+  (a) coverage.json overall_pass (speech-gap + scene coverage + artifacts + notes contract)
+  (b) notes.md satisfies the hook-only notes contract
 
 When no run-state file exists, the current turn was not a LecturAL run and the
 hook is a NO-OP (exit 0). Cross-platform: invoked via `python`/`py -3`; the
@@ -16,7 +15,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
 
 # Make `import lectural` work regardless of where the hook is launched from.
@@ -24,11 +22,11 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-# Notes anchors: import from the package, else fall back to literals. This MUST
-# NOT affect run-state reading (a completeness gate must not fail open).
+_CONTRACT_IMPORT_ERROR: Exception | None = None
 try:
-    from lectural.synthesis import (
+    from lectural.notes_contract import (
         NOTES_CONCEPTS_ANCHOR,
+        NOTES_CONTRACT_VERSION,
         NOTES_COVERAGE_ANCHOR,
         NOTES_DETAIL_ANCHOR,
         NOTES_ENRICH_MARKER,
@@ -36,27 +34,11 @@ try:
         NOTES_QUESTIONS_ANCHOR,
         NOTES_TAKEAWAY_ANCHOR,
         NOTES_TOC_ANCHOR,
+        NOTES_UNENRICHED_MARKER,
+        hook_contract_problems,
     )
-except Exception:  # noqa: BLE001
-    NOTES_ENRICH_MARKER = "<!-- lectural:notes -->"
-    NOTES_TAKEAWAY_ANCHOR = "## 한눈에 요약"
-    NOTES_TOC_ANCHOR = "## 목차"
-    NOTES_FLOW_ANCHOR = "## 강의 흐름"
-    NOTES_CONCEPTS_ANCHOR = "## 핵심 개념·이론"
-    NOTES_DETAIL_ANCHOR = "## 상세 노트"
-    NOTES_QUESTIONS_ANCHOR = "## 복습 질문"
-    NOTES_COVERAGE_ANCHOR = "## 정리 커버리지"
-
-_NOTES_SECTION_ANCHORS = [
-    NOTES_TAKEAWAY_ANCHOR,
-    NOTES_TOC_ANCHOR,
-    NOTES_FLOW_ANCHOR,
-    NOTES_CONCEPTS_ANCHOR,
-    NOTES_DETAIL_ANCHOR,
-    NOTES_QUESTIONS_ANCHOR,
-    NOTES_COVERAGE_ANCHOR,
-]
-_SLIDE_IMAGE_LINK_RE = re.compile(r"!\[[^\]]*\]\([^)]*frames/[^)]*\.png[^)]*\)", re.IGNORECASE)
+except Exception as exc:  # noqa: BLE001
+    _CONTRACT_IMPORT_ERROR = exc
 _DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
 
 
@@ -114,25 +96,28 @@ def _has_frame_png(run: dict, notes_path: str) -> bool:
 
 
 def _validate_notes(run: dict, cov_path: str) -> list[str]:
+    if _CONTRACT_IMPORT_ERROR is not None:
+        return [f"notes.md 계약 모듈 로드 실패: {_CONTRACT_IMPORT_ERROR}"]
+
     notes_path = _resolve_notes_path(run, cov_path)
     if not os.path.isfile(notes_path):
         return [f"notes.md 없음: {notes_path or 'notes_md/output_dir/coverage sibling 없음'}"]
 
     try:
-        text = open(notes_path, encoding="utf-8").read()
+        notes_text = open(notes_path, encoding="utf-8").read()
     except OSError as exc:
         return [f"notes.md 읽기 실패: {exc}"]
 
-    problems: list[str] = []
-    first_line = text.splitlines()[0] if text.splitlines() else ""
-    if first_line != NOTES_ENRICH_MARKER:
-        problems.append("notes.md: NOTES_ENRICH_MARKER line1 누락")
-    for anchor in _NOTES_SECTION_ANCHORS:
-        if anchor not in text:
-            problems.append(f"notes.md: 필수 섹션 앵커 누락: {anchor}")
-    if _has_frame_png(run, notes_path) and not _SLIDE_IMAGE_LINK_RE.search(text):
-        problems.append("notes.md: frames/ 슬라이드 이미지 링크 누락(frames png 존재)")
-    return problems
+    transcript_path = os.path.join(os.path.dirname(notes_path), "transcript.md")
+    if not os.path.isfile(transcript_path):
+        return [f"transcript.md 없음: {transcript_path}"]
+    try:
+        transcript_text = open(transcript_path, encoding="utf-8").read()
+    except OSError as exc:
+        return [f"transcript.md 읽기 실패: {exc}"]
+
+    has_frames = _has_frame_png(run, notes_path)
+    return hook_contract_problems(notes_text, transcript_text, has_frames=has_frames)
 
 
 
@@ -181,6 +166,12 @@ def main() -> int:
     if state is None or not state.get("runs"):
         # No run-state file (not a LecturAL run) or zero registered runs -> no-op.
         return 0
+    if _CONTRACT_IMPORT_ERROR is not None:
+        print(
+            f"LecturAL 완전성 게이트 실패 — notes.md 계약 모듈을 불러올 수 없습니다: {_CONTRACT_IMPORT_ERROR}",
+            file=sys.stderr,
+        )
+        return 2
 
     all_problems: list[str] = []
     for run in state["runs"]:

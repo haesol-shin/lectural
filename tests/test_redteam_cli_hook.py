@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from lectural import cli, runstate
+from lectural.notes_contract import coverage_contract_problems
 
 
 _HOOK_PATH = Path(__file__).resolve().parents[1] / "scripts" / "completeness_hook.py"
@@ -52,20 +53,25 @@ def _notes_text(hook, *, frame_link: bool = False) -> str:
     return (
         f"{hook.NOTES_ENRICH_MARKER}\n"
         "# 강의 정리\n\n"
-        f"{hook.NOTES_TAKEAWAY_ANCHOR}\n<!-- 미보강 -->\n\n"
+        f"{hook.NOTES_TAKEAWAY_ANCHOR}\n요약 1\n요약 2\n요약 3\n\n"
         f"{hook.NOTES_TOC_ANCHOR}\n- [00:00:00 · 시작](#sec-1)\n\n"
-        f"{hook.NOTES_FLOW_ANCHOR}\n<!-- 미보강 -->\n\n"
-        f"{hook.NOTES_CONCEPTS_ANCHOR}\n- 핵심 설명 [00:00:02](transcript.md#t000002)\n\n"
+        f"{hook.NOTES_FLOW_ANCHOR}\n- 도입 흐름\n- 핵심 흐름\n\n"
+        f"{hook.NOTES_CONCEPTS_ANCHOR}\n"
+        "- 핵심 설명 [00:00:02](transcript.md#t000002) ([영상](https://youtu.be/abc12345678?t=2))\n\n"
         f"{hook.NOTES_DETAIL_ANCHOR}\n"
         '<a id="sec-1"></a>\n'
         "### [00:00:02](transcript.md#t000002) 시작\n"
         f"{image_line}"
-        "- 핵심 설명 [00:00:02](transcript.md#t000002)\n\n"
+        "- 핵심 설명 [00:00:02](transcript.md#t000002) ([영상](https://youtu.be/abc12345678?t=2))\n\n"
         f"{hook.NOTES_QUESTIONS_ANCHOR}\n"
-        "- 미보강 질문 1: 핵심은 무엇인가요? [00:00:02](transcript.md#t000002)\n\n"
+        "- 질문 1: 핵심은 무엇인가요? [00:00:02](transcript.md#t000002)\n\n"
         f"{hook.NOTES_COVERAGE_ANCHOR}\n"
         "- coverage: pass\n"
     )
+
+
+def _transcript_text() -> str:
+    return '# 강의 정리 — 전체 전사본 (raw)\n\n<a id="t000002"></a> [00:00:02] 핵심 설명\n'
 
 
 def _set_runstate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runs: list[dict]) -> Path:
@@ -106,6 +112,7 @@ def _make_run(
     if write_notes:
         notes.write_text(notes_text if notes_text is not None else _notes_text(hook, frame_link=frames_png), encoding="utf-8")
 
+    (out / "transcript.md").write_text(_transcript_text(), encoding="utf-8")
     coverage_path = out / "coverage.json"
     if malformed_coverage:
         coverage_path.write_text("{not json", encoding="utf-8")
@@ -301,3 +308,34 @@ def test_hook_batch_with_one_failed_run_blocks_whole_gate(tmp_path, monkeypatch)
     ]
 
     assert _hook_exit(tmp_path, monkeypatch, runs) == 2
+
+
+def test_notes_contract_adversarial_dangling_anchor_fails():
+    hook = _load_hook()
+    text = _notes_text(hook).replace("transcript.md#t000002", "transcript.md#t999999", 1)
+    problems = coverage_contract_problems(text, _transcript_text())
+
+    assert any("전사본에 없는 앵커" in p for p in problems)
+
+
+def test_notes_contract_adversarial_missing_youtube_fails():
+    hook = _load_hook()
+    text = _notes_text(hook).replace(" ([영상](https://youtu.be/abc12345678?t=2))", "", 1)
+    problems = coverage_contract_problems(text, _transcript_text())
+
+    assert any("영상 시간 링크" in p for p in problems)
+
+
+@pytest.mark.parametrize(
+    ("offset", "passes"),
+    [
+        (1, True),
+        (2, False),
+    ],
+)
+def test_notes_contract_adversarial_youtube_seconds_tolerance(offset, passes):
+    hook = _load_hook()
+    text = _notes_text(hook).replace("https://youtu.be/abc12345678?t=2", f"https://youtu.be/abc12345678?t={2 + offset}", 1)
+    problems = coverage_contract_problems(text, _transcript_text())
+
+    assert (not problems) is passes

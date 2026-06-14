@@ -15,14 +15,10 @@ import json
 
 from .config import SCHEMA_VERSION
 
-# --- Stable anchors (the completeness hook checks for these) ----------------
-TOC_ANCHOR = "## 목차"
-COVERAGE_ANCHOR = "## 커버리지 요약"
-SECTION_PREFIX = "## 섹션"
-ENRICH_MARKER = "<!-- lectural:baseline -->"
-
 NOTES_ENRICH_MARKER = "<!-- lectural:notes -->"
 NOTES_UNENRICHED_MARKER = "<!-- 미보강 -->"
+NOTES_INTRO_TITLE = "도입"
+NOTES_INTRO_MARKER = "<!-- lectural:intro -->"
 NOTES_TAKEAWAY_ANCHOR = "## 한눈에 요약"
 NOTES_TOC_ANCHOR = "## 목차"
 NOTES_FLOW_ANCHOR = "## 강의 흐름"
@@ -110,7 +106,7 @@ def build_section_hints(slides: list[dict], duration: float) -> list[dict]:
     if float(ordered[0].get("t", 0.0)) > 0.0:
         hints.append({"index": 0, "t": 0.0, "win_start": 0.0,
                       "t_end": float(ordered[0].get("t", 0.0)),
-                      "title": "도입", "frame": None})
+                      "title": NOTES_INTRO_TITLE, "frame": None})
     base = len(hints)
     for i, sl in enumerate(ordered):
         t = float(sl.get("t", 0.0))
@@ -265,6 +261,8 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
             out.append(f"### [{format_timestamp(heading_sec)}](transcript.md#{heading_anchor}) {title_text}")
         else:
             out.append(f"### [{format_timestamp(heading_sec)}] {title_text}")
+        if not h.get("frame") and h.get("title") == NOTES_INTRO_TITLE:
+            out.append(NOTES_INTRO_MARKER)
         if h.get("frame"):
             out.append(f"![슬라이드 {section_no}]({h['frame']})")
         for s in body:

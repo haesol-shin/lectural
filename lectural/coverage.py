@@ -1,12 +1,13 @@
 """Compute coverage.json — the completeness gate's input.
 
-Three checks (all pure, unit-tested):
-  1. gap_check     - max untranscribed SPEECH gap <= MAX_GAP_SEC (AC-9).
-  2. scene_coverage- every timeline bin that contains speech also contains a
-                     keyframe, and every slide-classified frame has OCR text.
-  3. artifacts     - transcript.md and notes.md exist and are non-empty.
+Four checks (all pure, unit-tested):
+  1. gap_check      - max untranscribed SPEECH gap <= MAX_GAP_SEC (AC-9).
+  2. scene_coverage - every timeline bin that contains speech also contains a
+                      keyframe, and every slide-classified frame has OCR text.
+  3. artifacts      - transcript.md and notes.md exist and are non-empty.
+  4. notes_contract - marker-agnostic notes.md structure/citation contract.
 
-`overall_pass` is the AND of the three. The hook (G003) reads this file.
+`overall_pass` is the AND of the four. The hook (G003) reads this file.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ import os
 from dataclasses import dataclass
 
 from .config import FRAME_CARRY_MAX_SEC, MAX_GAP_SEC, SCENE_BINS_N, SCHEMA_VERSION
+from .notes_contract import NOTES_CONTRACT_VERSION, coverage_contract_problems
 from .vad import Span, max_non_silence_untranscribed_gap, transcript_coverage_spans
 
 
@@ -204,6 +206,21 @@ def build_coverage(inp: CoverageInputs) -> dict:
         transcript_text=inp.transcript_text,
         notes_text=inp.notes_text,
     )
+    if inp.notes_text is not None and inp.transcript_text is not None:
+        contract_problems = coverage_contract_problems(inp.notes_text, inp.transcript_text)
+        notes_contract = {
+            "version": NOTES_CONTRACT_VERSION,
+            "checked": True,
+            "problems": contract_problems,
+            "pass": not contract_problems,
+        }
+    else:
+        notes_contract = {
+            "version": NOTES_CONTRACT_VERSION,
+            "checked": False,
+            "problems": [],
+            "pass": True,
+        }
     return {
         "schema_version": SCHEMA_VERSION,
         "video_title": inp.video_title,
@@ -212,7 +229,8 @@ def build_coverage(inp: CoverageInputs) -> dict:
         "gap_check": gap,
         "scene_coverage": scene,
         "artifacts": artifacts,
-        "overall_pass": bool(gap["pass"] and scene["pass"] and artifacts["pass"]),
+        "notes_contract": notes_contract,
+        "overall_pass": bool(gap["pass"] and scene["pass"] and artifacts["pass"] and notes_contract["pass"]),
     }
 
 

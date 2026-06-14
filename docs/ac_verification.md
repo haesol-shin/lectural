@@ -1,6 +1,6 @@
-# AC-1..AC-13 Verification Matrix
+# AC-1..AC-18 Verification Matrix
 
-Offline command: `uv run --with pytest --with numpy pytest -q` → **112 passed**.
+Offline verification is split across focused suites; use `uv run --with pytest --with numpy pytest -q` for the full offline suite or the narrower commands named below.
 Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smoke.txt`.
 
 | AC | Requirement | How verified | Status |
@@ -11,13 +11,17 @@ Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smok
 | AC-4 | STT = faster-whisper medium int8 CPU, timestamped | `lectural/speech.py` (device="cpu", compute_type=int8); `should_warn_long_video` unit; real transcription → **smoke** | unit (config/logic) + smoke |
 | AC-5 | ffmpeg keyframe/scene extract + histogram/SSIM dedup | `tests/test_dedup.py`, `tests/test_ssim.py` (windowed SSIM); ffmpeg extraction → **smoke** | unit (dedup/SSIM) + smoke |
 | AC-6 | OCR (ko/en) on slides, incremental re-split | `tests/test_ocr.py` (classify/re-split, is_slide); PaddleOCR/Tesseract run → **smoke** | unit (logic) + smoke |
-| AC-7 | transcript.md (raw) + summary.md produced | `tests/test_summary_anchors.py::test_transcript_md_has_all_utterances`, `test_summary_md_required_anchors_present` | unit ✅ |
-| AC-8 | summary.md/outline.md pair contract: summary has ENRICH_MARKER, COVERAGE_ANCHOR, deterministic prose, TO-ENRICH; outline has TOC_ANCHOR, timestamps, slide links, transcript bullets | `tests/test_summary_anchors.py` (pair anchors, escaping, no-drop); hook validates summary/outline pair `tests/test_hook.py` | unit ✅ |
+| AC-7 | transcript.md (raw) + notes.md produced | `tests/test_notes.py::test_render_transcript_md_emits_anchor_per_cue`, `tests/test_notes.py::test_notes_sections_are_in_required_order_and_marker_is_line_one` | unit ✅ |
+| AC-8 | notes.md 7-section contract: NOTES marker on line 1, ordered section anchors, transcript.md cue anchors, and citation deeplinks from 핵심 개념·이론/상세 노트 bullets to `transcript.md#tHHMMSS[-n]` + `youtu.be?t=`; two-layer gate validates notes.md with CLI coverage and Claude Stop hook | `tests/test_notes.py` (anchors, citations, transcript grounding); `tests/test_redteam_notes.py` (adversarial citation/legacy-marker checks); `tests/test_coverage.py`; `tests/test_hook.py` | unit ✅ |
 | AC-9 | Transcript covers full duration; no >60s untranscribed speech gap | `tests/test_vad.py` (long-silence PASS, real-gap FAIL, quiet-speech); `coverage.gap_check` | unit ✅ |
 | AC-10 | SKILL.md + scripts + references; callable in Claude/Codex | `.claude/skills/lectural/SKILL.md` + `references/`; `.claude/settings.json` Stop hook; `uv run python -m lectural.cli --help` | artifact + CLI ✅ |
 | AC-11 | Core pipeline runs as standalone CLI/module | `lectural` console script + `python -m lectural.cli`; `tests/test_cli.py` parse/run; package imports offline | unit + CLI ✅ |
-| AC-12 | Outputs to ./output/<title>/ {transcript,summary,frames,coverage.json} | `lectural/cli.py` output_dir_for + `_default_processor` layout; `tests/test_cli.py::test_output_dir_for`; coverage.json schema round-trip `tests/test_coverage.py` | unit ✅ (layout) + smoke (files) |
-| AC-13 | Completeness hook: gap + scene + artifacts; exit 2 blocks done | `tests/test_hook.py` + `tests/test_redteam_cli_hook.py`; **real**: `artifacts/g003-hook-smoke.txt` (no-runstate→0, good→0, failed/pending→2, malformed→2) | unit ✅ + CLI ✅ |
+| AC-12 | Outputs to ./output/<title>/ {transcript.md, notes.md, frames, coverage.json} | `lectural/cli.py` output_dir_for + `_default_processor` layout; `tests/test_cli.py::test_output_dir_for`; notes/coverage.json schema round-trip `tests/test_cli.py`, `tests/test_coverage.py` | unit ✅ (layout) + smoke (files) |
+| AC-13 | Completeness hook: gap + scene + notes.md contract + artifacts; exit 2 blocks done | `tests/test_hook.py` + `tests/test_redteam_cli_hook.py`; **real**: `artifacts/g003-hook-smoke.txt` (no-runstate→0, good→0, failed/pending→2, malformed→2) | unit ✅ + CLI ✅ |
+| AC-15 | `coverage.json` folds `notes_contract` into `overall_pass` | `tests/test_coverage.py::test_bare_skeleton_notes_contract_is_marker_agnostic`, `::test_notes_contract_dangling_concept_anchor_fails_coverage`, `::test_notes_contract_youtube_seconds_mismatch_fails_coverage`; adversarial coverage folding in `tests/test_redteam_notes.py` and `tests/test_redteam_notes_contract.py` | unit ✅ |
+| AC-16 | Stop hook validates the seven required notes sections and per-slide detail blocks: every `###` slide heading needs a bullet, and every non-intro slide heading needs its own `frames/` image when frames exist | `tests/test_hook.py` section-order failures, `test_hook_passes_when_every_slide_heading_has_image_and_bullet`, `test_hook_blocks_when_non_intro_slide_heading_lacks_own_image`, `test_hook_allows_intro_heading_without_image_when_real_slides_have_images`, `test_hook_blocks_when_slide_heading_has_image_but_no_bullet`; red-team checks in `tests/test_redteam_notes_contract.py` | unit ✅ |
+| AC-17 | Full citation gate: 핵심 개념·이론/상세 노트 bullets cite `transcript.md#t<id>` that exists in `transcript.md` plus `youtu.be...?t=` within ±1s | `tests/test_notes.py`; `tests/test_redteam_notes.py` citation/deeplink tests; `tests/test_redteam_notes_contract.py::test_coverage_contract_rejects_dangling_anchor_and_missing_youtube`, `::test_youtube_seconds_tolerance_is_one_second` | unit ✅ |
+| AC-18 | Stop hook blocks while `미보강` remains; CLI coverage is marker-agnostic, so the bare skeleton can still exit 0 when Layer-1 coverage passes | `tests/test_hook.py::test_hook_blocks_bare_skeleton_because_unenriched_marker_remains`; `tests/test_coverage.py::test_bare_skeleton_notes_contract_is_marker_agnostic`; `tests/test_redteam_notes_contract.py::test_layer1_coverage_is_marker_agnostic_for_bare_skeleton` | unit ✅ |
 
 ## Smoke (requires ffmpeg + yt-dlp + models; not run in this environment)
 
@@ -38,7 +42,7 @@ smoke-only.
 
 ## Next Release (2026-06-13) — AC-A..AC-J
 
-Offline command: `uv run --with pytest --with numpy pytest -q` → **139 passed** (adds CLI exit-code + deps OS-label tests).
+Offline command: `uv run --with pytest --with numpy pytest -q` (adds CLI exit-code + deps OS-label tests).
 
 | AC | Requirement | How verified | Status |
 |----|-------------|--------------|--------|

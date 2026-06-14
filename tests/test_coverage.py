@@ -12,6 +12,45 @@ from lectural.coverage import (
     scene_coverage,
     write_coverage,
 )
+from lectural.synthesis import build_synthesis_input, render_notes_md, render_transcript_md
+
+
+def _rendered_notes_and_transcript() -> tuple[str, str]:
+    video = {
+        "title": "L",
+        "source": "https://youtu.be/abc12345678",
+        "video_id": "abc12345678",
+        "duration_sec": 300.0,
+    }
+    segments = [{"t": 2.0, "text": "핵심 설명"}]
+    coverage = {
+        "duration_sec": 300.0,
+        "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
+        "scene_coverage": {"speech_bins": [0], "uncovered_speech_bins": [], "pass": True,
+                           "slide_frames_with_text": 0, "slide_frames_total": 0},
+        "artifacts": {"transcript_nonempty": True, "notes_nonempty": True},
+        "ocr_engine": "none",
+    }
+    synthesis_input = build_synthesis_input(video, segments, [])
+    return render_notes_md(synthesis_input, coverage), render_transcript_md(video, segments)
+
+
+def _passing_inputs(tmp_path, *, notes_text: str | None = None, transcript_text: str | None = None) -> CoverageInputs:
+    return CoverageInputs(
+        video_title="L",
+        duration_sec=300.0,
+        speech_spans=[(0, 300)],
+        segment_times=[30 * i for i in range(10)],
+        frame_times=[float(i) for i in range(0, 300)],
+        transcript_path=str(tmp_path / "transcript.md"),
+        notes_path=str(tmp_path / "notes.md"),
+        ocr_engine="paddleocr",
+        slide_frames_total=1,
+        slide_frames_with_text=1,
+        transcript_text=transcript_text,
+        notes_text=notes_text,
+    )
+
 
 
 def test_gap_check_pass_and_fail():
@@ -76,18 +115,38 @@ def test_artifact_check_judges_nonempty_from_rendered_text(tmp_path):
 
 
 def test_build_coverage_passes_with_rendered_text_before_files_exist(tmp_path):
-    inp = CoverageInputs(
-        video_title="L", duration_sec=300.0, speech_spans=[(0, 300)],
-        segment_times=[30 * i for i in range(10)],
-        frame_times=[float(i) for i in range(0, 300)],
-        transcript_path=str(tmp_path / "transcript.md"),
-        notes_path=str(tmp_path / "notes.md"),  # not written
-        ocr_engine="paddleocr", slide_frames_total=1, slide_frames_with_text=1,
-        transcript_text="[00:00:00] hi", notes_text="# notes",
-    )
+    notes_text, transcript_text = _rendered_notes_and_transcript()
+    inp = _passing_inputs(tmp_path, notes_text=notes_text, transcript_text=transcript_text)
     cov = build_coverage(inp)
     assert cov["artifacts"]["notes_nonempty"] is True
+    assert cov["notes_contract"] == {"version": 1, "checked": True, "problems": [], "pass": True}
     assert cov["overall_pass"] is True
+
+
+def test_bare_skeleton_notes_contract_is_marker_agnostic(tmp_path):
+    notes_text, transcript_text = _rendered_notes_and_transcript()
+    assert "<!-- 미보강 -->" in notes_text
+    cov = build_coverage(_passing_inputs(tmp_path, notes_text=notes_text, transcript_text=transcript_text))
+    assert cov["notes_contract"]["pass"] is True
+    assert cov["overall_pass"] is True
+
+
+def test_notes_contract_dangling_concept_anchor_fails_coverage(tmp_path):
+    notes_text, transcript_text = _rendered_notes_and_transcript()
+    broken = notes_text.replace("transcript.md#t000002", "transcript.md#t999999", 1)
+    cov = build_coverage(_passing_inputs(tmp_path, notes_text=broken, transcript_text=transcript_text))
+    assert cov["notes_contract"]["pass"] is False
+    assert cov["overall_pass"] is False
+    assert any("전사본에 없는 앵커" in p for p in cov["notes_contract"]["problems"])
+
+
+def test_notes_contract_youtube_seconds_mismatch_fails_coverage(tmp_path):
+    notes_text, transcript_text = _rendered_notes_and_transcript()
+    broken = notes_text.replace("https://youtu.be/abc12345678?t=2", "https://youtu.be/abc12345678?t=10", 1)
+    cov = build_coverage(_passing_inputs(tmp_path, notes_text=broken, transcript_text=transcript_text))
+    assert cov["notes_contract"]["pass"] is False
+    assert cov["overall_pass"] is False
+    assert any("1초 넘게 다릅니다" in p for p in cov["notes_contract"]["problems"])
 
 
 def test_build_and_write_coverage(tmp_path):

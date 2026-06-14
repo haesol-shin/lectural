@@ -103,6 +103,45 @@ def _render_notes_and_transcript(
         slides = default_slides
     synthesis_input = build_synthesis_input(video, segments, slides)
     return render_notes_md(synthesis_input, coverage), render_transcript_md(video, segments), video, segments, slides
+def _replace_section_body(text: str, anchor: str, next_anchor: str, lines: list[str]) -> str:
+    body_start = text.index("\n", text.index(anchor)) + 1
+    body_end = text.index(next_anchor, body_start)
+    return text[:body_start] + "\n".join(lines).rstrip() + "\n\n" + text[body_end:]
+
+
+def _enrich(notes_md: str) -> str:
+    notes = "\n".join(
+        line for line in notes_md.splitlines() if line.strip() != NOTES_UNENRICHED_MARKER
+    ) + "\n"
+    notes = _replace_section_body(
+        notes,
+        NOTES_TAKEAWAY_ANCHOR,
+        NOTES_TOC_ANCHOR,
+        [
+            "강의는 자동 생성된 전사와 슬라이드 근거를 바탕으로 핵심 흐름을 정리한다.",
+            "학습자는 각 개념의 출처를 전사 링크와 영상 시간으로 되짚을 수 있다.",
+            "상세 노트는 슬라이드별 설명을 보강해 복습 가능한 기록으로 완성한다.",
+        ],
+    )
+    return _replace_section_body(
+        notes,
+        NOTES_FLOW_ANCHOR,
+        NOTES_CONCEPTS_ANCHOR,
+        [
+            "- 도입부에서 강의의 문제의식과 확인할 자료를 제시한다.",
+            "- 본문에서는 전사 근거를 따라 개념과 예시를 순서대로 연결한다.",
+        ],
+    )
+
+
+def _hook_fixture_texts() -> tuple[str, str]:
+    video = {"title": "WU-2 hook smoke", "duration_sec": 60.0, "video_id": VIDEO_ID, "source": "caption"}
+    segments = [{"t": 2.0, "text": "hook smoke utterance"}]
+    slides = [{"t": 0.0, "frame": "frames/slide-001.png", "ocr_text": "Hook slide", "is_slide": True}]
+    synthesis_input = build_synthesis_input(video, segments, slides)
+    return render_notes_md(synthesis_input, _coverage_payload(True)), render_transcript_md(video, segments)
+
+
 
 
 def _block(md: str, start: str, end: str | None = None) -> str:
@@ -221,16 +260,28 @@ def test_boundary_empty_zero_missing_video_id_past_duration_and_markdown_special
 
 
 def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components():
+    video = {"title": "ok", "duration_sec": 3.0, "video_id": VIDEO_ID, "source": "caption"}
+    segments = [
+        {"t": 0.5, "text": "첫 번째 슬라이드 개념"},
+        {"t": 1.5, "text": "두 번째 슬라이드 세부"},
+    ]
+    slides = [
+        {"t": 0.0, "frame": "frames/slide-001.png", "ocr_text": "첫 슬라이드", "is_slide": True},
+        {"t": 1.0, "frame": "frames/slide-002.png", "ocr_text": "둘째 슬라이드", "is_slide": True},
+    ]
+    synthesis_input = build_synthesis_input(video, segments, slides)
+    notes_text = render_notes_md(synthesis_input, _coverage_payload(True))
+    transcript_text = render_transcript_md(video, segments)
     all_pass = CoverageInputs(
         video_title="ok",
-        duration_sec=0.0,
+        duration_sec=3.0,
         speech_spans=[],
-        segment_times=[],
+        segment_times=[0.5, 1.5],
         frame_times=[],
         transcript_path="transcript.md",
         notes_path="notes.md",
-        transcript_text="transcript",
-        notes_text="notes",
+        transcript_text=transcript_text,
+        notes_text=notes_text,
     )
     coverage = build_coverage(all_pass)
     assert coverage["artifacts"] == {
@@ -240,13 +291,25 @@ def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components
         "notes_nonempty": True,
         "pass": True,
     }
+    assert coverage["notes_contract"]["checked"] is True
+    assert coverage["notes_contract"]["pass"] is True
     assert coverage["overall_pass"] is True
 
     artifact_fail = build_coverage(CoverageInputs(**{**all_pass.__dict__, "notes_text": ""}))
     assert artifact_fail["artifacts"]["notes_nonempty"] is False
     assert artifact_fail["overall_pass"] is False
 
-    gap_fail = build_coverage(CoverageInputs(**{**all_pass.__dict__, "duration_sec": 120.0, "speech_spans": [(0.0, 120.0)]}))
+    gap_fail = build_coverage(
+        CoverageInputs(
+            **{
+                **all_pass.__dict__,
+                "duration_sec": 120.0,
+                "speech_spans": [(0.0, 120.0)],
+                "segment_times": [],
+                "frame_times": [0.0],
+            }
+        )
+    )
     assert gap_fail["gap_check"]["pass"] is False
     assert gap_fail["overall_pass"] is False
 
@@ -258,22 +321,33 @@ def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components
 
     from_extraction = coverage_inputs_from_extraction(
         video_title="from extraction",
-        duration_sec=0.0,
+        duration_sec=3.0,
         speech_spans=[],
-        segment_times=[],
+        segment_times=[0.5, 1.5],
         raw_sample_times=[],
         slides=[],
         transcript_path="transcript.md",
         notes_path="notes.md",
-        transcript_text="transcript",
-        notes_text="notes",
+        transcript_text=transcript_text,
+        notes_text=notes_text,
     )
     assert from_extraction.notes_path == "notes.md"
-    assert from_extraction.notes_text == "notes"
+    assert from_extraction.notes_text == notes_text
 
     forbidden = {"summary_path", "outline_path", "summary_nonempty", "outline_nonempty"}
     assert forbidden.isdisjoint(_all_keys(coverage))
     assert forbidden.isdisjoint(_all_keys(artifact_fail))
+
+    dangling_notes = re.sub(
+        r"(transcript\.md#)t\d{6}(?:-\d+)?",
+        lambda match: f"{match.group(1)}t999999",
+        notes_text,
+        count=1,
+    )
+    assert dangling_notes != notes_text
+    dangling_fail = build_coverage(CoverageInputs(**{**all_pass.__dict__, "notes_text": dangling_notes}))
+    assert dangling_fail["notes_contract"]["pass"] is False
+    assert dangling_fail["overall_pass"] is False
 
 
 def test_fresh_synthesis_import_keeps_heavy_runtime_modules_lazy():
@@ -295,12 +369,12 @@ def _write_hook_case(root: Path, name: str, *, notes_text: str | None = None, fr
     out = root / name
     out.mkdir(parents=True)
     notes_path = out / "notes.md"
+    default_notes, transcript_text = _hook_fixture_texts()
     if notes_text is None:
-        video = {"title": name, "duration_sec": 60.0, "video_id": VIDEO_ID, "source": "caption"}
-        segments = [{"t": 2.0, "text": "hook smoke utterance"}]
-        slides = [{"t": 0.0, "frame": "frames/slide-001.png", "ocr_text": "Hook slide", "is_slide": True}]
-        notes_text = render_notes_md(build_synthesis_input(video, segments, slides), _coverage_payload(True))
+        notes_text = _enrich(default_notes)
     notes_path.write_text(notes_text, encoding="utf-8")
+    (out / "transcript.md").write_text(transcript_text, encoding="utf-8")
+
     coverage_path = out / "coverage.json"
     coverage_path.write_text(json.dumps(_coverage_payload(True), ensure_ascii=False), encoding="utf-8")
     if frames_png:
@@ -366,5 +440,8 @@ def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
         no_frame_link_text = re.sub(r"\n!\[[^\n]*\]\(frames/slide-001\.png\)", "", Path(valid_run["notes_md"]).read_text(encoding="utf-8"))
         no_frame_link_run = _write_hook_case(tmp_path, "frames-without-link", notes_text=no_frame_link_text, frames_png=True)
         record("frames-present-without-slide-link", _invoke_hook(tmp_path / "frames-no-link-runstate.json", [no_frame_link_run]), 2)
+        bare_skeleton_text, _ = _hook_fixture_texts()
+        bare_skeleton_run = _write_hook_case(tmp_path, "bare-skeleton", notes_text=bare_skeleton_text)
+        record("bare-unenriched-skeleton", _invoke_hook(tmp_path / "bare-skeleton-runstate.json", [bare_skeleton_run]), 2)
     finally:
         artifact.write_text("\n".join(transcript), encoding="utf-8")

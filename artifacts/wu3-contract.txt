@@ -1,0 +1,175 @@
+WU-3 contract probe
+Probe: Python pathlib/hashlib/re/ast checks over package/doc artifacts; temp-copy adversarial mutations only.
+Overall: passed
+
+Hashes:
+- skill_body_sha256: 957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a
+- claude_skill_body_sha256: 957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a
+- summary_prompt_sha256: 5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198
+- claude_summary_prompt_sha256: 5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198
+- pipeline_sha256: af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54
+- claude_pipeline_sha256: af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54
+
+Checks:
+- [passed] AC-11 role section
+- [passed] AC-11 reference material before task/output
+- [passed] AC-11 required XML-tagged sections — role=True, reference_material=True, task=True, output_contract=True, citation_rules=True, grounding_rules=True, chain_of_density=True, example=True
+- [passed] AC-11 seven notes.md sections ordered — ## 한눈에 요약 -> ## 목차 -> ## 강의 흐름 -> ## 핵심 개념·이론 -> ## 상세 노트 -> ## 복습 질문 -> ## 정리 커버리지
+- [passed] AC-11 few-shot skeleton marker to enriched — marker_value='<!-- 미보강 -->'; symbolic_name_in_example=False
+- [passed] AC-11 Chain-of-Density instruction
+- [passed] AC-11/AC-14 soft utterance-proportional heuristic
+- [passed] AC-11 grounding 불명확
+- [passed] AC-11 mandatory citation rule
+- [passed] AC-12 skill references summary_prompt and auto-enrichment
+- [passed] AC-12 skill body hash after frontmatter strip — skills=957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a; claude=957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a
+- [passed] AC-13 reads only synthesis_input.json text/no LLM API/no images — non_negated_external_hits=[]
+- [passed] AC-14 no hard numeric utterance quota gate — hard_quota_hits=[]
+- [passed] Parity summary_prompt byte-identical — skills=5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198; claude=5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198
+- [passed] Parity pipeline byte-identical — skills=af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54; claude=af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54
+- [passed] Zero-Hangul English artifacts — []
+- [passed] Symbolic NOTES_* anchors present in SKILL.md — {"NOTES_ENRICH_MARKER": true, "NOTES_UNENRICHED_MARKER": true, "NOTES_TAKEAWAY_ANCHOR": true, "NOTES_TOC_ANCHOR": true, "NOTES_FLOW_ANCHOR": true, "NOTES_CONCEPTS_ANCHOR": true, "NOTES_DETAIL_ANCHOR": true, "NOTES_QUESTIONS_ANCHOR": true, "NOTES_COVERAGE_ANCHOR": true}
+- [passed] Literal Korean NOTES_* values not embedded in SKILL/pipeline — []
+- [passed] No stale current-artifact refs in WU-3 files — []
+- [passed] Adversarial temp-copy Hangul/missing-symbol guards — {"hangul_temp_copy_flagged": true, "hangul_offset": 4485, "missing_symbol_temp_copy_flagged": true, "missing_symbols": ["NOTES_DETAIL_ANCHOR"], "product_files_modified": false}
+
+Adversarial temp-copy proof:
+- hangul_temp_copy_flagged: True
+- hangul_offset: 4485
+- missing_symbol_temp_copy_flagged: True
+- missing_symbols: ['NOTES_DETAIL_ANCHOR']
+- product_files_modified: False
+
+JSON:
+{
+  "overall": "passed",
+  "hashes": {
+    "skill_body_sha256": "957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a",
+    "claude_skill_body_sha256": "957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a",
+    "summary_prompt_sha256": "5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198",
+    "claude_summary_prompt_sha256": "5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198",
+    "pipeline_sha256": "af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54",
+    "claude_pipeline_sha256": "af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54"
+  },
+  "anchor_values_from_synthesis": {
+    "NOTES_ENRICH_MARKER": "<!-- lectural:notes -->",
+    "NOTES_UNENRICHED_MARKER": "<!-- 미보강 -->",
+    "NOTES_TAKEAWAY_ANCHOR": "## 한눈에 요약",
+    "NOTES_TOC_ANCHOR": "## 목차",
+    "NOTES_FLOW_ANCHOR": "## 강의 흐름",
+    "NOTES_CONCEPTS_ANCHOR": "## 핵심 개념·이론",
+    "NOTES_DETAIL_ANCHOR": "## 상세 노트",
+    "NOTES_QUESTIONS_ANCHOR": "## 복습 질문",
+    "NOTES_COVERAGE_ANCHOR": "## 정리 커버리지"
+  },
+  "checks": [
+    {
+      "name": "AC-11 role section",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-11 reference material before task/output",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-11 required XML-tagged sections",
+      "status": "passed",
+      "detail": "role=True, reference_material=True, task=True, output_contract=True, citation_rules=True, grounding_rules=True, chain_of_density=True, example=True"
+    },
+    {
+      "name": "AC-11 seven notes.md sections ordered",
+      "status": "passed",
+      "detail": "## 한눈에 요약 -> ## 목차 -> ## 강의 흐름 -> ## 핵심 개념·이론 -> ## 상세 노트 -> ## 복습 질문 -> ## 정리 커버리지"
+    },
+    {
+      "name": "AC-11 few-shot skeleton marker to enriched",
+      "status": "passed",
+      "detail": "marker_value='<!-- 미보강 -->'; symbolic_name_in_example=False"
+    },
+    {
+      "name": "AC-11 Chain-of-Density instruction",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-11/AC-14 soft utterance-proportional heuristic",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-11 grounding 불명확",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-11 mandatory citation rule",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-12 skill references summary_prompt and auto-enrichment",
+      "status": "passed",
+      "detail": ""
+    },
+    {
+      "name": "AC-12 skill body hash after frontmatter strip",
+      "status": "passed",
+      "detail": "skills=957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a; claude=957829adc3cb47fb43c09c10e2cc75cc5fd2a2753f13848485128c595bab6b6a"
+    },
+    {
+      "name": "AC-13 reads only synthesis_input.json text/no LLM API/no images",
+      "status": "passed",
+      "detail": "non_negated_external_hits=[]"
+    },
+    {
+      "name": "AC-14 no hard numeric utterance quota gate",
+      "status": "passed",
+      "detail": "hard_quota_hits=[]"
+    },
+    {
+      "name": "Parity summary_prompt byte-identical",
+      "status": "passed",
+      "detail": "skills=5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198; claude=5f57504a20d06b585b1dfcbe4da8c799082d901bc4e54876e09e946351026198"
+    },
+    {
+      "name": "Parity pipeline byte-identical",
+      "status": "passed",
+      "detail": "skills=af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54; claude=af1ff84c21147e6a5c6d5bc7c39167440626816e72c4a4ca7eb04d915079ba54"
+    },
+    {
+      "name": "Zero-Hangul English artifacts",
+      "status": "passed",
+      "detail": "[]"
+    },
+    {
+      "name": "Symbolic NOTES_* anchors present in SKILL.md",
+      "status": "passed",
+      "detail": "{\"NOTES_ENRICH_MARKER\": true, \"NOTES_UNENRICHED_MARKER\": true, \"NOTES_TAKEAWAY_ANCHOR\": true, \"NOTES_TOC_ANCHOR\": true, \"NOTES_FLOW_ANCHOR\": true, \"NOTES_CONCEPTS_ANCHOR\": true, \"NOTES_DETAIL_ANCHOR\": true, \"NOTES_QUESTIONS_ANCHOR\": true, \"NOTES_COVERAGE_ANCHOR\": true}"
+    },
+    {
+      "name": "Literal Korean NOTES_* values not embedded in SKILL/pipeline",
+      "status": "passed",
+      "detail": "[]"
+    },
+    {
+      "name": "No stale current-artifact refs in WU-3 files",
+      "status": "passed",
+      "detail": "[]"
+    },
+    {
+      "name": "Adversarial temp-copy Hangul/missing-symbol guards",
+      "status": "passed",
+      "detail": "{\"hangul_temp_copy_flagged\": true, \"hangul_offset\": 4485, \"missing_symbol_temp_copy_flagged\": true, \"missing_symbols\": [\"NOTES_DETAIL_ANCHOR\"], \"product_files_modified\": false}"
+    }
+  ],
+  "adversarial": {
+    "hangul_temp_copy_flagged": true,
+    "hangul_offset": 4485,
+    "missing_symbol_temp_copy_flagged": true,
+    "missing_symbols": [
+      "NOTES_DETAIL_ANCHOR"
+    ],
+    "product_files_modified": false
+  }
+}
