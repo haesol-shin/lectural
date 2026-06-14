@@ -22,7 +22,7 @@ run = [
     "Pillow>=10.0.0",
     "webrtcvad>=2.0.10",
     # webrtcvad imports pkg_resources at runtime on current wheels.
-    "setuptools>=68,<81",
+    "setuptools>=68,<83",
 ]
 test = ["pytest>=7.0", "numpy>=1.24"]
 # Keep transitive runtime providers inside the approved WU-1 matrix without
