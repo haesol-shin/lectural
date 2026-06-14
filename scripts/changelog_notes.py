@@ -23,14 +23,20 @@ from pathlib import Path
 _LINK_REF_RE = re.compile(r"^\[[^\]]+\]:\s")
 
 
+def _header_re(version: str) -> re.Pattern[str]:
+    # Exact heading identity: `## [<version>]` followed by whitespace/EOL so a
+    # request for 0.1.1 never matches 0.1.10.
+    return re.compile(r"^## \[" + re.escape(version) + r"\](?:\s|$)")
+
+
 def extract_notes(changelog_text: str, version: str) -> str:
     """Return the trimmed body for `## [<version>]`, or "" if absent."""
-    header_prefix = f"## [{version}]"
+    header_re = _header_re(version)
     collected: list[str] = []
     in_section = False
     for line in changelog_text.splitlines():
         if not in_section:
-            if line.startswith(header_prefix):
+            if header_re.match(line):
                 in_section = True
             continue
         if line.startswith("## ["):

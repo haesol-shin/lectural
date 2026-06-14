@@ -61,6 +61,15 @@ def test_leading_blank_lines_after_heading_are_trimmed():
     assert notes == "### Added\n- Body."
     assert not notes.startswith("\n")
 
+def test_version_prefix_collision_is_not_matched():
+    # 0.1.1 must NOT extract the 0.1.10 section when 0.1.1 itself is absent.
+    text = (
+        "## [0.1.10] - 2026-02-01\n\n### Added\n- Ten body.\n\n"
+        "## [0.1.0] - 2026-01-01\n\n### Added\n- Zero body.\n"
+    )
+    assert changelog_notes.extract_notes(text, "0.1.1") == ""
+    assert changelog_notes.extract_notes(text, "0.1.10") == "### Added\n- Ten body."
+
 
 def test_cli_writes_nothing_for_missing_version(tmp_path, capsys):
     changelog = tmp_path / "CHANGELOG.md"
