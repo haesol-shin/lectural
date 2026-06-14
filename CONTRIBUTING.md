@@ -93,10 +93,25 @@ Check runtime readiness separately:
 lectural doctor
 ```
 
+Validate the plugin manifests (offline; catches plugin.json / marketplace.json /
+hooks.json errors the unit suite does not):
+
+```bash
+claude plugin validate .
+```
+
+Before committing, scan the diff for whitespace errors and stray conflict
+markers:
+
+```bash
+git diff --check
+```
+
 ## Pull request checklist
 
 - [ ] Scope is focused and reversible.
 - [ ] User-facing behavior, docs, and changelog are updated together when needed.
+- [ ] `claude plugin validate .` passes.
 - [ ] `uv run --with pytest --with numpy pytest -q` passes or the PR explains why it was not run.
 - [ ] `lectural doctor` reports the runtime status or the PR explains unavailable runtime dependencies.
 - [ ] No `.claude/` mirror or duplicate plugin tree was introduced.
