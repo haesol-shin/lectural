@@ -22,7 +22,7 @@ LecturAL releases are lightweight GitHub Releases driven by the annotated versio
    git push origin vX.Y.Z
    ```
 
-The release workflow checks the tag version against `.claude-plugin/plugin.json` and creates the GitHub Release.
+The release workflow checks the tag version against `.claude-plugin/plugin.json`, extracts the matching `## [X.Y.Z]` section from `CHANGELOG.md` as the GitHub Release body, and publishes the release. If the tag version and `plugin.json` disagree, or the `CHANGELOG.md` section is missing, the workflow fails — so the curated changelog entry is the release notes (write it before tagging; do not hand-author a separate release description).
 
 Do not run a build, npm publish, or a separate QA readiness document for this project.
 
