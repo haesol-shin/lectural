@@ -29,8 +29,6 @@ def _write_distribution(root: Path) -> None:
     (root / "scripts").mkdir()
 
     (root / "AGENTS.md").write_text("agents\n", encoding="utf-8")
-    skill = "---\nname: lectural\n---\n# Skill\nBody\n"
-    (root / "skills/lectural/SKILL.md").write_text(skill, encoding="utf-8")
     prompt = "prompt\n"
     pipeline = "pipeline\n"
     (root / "skills/lectural/references/summary_prompt.md").write_text(prompt, encoding="utf-8")

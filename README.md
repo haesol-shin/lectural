@@ -46,7 +46,7 @@ flowchart TD
 /plugin install lectural@lectural
 ```
 
-This registers the skill, the completeness Stop hook, and the `/lectural:notes` and `/lectural:setup` commands.
+This registers the completeness Stop hook and the `/lectural:notes` and `/lectural:setup` commands.
 
 ### 2. Prepare the runtime
 
@@ -81,7 +81,7 @@ uvx --from ".[run]" lectural "https://youtu.be/<VIDEO_ID>" --out ./output
 
 Options: `--force-stt` (ignore captions, force STT), `--model medium|small` (STT model size), `--out ./output` (output location). Pass multiple URLs to process them sequentially.
 
-The skill runs **only on explicit request** (it does not auto-trigger on a stray YouTube link). At session end, the Stop hook re-verifies note completeness.
+The commands run **only on explicit request** (they do not auto-trigger on a stray YouTube link). At session end, the Stop hook re-verifies note completeness.
 
 ## Output
 

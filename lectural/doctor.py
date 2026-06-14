@@ -43,7 +43,6 @@ RUN_PYTHON_REQUIREMENTS: tuple[tuple[str, str | None, str | None], ...] = (
 
 AGENT_FILES = (
     "AGENTS.md",
-    "skills/lectural/SKILL.md",
     "skills/lectural/references/summary_prompt.md",
 )
 

@@ -1,5 +1,5 @@
 ---
-description: "[lectural] Set up and verify the LecturAL runtime: run lectural doctor --fix (Python run deps via uv lockfile, ffmpeg/yt-dlp), and report readiness. Run this once after installing the plugin."
+description: Set up and verify the LecturAL runtime before first use.
 ---
 
 Set up and verify the LecturAL runtime for this plugin install. Do NOT run any lecture pipeline here.

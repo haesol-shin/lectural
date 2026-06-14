@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import json
 import os
 from pathlib import Path
@@ -18,28 +17,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
-CANONICAL_SKILL = ROOT / "skills" / "lectural" / "SKILL.md"
 PIPELINE_REF = ROOT / "skills" / "lectural" / "references" / "pipeline.md"
-SYNTHESIS = ROOT / "lectural" / "synthesis.py"
 
 ENGLISH_ARTIFACTS = [
     PLUGIN_JSON,
     MARKETPLACE_JSON,
     HOOKS_JSON,
-    CANONICAL_SKILL,
     PIPELINE_REF,
 ]
-ANCHOR_SYMBOLS = {
-    "NOTES_ENRICH_MARKER",
-    "NOTES_UNENRICHED_MARKER",
-    "NOTES_TAKEAWAY_ANCHOR",
-    "NOTES_TOC_ANCHOR",
-    "NOTES_FLOW_ANCHOR",
-    "NOTES_CONCEPTS_ANCHOR",
-    "NOTES_DETAIL_ANCHOR",
-    "NOTES_QUESTIONS_ANCHOR",
-    "NOTES_COVERAGE_ANCHOR",
-}
 HANGUL_RE = re.compile(r"[\uac00-\ud7a3]")
 INTERPRETERS = {"python", "py"}
 
@@ -108,17 +93,6 @@ def _validate_stop_command(command: str, plugin_root: Path) -> list[str]:
     return tokens
 
 
-def _synthesis_anchor_values() -> dict[str, str]:
-    module = ast.parse(_read_text(SYNTHESIS), filename=str(SYNTHESIS))
-    values: dict[str, str] = {}
-    for node in module.body:
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and target.id in ANCHOR_SYMBOLS:
-                    assert isinstance(node.value.value, str), f"{target.id} must be a string constant"
-                    values[target.id] = node.value.value
-    assert values.keys() == ANCHOR_SYMBOLS
-    return values
 
 
 def test_plugin_and_marketplace_json_are_strict_and_portable():
@@ -184,17 +158,6 @@ def test_english_packaging_artifacts_have_zero_hangul_codepoints():
         assert match is None, f"Hangul codepoint in {path.relative_to(ROOT)} at offset {match.start()}"
 
 
-def test_skill_docs_reference_synthesis_anchors_symbolically_only():
-    anchor_values = _synthesis_anchor_values()
-    for skill_path in [CANONICAL_SKILL]:
-        text = _read_text(skill_path)
-        for symbol in ANCHOR_SYMBOLS:
-            assert symbol in text, f"{skill_path.relative_to(ROOT)} must reference {symbol} symbolically"
-        for symbol, literal in anchor_values.items():
-            if HANGUL_RE.search(literal):
-                assert literal not in text, (
-                    f"{skill_path.relative_to(ROOT)} embeds literal value for {symbol}; use the symbol name"
-                )
 
 
 def test_hooks_json_rejects_comment_syntax_as_adversarial_mutation():
