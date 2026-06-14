@@ -2,6 +2,7 @@
 
 Offline verification is split across focused suites; use `uv run --with pytest --with numpy pytest -q` for the full offline suite or the narrower commands named below.
 Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smoke.txt`.
+Korean `notes.md` section names are product identifiers and are intentionally kept verbatim.
 
 | AC | Requirement | How verified | Status |
 |----|-------------|--------------|--------|
