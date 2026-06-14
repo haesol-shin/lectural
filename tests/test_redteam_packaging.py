@@ -102,6 +102,14 @@ def test_plugin_and_marketplace_json_are_strict_and_portable():
     assert plugin.get("name") == "lectural"
     _validate_marketplace(marketplace)
 
+    # The standard hooks/hooks.json is auto-loaded; plugin.json must NOT also
+    # reference it or the plugin fails to load with a duplicate-hooks error.
+    hooks_ref = plugin.get("hooks")
+    if hooks_ref is not None:
+        assert (ROOT / hooks_ref).resolve() != HOOKS_JSON.resolve(), (
+            "plugin.json hooks must not reference the auto-loaded hooks/hooks.json"
+        )
+
 
 def test_hooks_json_is_strict_and_stop_command_is_portable():
     hooks = _load_json(HOOKS_JSON)

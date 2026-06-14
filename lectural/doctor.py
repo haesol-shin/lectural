@@ -316,16 +316,13 @@ def _plugin_item(root: Path) -> DoctorItem:
     if data.get("name") != "lectural":
         return incompatible(".claude-plugin/plugin.json", "plugin", "plugin name is not `lectural`", "Set plugin.json name to `lectural`.")
     hooks = data.get("hooks")
-    if not isinstance(hooks, str) or not hooks.strip():
-        return incompatible(".claude-plugin/plugin.json", "plugin", "plugin hooks path is missing", "Set hooks to `./hooks/hooks.json`.")
-    hooks_path = (root / hooks).resolve()
-    try:
-        hooks_path.relative_to(root.resolve())
-    except ValueError:
-        return incompatible(".claude-plugin/plugin.json", "plugin", f"hooks path escapes repository root: {hooks}", "Use a relative hooks path inside the plugin root.")
-    if not hooks_path.is_file():
-        return missing("hooks/hooks.json", "plugin", f"plugin hooks path does not exist: {hooks}", "Restore the hooks file referenced by plugin.json.")
-    return ok(".claude-plugin/plugin.json", "plugin", f"name lectural; hooks {hooks}")
+    if hooks is not None:
+        if not isinstance(hooks, str) or not hooks.strip():
+            return incompatible(".claude-plugin/plugin.json", "plugin", "plugin hooks must be a non-empty string when set", "Remove the `hooks` key from plugin.json, or point it only at additional hook files.")
+        standard = (root / "hooks" / "hooks.json").resolve()
+        if (root / hooks).resolve() == standard:
+            return incompatible(".claude-plugin/plugin.json", "plugin", "plugin.json hooks must not reference the auto-loaded hooks/hooks.json (the duplicate hook load breaks plugin loading)", "Remove the `hooks` key from plugin.json; the standard hooks/hooks.json is loaded automatically.")
+    return ok(".claude-plugin/plugin.json", "plugin", "name lectural")
 
 
 def _marketplace_item(root: Path) -> DoctorItem:

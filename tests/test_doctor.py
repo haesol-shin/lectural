@@ -36,7 +36,7 @@ def _write_distribution(root: Path) -> None:
     (root / "scripts/completeness_hook.py").write_text("print('ok')\n", encoding="utf-8")
     (root / "hooks/hooks.json").write_text(json.dumps(VALID_HOOKS), encoding="utf-8")
     (root / ".claude-plugin/plugin.json").write_text(
-        json.dumps({"name": "lectural", "hooks": "./hooks/hooks.json"}),
+        json.dumps({"name": "lectural"}),
         encoding="utf-8",
     )
     (root / ".claude-plugin/marketplace.json").write_text(
@@ -327,20 +327,22 @@ def test_hooks_manifest_rejects_missing_plugin_root_script_argument(tmp_path, mo
     assert "quoted ${CLAUDE_PLUGIN_ROOT}" in item["detail"]
 
 
-def test_plugin_manifest_hooks_path_pointing_to_missing_file_is_missing(tmp_path, monkeypatch):
+def test_plugin_manifest_hooks_referencing_standard_file_is_incompatible(tmp_path, monkeypatch):
+    # The standard hooks/hooks.json is auto-loaded; a manifest hooks key that
+    # points at it causes a duplicate hook load that breaks plugin loading.
     _write_distribution(tmp_path)
     _stub_runtime_ok(monkeypatch)
     (tmp_path / ".claude-plugin/plugin.json").write_text(
-        json.dumps({"name": "lectural", "hooks": "./hooks/missing.json"}),
+        json.dumps({"name": "lectural", "hooks": "./hooks/hooks.json"}),
         encoding="utf-8",
     )
 
     report = doctor.build_report(tmp_path)
 
-    item = _item(report, "hooks/hooks.json", "plugin")
+    item = _item(report, ".claude-plugin/plugin.json", "plugin")
     assert report["exit_code"] == 2
-    assert item["status"] == "missing"
-    assert "does not exist" in item["detail"]
+    assert item["status"] == "incompatible"
+    assert "must not reference the auto-loaded" in item["detail"]
 
 
 def test_fix_missing_yt_dlp_attempts_once_then_rechecks(tmp_path, monkeypatch):
