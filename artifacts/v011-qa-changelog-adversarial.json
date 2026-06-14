@@ -1,0 +1,34 @@
+{
+  "artifact": "artifacts/v011-qa-changelog-adversarial.json",
+  "commands": [
+    {
+      "cmd": "python scripts/changelog_notes.py 0.1.1",
+      "exit_code": 0,
+      "stdout": "### Removed\n- The standalone `lectural` plugin skill (`skills/lectural/SKILL.md`). Only the\n  `/lectural:notes` and `/lectural:setup` slash commands now surface in the\n  Claude Code menu; the enrichment references under `skills/lectural/references/`\n  are retained.\n\n### Changed\n- Shortened the `/lectural:notes` and `/lectural:setup` command descriptions and\n  dropped the `[lectural]` prefix.\n- De-skilled host-agent enrichment wording across `AGENTS.md`, the setup command,\n  and `docs/synthesis_contract.md` (command-driven, not skill-driven).\n\n### Added\n- Advisory, non-blocking `PR Check` workflow plus an `AGENTS.md`/`CONTRIBUTING.md`\n  rule to keep PR bodies aligned with `PULL_REQUEST_TEMPLATE.md`.\n- Release-notes automation: the Release workflow builds the GitHub Release body\n  from the matching `CHANGELOG.md` section via `scripts/changelog_notes.py`.\n- A `claude plugin validate .` CI gate (pinned `@anthropic-ai/claude-code`).\n- Tests guarding version-surface/CHANGELOG consistency and the release-notes\n  extractor.\n"
+    },
+    {
+      "cmd": "python scripts/changelog_notes.py 9.9.9",
+      "exit_code": 0,
+      "stdout": ""
+    },
+    {
+      "cmd": "python scripts/changelog_notes.py 0.1.1 C:\\Users\\haesol\\AppData\\Local\\Temp\\v011-changelog-_4x1_x87\\CHANGELOG-prefix.md",
+      "exit_code": 0,
+      "stdout": ""
+    },
+    {
+      "cmd": "python scripts/changelog_notes.py 0.1.1 C:\\Users\\haesol\\AppData\\Local\\Temp\\v011-changelog-_4x1_x87\\CHANGELOG-last.md",
+      "exit_code": 0,
+      "stdout": "### Added\n- Last body.\n"
+    }
+  ],
+  "checks": {
+    "real_non_empty": true,
+    "real_excludes_next_header": true,
+    "real_excludes_link_refs": true,
+    "missing_empty": true,
+    "prefix_collision_empty": true,
+    "last_section_excludes_links": true
+  },
+  "passed": true
+}

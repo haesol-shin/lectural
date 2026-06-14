@@ -1,0 +1,7 @@
+$ powershell.exe -NoProfile -Command "claude plugin validate ."
+exit_code: 0
+elapsed_seconds: 0.47
+
+Validating marketplace manifest: C:\Users\haesol\dev\LecturAL\.claude-plugin\marketplace.json
+
+✔ Validation passed
