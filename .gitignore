@@ -32,3 +32,6 @@ ffprobe.exe
 
 # Claude Code local workspace config (use `claude --plugin-dir .` for plugin dev)
 .claude/
+
+# Claude CLI local session/memory state
+.omc/
