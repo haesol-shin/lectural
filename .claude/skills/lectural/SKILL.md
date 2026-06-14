@@ -19,7 +19,7 @@ the CLI exit code and additionally by the Stop hook, not by author assertion.
 ## How it works (Option A-prime · zero external tokens)
 
 A deterministic Python core builds the raw artifacts WITHOUT any external LLM.
-After the CLI succeeds, you (the host agent) MUST enrich `summary.md` prose.
+After the CLI succeeds, you (the host agent) MUST enrich `notes.md` prose.
 External API token cost remains zero because the already-running host agent does
 the enrichment.
 
@@ -29,10 +29,9 @@ the enrichment.
 2. **Visual**: ffmpeg keyframe/scene extraction (2fps) -> histogram/SSIM dedup ->
    PaddleOCR (Korean and English, Tesseract fallback) for slide text. Incremental
    slides are kept separate.
-3. **Synthesize**: `transcript.md` (raw, timestamped) + `summary.md` (coverage
-   summary + deterministic prose + `TO-ENRICH` cue) + `outline.md` (TOC,
-   per-section timestamps, slide links, and transcript bullets) +
-   `synthesis_input.json` + `coverage.json`.
+3. **Synthesize**: `transcript.md` (raw, timestamped) + `notes.md` (seven-section
+   deterministic skeleton with prose enrichment cues) + `synthesis_input.json` +
+   `coverage.json`.
 4. **Completeness**: check speech gaps, scene coverage, and artifact presence via
    `coverage.json`.
 
@@ -54,20 +53,23 @@ lectural "<url1>" "<url2>" --out ./output         # process several, sequentiall
 lectural "<url>" --force-stt --model medium       # ignore captions, force STT
 ```
 
-Artifacts: under `./output/<video-title>/` -> `transcript.md`, `summary.md`,
-`outline.md`, `frames/`, `coverage.json`, `synthesis_input.json`.
+Artifacts: under `./output/<video-title>/` -> `transcript.md`, `notes.md`,
+`frames/`, `coverage.json`, `synthesis_input.json`.
 
-## Required: host-agent summary enrichment (still zero external tokens)
+## Required: host-agent notes enrichment (still zero external tokens)
 
-After `lectural` exits successfully, read only `synthesis_input.json` (text
-only, no images) and enrich the prose in `summary.md`. Preserve the
-summary-owned anchors defined in `lectural.synthesis`: `ENRICH_MARKER` and
-`COVERAGE_ANCHOR`, plus the `TO-ENRICH` host-agent cue. Do not add the TOC,
-per-section timestamps, slide links, or transcript bullets to `summary.md`;
-`outline.md` owns `TOC_ANCHOR`, the `SECTION_PREFIX` section headings,
-timestamps, slide/frame links, and transcript bullets, and its structural
-anchors MUST remain intact. A bare CLI run remains an honest deterministic
-baseline and does not call an external LLM.
+After `lectural` exits successfully, the host agent MUST enrich `notes.md` prose
+by following `references/summary_prompt.md` and reading only
+`synthesis_input.json` (text only, no external LLM, no images). It MUST enrich
+the four sections marked by `NOTES_UNENRICHED_MARKER`: `NOTES_TAKEAWAY_ANCHOR`,
+`NOTES_FLOW_ANCHOR`, `NOTES_CONCEPTS_ANCHOR`, and `NOTES_QUESTIONS_ANCHOR`.
+It MUST preserve `NOTES_ENRICH_MARKER` on line 1, the seven section anchors
+(`NOTES_TAKEAWAY_ANCHOR`, `NOTES_TOC_ANCHOR`, `NOTES_FLOW_ANCHOR`,
+`NOTES_CONCEPTS_ANCHOR`, `NOTES_DETAIL_ANCHOR`, `NOTES_QUESTIONS_ANCHOR`, and
+`NOTES_COVERAGE_ANCHOR`), citation deeplinks, transcript anchors, and slide image
+links. Remove the `NOTES_UNENRICHED_MARKER` markers once enrichment is complete.
+A bare CLI run remains an honest deterministic skeleton and does not call an
+external LLM.
 
 ## Completeness gate (must pass)
 
@@ -78,10 +80,10 @@ gap, scene coverage, non-empty artifacts). Any agent wrapping the CLI MUST treat
 a non-zero exit as a hard failure and must not work around it with arbitrary
 summarization. Layer 2 (additional, Claude Code only): the Stop hook
 (`scripts/completeness_hook.py`) is a session-final verifier that independently
-reads run state (rejecting failed/pending runs), `coverage.json`, validates
-`summary.md` anchors, and validates `outline.md` TOC/timestamps/transcript
-bullets/slide-frame links; it does not call the CLI. On Windows without
-`python`, use `py -3` for the hook script.
+validates `notes.md` (`NOTES_ENRICH_MARKER` on line 1 + the seven section anchors
++ slide image link when frames exist), runstate, and `coverage.json`; it does not
+call or wrap the CLI.
+On Windows without `python`, use `py -3` for the hook script.
 
 ## Scope
 

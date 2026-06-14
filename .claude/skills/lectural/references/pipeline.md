@@ -11,7 +11,7 @@ offline):
 | `lectural/vad.py` | silence mask + speech-gap metric (`silencedetect` parser) | AC-9 |
 | `lectural/visual.py` | ffmpeg keyframe/scene extraction + histogram/SSIM dedup | AC-5 |
 | `lectural/ocr.py` | PaddleOCR primary + Tesseract fallback, incremental re-split | AC-6 |
-| `lectural/synthesis.py` | synthesis_input.json + transcript.md + baseline summary.md | AC-7,8,12 |
+| `lectural/synthesis.py` | synthesis_input.json + transcript.md + notes.md skeleton | AC-7,8,12 |
 | `lectural/coverage.py` | coverage.json (gap/scene/artifact) + raw-samples contract | AC-13 |
 | `lectural/runstate.py` | active-run pointer for the Stop hook | AC-2 |
 | `lectural/cli.py` | arg parsing, sequential batch, orchestration | AC-1,2,10,11 |
@@ -19,11 +19,13 @@ offline):
 
 ## Key invariants
 
-- **No external LLM tokens.** Raw transcript and OCR are deterministic. Summary
-  baseline is deterministic too; host-agent enrichment is optional.
-- **Capture ALL speech.** `transcript.md` iterates every segment; `summary.md`
+- **No external LLM tokens.** Raw transcript and OCR are deterministic. The
+  `notes.md` skeleton is deterministic too; host-agent enrichment fills the
+  `NOTES_UNENRICHED_MARKER` prose sections.
+- **Capture ALL speech.** `transcript.md` iterates every segment; `notes.md`
   assigns every in-duration segment to exactly one section (no drops), with an
-  intro section for pre-first-slide speech.
+  intro section for pre-first-slide speech; host-agent enrichment fills the
+  `NOTES_UNENRICHED_MARKER` prose sections.
 - **Honest scene coverage.** `scene_coverage` is fed RAW sampled keyframe times
   (via `coverage_inputs_from_extraction`); a capped carry-forward passes static
   slides but FAILs a keyframe-less stall.
