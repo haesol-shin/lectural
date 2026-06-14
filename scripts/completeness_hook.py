@@ -16,6 +16,11 @@ from __future__ import annotations
 import json
 import os
 import sys
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 # Make `import lectural` work regardless of where the hook is launched from.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
