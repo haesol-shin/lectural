@@ -7,7 +7,7 @@
 
 ## Features
 
-- 🧾 **Full transcript + study notes** — a raw `transcript.md` (every utterance) and a seven-section `notes.md` (한눈 요약 / 목차 / 흐름 / 핵심 개념·이론 / 정리 노트 / 복습 질문 / 정리 커버리지). Note prose is Korean by design.
+- 🧾 **Full transcript + study notes** — a raw `transcript.md` (every utterance) and a seven-section `notes.md` (3줄 요약 / 목차 / 흐름 / 핵심 개념·이론 / 정리 노트 / 복습 질문 / 정리 커버리지). Note prose is Korean by design.
 - 🔗 **Video deeplinks** — concept bullets and review-question answers carry `youtu.be?t=` links that jump to the exact moment.
 - 🇰🇷 **Korean & English** — uses captions when available, falls back to speech-to-text (faster-whisper) otherwise.
 - 🚧 **Completeness gate** — checks speech gaps, scene coverage, and artifact presence, and blocks "done" until they pass.
