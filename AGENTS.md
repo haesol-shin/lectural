@@ -43,6 +43,7 @@ See `README.md`, the `commands/` slash commands, and `skills/lectural/references
 ## Operations
 
 - Branch, commit, and PR conventions: see `CONTRIBUTING.md`.
+- Pull requests (HARD RULE): follow `.github/PULL_REQUEST_TEMPLATE.md` exactly (Summary / Changes / Validation / Checklist / Related). When opening a PR non-interactively (`gh` or the API), the web template is NOT auto-injected, so build the PR body from `.github/PULL_REQUEST_TEMPLATE.md` as the starting scaffold and fill every section. Merge only with maintainer approval.
 - Release procedure: see `RELEASE.md`.
 - Agent audit policy: commit the durable audit trail `.gjc/ultragoal` and `.gjc/specs`; ignore `.gjc/state` and `.gjc/plans` (the shared ralplan run-id dir is not cleanly isolable, so it stays out of the committed audit until a per-run-id scheme is introduced).
 - Gate-run expectation: offline suite green with `uv run --with pytest --with numpy pytest -q` and `lectural doctor` reporting ready.
