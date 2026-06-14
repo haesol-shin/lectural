@@ -60,6 +60,23 @@ Use Conventional Commits with these common types:
   - **Squash and merge**: use when the branch has noisy WIP/fixup commits or is a single logical change. The squash commit message MUST be a Conventional Commit, because it becomes the `main` history entry.
   - Avoid merge commits; keep `main` linear.
 
+## Dependency policy
+
+Runtime dependencies are pinned with intentional upper-bound caps (`opencv-python`,
+`paddleocr`, `paddlepaddle`, `setuptools`). These caps are compatibility boundaries,
+not arbitrary: for example `opencv-python` is held at `<=4.6.0.66` because cv2 4.11+
+breaks the runtime. The offline CI does not exercise these heavy deps (they are
+lazily imported and smoke-skipped), so a green CI does not validate a major bump.
+
+Because of this, Dependabot is scoped to GitHub Actions plus security updates only;
+it does not open scheduled version-bump PRs for the Python caps. To raise a heavy
+dependency major, do it deliberately:
+
+1. Raise the cap in `pyproject.toml`.
+2. Regenerate the lockfile: `uv lock`.
+3. Run the real smoke/OCR end-to-end path and confirm it passes.
+4. Commit the cap change and the updated `uv.lock` together.
+
 ## Testing
 
 Run the full offline suite without extra environment variables:
