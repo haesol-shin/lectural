@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate tag version
+        shell: bash
+        run: |
+          plugin_version="$(jq -r '.version' .claude-plugin/plugin.json)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$tag_version" != "$plugin_version" ]; then
+            echo "Tag version $tag_version does not match plugin.json version $plugin_version" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
