@@ -4,6 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Disable scheduled version-update PRs: runtime dependency upper-bound caps
+    # (opencv, paddle, setuptools) are intentional compatibility boundaries and
+    # are not exercised by the offline CI. Dependabot security updates ignore this
+    # limit and still open PRs for known vulnerabilities. Bump heavy deps manually:
+    # raise cap -> uv lock -> run smoke/OCR e2e -> commit cap+lock together.
+    open-pull-requests-limit: 0
   - package-ecosystem: github-actions
     directory: /
     schedule:
