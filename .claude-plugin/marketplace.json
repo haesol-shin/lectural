@@ -1,5 +1,6 @@
 {
   "name": "lectural",
+  "description": "LecturAL marketplace: the LecturAL Claude Code plugin that turns a YouTube lecture into complete study notes.",
   "owner": {
     "name": "Haesol Shin",
     "url": "https://github.com/haesol-shin/lectural"

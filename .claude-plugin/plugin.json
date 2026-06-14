@@ -2,6 +2,10 @@
   "name": "lectural",
   "version": "0.1.0",
   "description": "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, and every scene. Ships a deterministic Python core, a skill, and a completeness Stop hook.",
+  "author": {
+    "name": "Haesol Shin",
+    "url": "https://github.com/haesol-shin"
+  },
   "keywords": [
     "youtube",
     "lecture",
