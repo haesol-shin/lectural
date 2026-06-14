@@ -34,7 +34,7 @@ flowchart TD
     K --> H
 ```
 
-`transcript.md`·OCR·기본 `summary.md`/`outline.md`는 **LLM 없이** 만들어집니다. 호스트 에이전트는 `synthesis_input.json`(텍스트만, 이미지 미포함)만 읽고 `summary.md` 산문을 *선택적으로* 보강하며, `outline.md` 구조 앵커는 그대로 둡니다.
+`transcript.md`·OCR·기본 `summary.md`/`outline.md`는 **LLM 없이** 만들어집니다. 순수 CLI 실행은 외부 LLM을 호출하지 않는 결정론적 저수준 산출물(`summary.md`, `outline.md`, `transcript.md`, `coverage.json`, `synthesis_input.json`)만 남깁니다. 스킬로 실행할 때는 CLI 성공 뒤 호스트 에이전트가 `synthesis_input.json`(텍스트만, 이미지 미포함)을 읽어 `summary.md` 산문을 반드시 보강하되, `ENRICH_MARKER`와 `COVERAGE_ANCHOR`는 보존하고 `outline.md` 구조 앵커·목차·타임스탬프·슬라이드 링크는 그대로 둡니다.
 
 ## 요구 사항
 
@@ -125,7 +125,7 @@ output/<video-title>/
 ├── transcript.md          # 원본 전사본(raw, 타임스탬프 포함) — 모든 발화
 ├── summary.md             # 학습 요약: 커버리지 요약 + 결정론적 산문 + TO-ENRICH 보강 cue
 ├── outline.md             # 개요: 목차 + 섹션별 타임스탬프/슬라이드 링크 + 전사 bullet
-├── synthesis_input.json   # (선택) 호스트 에이전트 요약 보강용 입력 — 텍스트만
+├── synthesis_input.json   # 호스트 에이전트 summary.md 보강 입력(텍스트만)
 ├── coverage.json          # 완전성 게이트 입력(대사 공백/장면 커버리지/산출물)
 └── frames/                # 중복 제거된 슬라이드 이미지
 ```
@@ -155,6 +155,7 @@ Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude 
 ## 플러그인 / 스킬로 쓰기
 
 `skills/lectural/SKILL.md`가 플러그인에 포함되어 있어, 에이전트 세션에서 강의 URL을 던지면 자동으로 이 파이프라인을 호출합니다. 상세 동작은 `skills/lectural/references/pipeline.md`와 `docs/synthesis_contract.md` 참고.
+스킬 기반 실행에서는 CLI가 성공한 뒤 호스트 에이전트가 `summary.md` 산문을 반드시 보강합니다. 보강은 `ENRICH_MARKER`·`COVERAGE_ANCHOR`·`TO-ENRICH` cue를 보존해야 하며, `outline.md`의 목차/섹션 앵커/타임스탬프/슬라이드 링크/전사 bullet은 구조 파일로 유지해야 합니다. 순수 CLI만 직접 호출하면 외부 LLM 없이 결정론적 기본 산출물만 생성됩니다.
 
 ## 개발·테스트
 

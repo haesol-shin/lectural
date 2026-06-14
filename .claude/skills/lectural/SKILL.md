@@ -6,21 +6,22 @@ description: >-
   turned into markdown. Triggers on requests like "summarize this lecture",
   "transcribe and summarize this lecture", or any YouTube link framed as study
   material. Produces a raw transcript plus a structured summary and refuses to
-  claim "done" until a completeness hook confirms nothing was missed.
+  claim "done" until completeness checks confirm nothing was missed.
 argument-hint: <youtube-url> [more-urls...] [--force-stt] [--model medium]
 ---
 
 # LecturAL — Complete YouTube Lecture Notes
 
 Core contract: capture every utterance, every on-screen text, and every scene
-without arbitrary summarization or skipping. Completeness is enforced by a Stop
-hook (below), not by author assertion.
+without arbitrary summarization or skipping. Completeness is enforced first by
+the CLI exit code and additionally by the Stop hook, not by author assertion.
 
 ## How it works (Option A-prime · zero external tokens)
 
-A deterministic Python core builds the raw artifacts WITHOUT any external LLM;
-you (the host agent) only optionally *enrich* the summary. External API token
-cost is zero.
+A deterministic Python core builds the raw artifacts WITHOUT any external LLM.
+After the CLI succeeds, you (the host agent) MUST enrich `summary.md` prose.
+External API token cost remains zero because the already-running host agent does
+the enrichment.
 
 1. **Acquire**: captions first (yt-dlp / youtube-transcript-api). If captions are
    missing or `--force-stt` is set, download audio only and transcribe with
@@ -56,16 +57,17 @@ lectural "<url>" --force-stt --model medium       # ignore captions, force STT
 Artifacts: under `./output/<video-title>/` -> `transcript.md`, `summary.md`,
 `outline.md`, `frames/`, `coverage.json`, `synthesis_input.json`.
 
-## Optional: summary enrichment (still zero tokens)
+## Required: host-agent summary enrichment (still zero external tokens)
 
-`summary.md` is already a deterministic prose baseline. If richer prose is
-wanted, read only `synthesis_input.json` (text only, no images) and enrich the
-summary prose. You MUST preserve the summary-owned anchors defined in
-`lectural.synthesis`: `ENRICH_MARKER` and `COVERAGE_ANCHOR`, plus the `TO-ENRICH`
-host-agent cue. Do not add the TOC, per-section timestamps, slide links, or
-transcript bullets to `summary.md`; `outline.md` owns `TOC_ANCHOR`, the
-`SECTION_PREFIX` section headings, timestamps, slide/frame links, and transcript
-bullets, and its structural anchors MUST remain intact.
+After `lectural` exits successfully, read only `synthesis_input.json` (text
+only, no images) and enrich the prose in `summary.md`. Preserve the
+summary-owned anchors defined in `lectural.synthesis`: `ENRICH_MARKER` and
+`COVERAGE_ANCHOR`, plus the `TO-ENRICH` host-agent cue. Do not add the TOC,
+per-section timestamps, slide links, or transcript bullets to `summary.md`;
+`outline.md` owns `TOC_ANCHOR`, the `SECTION_PREFIX` section headings,
+timestamps, slide/frame links, and transcript bullets, and its structural
+anchors MUST remain intact. A bare CLI run remains an honest deterministic
+baseline and does not call an external LLM.
 
 ## Completeness gate (must pass)
 
