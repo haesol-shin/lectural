@@ -6,7 +6,7 @@ incompatible change to the shapes below; readers MUST check it.
 ## `synthesis_input.json`
 
 The deterministic core writes this compact, **text-only** handoff. It is the
-primary input a skill-driven host-agent enrichment step reads to enrich
+primary input a command-driven host-agent enrichment step reads to enrich
 `notes.md`; raw frame images remain separate under `frames/` and may be opened
 on disk when OCR text is garbled. Bare CLI runs stop at deterministic low-level
 artifacts and do not call an external LLM.
@@ -33,7 +33,7 @@ The deterministic core writes two markdown outputs with separate ownership:
 | `transcript.md` | verbatim, timestamped transcript with per-cue `<a id="tHHMMSS[-n]">` anchors; no summarization or enrichment |
 | `notes.md` | deterministic 7-section study-note skeleton; owns `NOTES_ENRICH_MARKER`, the seven section anchors, `<!-- 미보강 -->` placeholders, citation deeplinks, and the coverage footer |
 
-For skill-driven runs, after the CLI succeeds, the host agent MUST enrich only
+For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich only
 the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve
 `NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript
 anchors, and the `정리 커버리지` footer. Bare CLI runs do not perform this
