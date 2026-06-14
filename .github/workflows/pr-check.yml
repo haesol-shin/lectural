@@ -1,0 +1,35 @@
+name: PR Check
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  template-structure:
+    name: PR template structure (advisory)
+    runs-on: ubuntu-latest
+    steps:
+      # Advisory only: this job never fails the PR. The repository deliberately
+      # mirrors oh-my-codex and enforces PR structure through the template plus
+      # AGENTS.md/CONTRIBUTING.md guidance, not a blocking gate.
+      - name: Check PR body sections
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          missing=()
+          for h in "## Summary" "## Changes" "## Validation" "## Checklist"; do
+            grep -qF "$h" <<<"$PR_BODY" || missing+=("$h")
+          done
+          if [ ${#missing[@]} -eq 0 ]; then
+            echo "PR body follows PULL_REQUEST_TEMPLATE.md." >> "$GITHUB_STEP_SUMMARY"
+          else
+            msg="PR body is missing: ${missing[*]}. Start from .github/PULL_REQUEST_TEMPLATE.md and fill every section."
+            echo "::warning title=PR template::$msg"
+            {
+              echo '## PR template guidance'
+              echo
+              echo "$msg"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

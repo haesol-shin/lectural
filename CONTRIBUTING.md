@@ -54,7 +54,9 @@ Use Conventional Commits with these common types:
 ## Pull requests
 
 - Title: short imperative summary (about 50-72 characters), no Conventional Commit prefix. Example: `Set up repo operations & distribution model`.
-- Body: include a `## Summary` section and a `## Verification` section; link issues with `Fixes #N` when applicable.
+- Body: follow `.github/PULL_REQUEST_TEMPLATE.md` exactly — `## Summary`, `## Changes`, `## Validation`, `## Checklist`, `## Related`. Link issues under **Related** with `Closes #N`.
+- The web UI pre-fills the template automatically. When opening a PR non-interactively (`gh pr create --body-file`, or the API), the template is NOT injected — scaffold the body from `.github/PULL_REQUEST_TEMPLATE.md` and fill every section. The non-blocking `PR Check` workflow warns when a required section is missing.
+- Merge only with maintainer approval.
 - Merge strategy:
   - **Rebase and merge** (default): use when the branch holds clean, individually meaningful Conventional Commits worth preserving in `main` history. Keeps history linear and compare-range release notes accurate.
   - **Squash and merge**: use when the branch has noisy WIP/fixup commits or is a single logical change. The squash commit message MUST be a Conventional Commit, because it becomes the `main` history entry.
