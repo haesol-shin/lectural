@@ -1,5 +1,7 @@
 """Unit tests for frame dedup selection (AC-5). Pure, offline."""
 
+import pytest
+
 from lectural import visual
 from lectural.visual import (
     PHASH_HAMMING_THRESHOLD,
@@ -109,6 +111,24 @@ def test_dedupe_frames_routes_through_phash_with_metadata(monkeypatch):
     assert frames[1].meta["phash"] == f"{slide_b:016x}"
     assert frames[1].meta["phash_hamming_from_previous"] == 17
     assert frames[1].meta["phash_hamming_threshold"] == PHASH_HAMMING_THRESHOLD
+
+
+def test_image_phash_reads_non_ascii_path(tmp_path):
+    pytest.importorskip("cv2")
+    pytest.importorskip("numpy")
+    Image = pytest.importorskip("PIL.Image")
+
+    frames_dir = tmp_path / "96강-강박장애-프레임"
+    frames_dir.mkdir()
+    image_path = frames_dir / "frame_00000.png"
+    image = Image.new("L", (48, 48))
+    pixels = image.load()
+    for y in range(image.height):
+        for x in range(image.width):
+            pixels[x, y] = (x * 5 + y * 3) % 256
+    image.save(image_path)
+
+    assert isinstance(visual._image_phash(str(image_path)), int)
 
 
 def test_cleanup_raw_frames_default_removes_non_final_images(tmp_path):

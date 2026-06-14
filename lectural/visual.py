@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import os
 import re
 import shutil
+from pathlib import Path
 
 from .config import DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
 
@@ -265,14 +266,25 @@ def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_
             )
     return frames
 
+def _cv2_imread_unicode(image_path: str, flags: int, cv2, np):
+    """Read an image through OpenCV without cv2.imread path encoding limits."""
+    try:
+        data = Path(image_path).read_bytes()
+    except OSError:
+        return None
+    if not data:
+        return None
+    buf = np.frombuffer(data, dtype=np.uint8)
+    return cv2.imdecode(buf, flags)
+
 
 def _pair_metrics(path_a: str, path_b: str) -> tuple[float, float]:
     """(hist_corr, ssim) between two image files. Lazy OpenCV/numpy."""
     import cv2  # lazy
     import numpy as np  # lazy
 
-    a = cv2.imread(path_a)
-    b = cv2.imread(path_b)
+    a = _cv2_imread_unicode(path_a, cv2.IMREAD_COLOR, cv2, np)
+    b = _cv2_imread_unicode(path_b, cv2.IMREAD_COLOR, cv2, np)
     if a is None or b is None:
         return (0.0, 0.0)
     if a.shape != b.shape:
@@ -367,7 +379,7 @@ def _image_phash(image_path: str) -> int:
             gray = gray.crop((0, 0, gray.width, crop_h)).resize((32, 32))
             return _phash_from_32x32(np.asarray(gray, dtype=np.float64), np)
 
-    gray = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    gray = _cv2_imread_unicode(image_path, cv2.IMREAD_GRAYSCALE, cv2, np)
     if gray is None:
         raise ValueError(f"Unable to read image for pHash: {image_path}")
     crop_h = max(1, int(round(gray.shape[0] * 0.60)))
