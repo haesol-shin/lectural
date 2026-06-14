@@ -44,5 +44,5 @@ See `README.md` and `skills/lectural/SKILL.md`.
 
 - Branch, commit, and PR conventions: see `CONTRIBUTING.md`.
 - Release procedure: see `RELEASE.md`.
-- Agent audit policy: commit durable `.gjc/ultragoal`, `.gjc/specs`, and scoped `.gjc/plans`; ignore `.gjc/state`.
+- Agent audit policy: commit the durable audit trail `.gjc/ultragoal` and `.gjc/specs`; ignore `.gjc/state` and `.gjc/plans` (the shared ralplan run-id dir is not cleanly isolable, so it stays out of the committed audit until a per-run-id scheme is introduced).
 - Gate-run expectation: offline suite green with `uv run --with pytest --with numpy pytest -q` and `lectural doctor` reporting ready.

@@ -15,9 +15,12 @@ TEXT = README.read_text(encoding="utf-8")
 FORBIDDEN = ["확신", "시험 기간", "시험기간", "유튜브에만", "Ollama", "local LLM"]
 
 
-def test_readme_exists_and_is_korean_prose() -> None:
+def test_readme_keeps_protected_product_section_names() -> None:
+    # README is English prose, but the product notes section names are Korean
+    # identifiers and must be quoted exactly (esp. the renamed `3줄 요약`).
     assert README.is_file()
-    assert re.search(r"[\uac00-\ud7a3]", TEXT), "README must contain Korean prose"
+    for name in ("3줄 요약", "목차", "흐름", "핵심 개념·이론", "정리 노트", "복습 질문", "정리 커버리지"):
+        assert name in TEXT, f"README must quote the protected section name: {name}"
 
 
 def test_no_forbidden_framing() -> None:

@@ -28,4 +28,4 @@ Do not run a build, npm publish, or a separate QA readiness document for this pr
 
 ## Agent audit policy
 
-Commit durable audit artifacts that explain shipped work: `.gjc/ultragoal`, `.gjc/specs`, and scoped `.gjc/plans`. Do not commit `.gjc/state`.
+Commit the durable audit trail that explains shipped work: `.gjc/ultragoal` and `.gjc/specs`. Do not commit `.gjc/state` or `.gjc/plans` (the shared ralplan run-id directory is not cleanly isolable, so it stays ignored until a per-run-id scheme is introduced).
