@@ -25,8 +25,8 @@ lectural "<url>" --out ./output
 uvx --from ".[run]" lectural "<url>"
 ```
 
-## Skill-driven host-agent enrichment
-After a skill-driven `lectural` run exits successfully, enrich the prose of
+## Command-driven host-agent enrichment
+After a `/lectural:notes` run exits successfully, enrich the prose of
 `notes.md` in the `미보강` sections by following
 `skills/lectural/references/summary_prompt.md` and reading only
 `synthesis_input.json`. Preserve `NOTES_ENRICH_MARKER`, the seven section
