@@ -12,6 +12,7 @@ runs offline without ffmpeg/yt-dlp/models.
 from __future__ import annotations
 
 import argparse
+import inspect
 import os
 import re
 import sys
@@ -43,6 +44,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--force-stt", action="store_true", help="Skip captions; always transcribe with STT")
     p.add_argument("--model", default=DEFAULT_STT_MODEL, help="faster-whisper model size (default: medium)")
     p.add_argument("--out", default="./output", help="Output root directory (default: ./output)")
+    p.add_argument(
+        "--keep-frames",
+        action="store_true",
+        help="Archive raw sampled frames under frames/raw/ instead of deleting extras",
+    )
     return p.parse_args(argv)
 
 
@@ -53,6 +59,7 @@ def run(
     model: str = DEFAULT_STT_MODEL,
     processor=None,
     runstate_file: str | None = None,
+    keep_frames: bool = False,
 ) -> list[dict]:
     """Sequentially process each URL; pre-register and record EVERY run.
 
@@ -65,12 +72,26 @@ def run(
     A processor failure is recorded and the batch CONTINUES to the next URL.
     """
     processor = processor or _default_processor
+    def _call_processor(url: str, out_dir: str) -> dict:
+        try:
+            signature = inspect.signature(processor)
+        except (TypeError, ValueError):
+            return processor(url, out_dir, force_stt, model)
+
+        accepts_keep = (
+            "keep_frames" in signature.parameters
+            or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in signature.parameters.values())
+        )
+        if accepts_keep:
+            return processor(url, out_dir, force_stt, model, keep_frames=keep_frames)
+        return processor(url, out_dir, force_stt, model)
+
     runstate.start_session(urls, runstate_file)
     results: list[dict] = []
     for i, url in enumerate(urls):
         out_dir = os.path.join(out_root, f"video_{i + 1:02d}")  # provisional
         try:
-            result = processor(url, out_dir, force_stt, model)
+            result = _call_processor(url, out_dir)
             runstate.update_run(
                 i,
                 status="complete",
@@ -87,7 +108,14 @@ def run(
     return results
 
 
-def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str) -> dict:
+def _default_processor(
+    url: str,
+    out_dir_hint: str,
+    force_stt: bool,
+    model: str,
+    *,
+    keep_frames: bool = False,
+) -> dict:
     """Real pipeline for one video (lazy heavy deps; smoke-tested, not unit)."""
     from .acquisition import acquire_speech, extract_video_id, fetch_video_metadata
     from .coverage import build_coverage, coverage_inputs_from_extraction, write_coverage
@@ -102,7 +130,7 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
         write_text,
     )
     from .vad import detect_speech_spans
-    from .visual import dedupe_frames, extract_candidate_frames
+    from .visual import cleanup_raw_frames, dedupe_frames, extract_candidate_frames
 
     assert_acquisition_ready()
     out_root = os.path.dirname(out_dir_hint) or "."
@@ -154,11 +182,13 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     # 5. Coverage (raw sample times enforce the carry-cap contract). Render
     # summary/outline before the final coverage write so artifact checks judge
     # rendered content, not filesystem write ordering.
+    raw_sample_times = [f.timestamp for f in raw_frames]
+
     def _cov_inputs(summary_md_text: str | None, outline_md_text: str | None) -> "object":
         return coverage_inputs_from_extraction(
             video_title=title, duration_sec=duration, speech_spans=speech_spans,
             segment_times=[s["t"] for s in segments],
-            raw_sample_times=[f.timestamp for f in raw_frames],
+            raw_sample_times=raw_sample_times,
             slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
             outline_path=outline_path,
             ocr_engine=ocr_engine,
@@ -174,6 +204,7 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     write_text(summary_md, summary_path)
     write_text(outline_md, outline_path)
     coverage_path = write_coverage(coverage, os.path.join(out_dir, "coverage.json"))
+    cleanup_raw_frames(raw_frames, slide_frames, keep_frames=keep_frames)
 
     return {
         "output_dir": out_dir,
@@ -202,7 +233,13 @@ def _download_video(url: str, out_dir: str) -> str:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     try:
-        results = run(args.urls, out_root=args.out, force_stt=args.force_stt, model=args.model)
+        results = run(
+            args.urls,
+            out_root=args.out,
+            force_stt=args.force_stt,
+            model=args.model,
+            keep_frames=args.keep_frames,
+        )
     except Exception as exc:  # noqa: BLE001 - surface a clean CLI error
         print(f"lectural: 실패 — {exc}", file=sys.stderr)
         return 1

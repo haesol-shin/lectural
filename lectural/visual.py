@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import os
 import re
+import shutil
 
 from .config import DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
 
@@ -143,6 +144,75 @@ def parse_frame_timestamp_from_filename(
     if fps > 0:
         return (value / fps, "filename_pts_over_fps")
     return (value, "filename_pts_no_fps")
+
+
+def cleanup_raw_frames(
+    raw_frames: list[Frame],
+    final_slide_frames: list[Frame],
+    *,
+    keep_frames: bool = False,
+) -> dict:
+    """Delete or archive raw sampled frames while keeping final slides linked.
+
+    Default mode removes non-final raw images from ``frames/``. Keep mode moves
+    non-final raw images into ``frames/raw/`` and copies final slide images there
+    too, so ``frames/`` still contains the images referenced by outline links.
+    """
+    raw_paths = [os.path.abspath(frame.image_path) for frame in raw_frames]
+    final_paths = {os.path.abspath(frame.image_path) for frame in final_slide_frames}
+    archived: list[str] = []
+    removed: list[str] = []
+    kept_final: list[str] = []
+
+    if not raw_paths:
+        return {
+            "archived": archived,
+            "removed": removed,
+            "kept_final": kept_final,
+            "raw_dir": None,
+        }
+
+    frames_dir = os.path.dirname(raw_paths[0])
+    raw_dir = os.path.join(frames_dir, "raw")
+
+    for source in raw_paths:
+        if source in final_paths:
+            kept_final.append(source)
+            continue
+        if not os.path.isfile(source):
+            continue
+        if keep_frames:
+            os.makedirs(raw_dir, exist_ok=True)
+            dest = os.path.join(raw_dir, os.path.basename(source))
+            if os.path.abspath(dest) != source:
+                if os.path.exists(dest):
+                    os.remove(dest)
+                shutil.move(source, dest)
+                archived.append(dest)
+        else:
+            os.remove(source)
+            removed.append(source)
+
+    if not keep_frames and os.path.isdir(raw_dir):
+        shutil.rmtree(raw_dir)
+
+    if keep_frames:
+        os.makedirs(raw_dir, exist_ok=True)
+        for source in raw_paths:
+            if source not in final_paths or not os.path.isfile(source):
+                continue
+            dest = os.path.join(raw_dir, os.path.basename(source))
+            if os.path.abspath(dest) == source:
+                continue
+            shutil.copy2(source, dest)
+            archived.append(dest)
+
+    return {
+        "archived": archived,
+        "removed": removed,
+        "kept_final": kept_final,
+        "raw_dir": raw_dir if keep_frames else None,
+    }
 
 
 def select_keyframe_indices(

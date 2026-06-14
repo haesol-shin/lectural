@@ -2,8 +2,9 @@
 
 import json
 import os
+from pathlib import Path
 
-from lectural import acquisition, cli, deps, ocr, runstate, visual
+from lectural import acquisition, cli, coverage, deps, ocr, runstate, visual
 
 
 def test_slugify():
@@ -30,8 +31,10 @@ def test_frame_link_is_posix_separated():
 def test_parse_args_single_and_batch():
     a = cli.parse_args(["https://youtu.be/abc"])
     assert a.urls == ["https://youtu.be/abc"] and a.force_stt is False and a.model == "medium"
-    b = cli.parse_args(["u1", "u2", "--force-stt", "--model", "small", "--out", "./o"])
+    assert a.keep_frames is False
+    b = cli.parse_args(["u1", "u2", "--force-stt", "--model", "small", "--out", "./o", "--keep-frames"])
     assert b.urls == ["u1", "u2"] and b.force_stt is True and b.model == "small" and b.out == "./o"
+    assert b.keep_frames is True
 
 
 def _fake_processor(url, out_dir, force_stt, model):
@@ -100,7 +103,13 @@ def _install_default_processor_fakes(monkeypatch, tmp_path, metadata):
 
     def fake_extract_candidate_frames(video_path, frames_dir):
         calls["frames_dir"] = frames_dir
-        return [visual.Frame(timestamp=5.0, image_path=os.path.join(frames_dir, "frame_00001.png"))]
+        Path(frames_dir).mkdir(parents=True, exist_ok=True)
+        frames = []
+        for index, timestamp in ((1, 5.0), (2, 15.0), (3, 25.0)):
+            path = Path(frames_dir) / f"frame_{index:05d}.png"
+            path.write_text(f"raw {index}", encoding="utf-8")
+            frames.append(visual.Frame(timestamp=timestamp, image_path=str(path)))
+        return frames
 
     def fake_ocr_frames(frames):
         for frame in frames:
@@ -111,7 +120,7 @@ def _install_default_processor_fakes(monkeypatch, tmp_path, metadata):
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire_speech)
     monkeypatch.setattr(cli, "_download_video", fake_download_video)
     monkeypatch.setattr(visual, "extract_candidate_frames", fake_extract_candidate_frames)
-    monkeypatch.setattr(visual, "dedupe_frames", lambda frames: frames)
+    monkeypatch.setattr(visual, "dedupe_frames", lambda frames: [frames[0], frames[-1]])
     monkeypatch.setattr(ocr, "ocr_frames", fake_ocr_frames)
     return calls
 
@@ -154,6 +163,66 @@ def test_default_processor_uses_title_slug_before_acquiring_speech(tmp_path, mon
     assert "## 목차" in outline
     assert "frames/frame_00001.png" in outline
     assert "- [00:00:30] 두 번째 문장입니다" in outline
+
+
+def test_default_processor_cleanup_keeps_coverage_raw_times(tmp_path, monkeypatch):
+    calls = _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        {"title": "프레임 정리", "duration": 120.0, "video_id": "frames"},
+    )
+    captured_raw_times = []
+    coverage_input_frame_exists = []
+    original_coverage_inputs = coverage.coverage_inputs_from_extraction
+
+    def capture_coverage_inputs(**kwargs):
+        captured_raw_times.append(list(kwargs["raw_sample_times"]))
+        frame_2 = Path(calls["frames_dir"]) / "frame_00002.png"
+        coverage_input_frame_exists.append(frame_2.exists())
+        return original_coverage_inputs(**kwargs)
+
+    monkeypatch.setattr(coverage, "coverage_inputs_from_extraction", capture_coverage_inputs)
+
+    result = cli._default_processor(
+        "https://youtu.be/frames",
+        str(tmp_path / "video_01"),
+        force_stt=False,
+        model="tiny",
+    )
+
+    frames_dir = Path(result["output_dir"]) / "frames"
+    assert sorted(p.name for p in frames_dir.glob("*.png")) == ["frame_00001.png", "frame_00003.png"]
+    assert not (frames_dir / "raw").exists()
+    assert captured_raw_times and all(times == [5.0, 15.0, 25.0] for times in captured_raw_times)
+    assert coverage_input_frame_exists and all(coverage_input_frame_exists)
+
+
+def test_default_processor_keep_frames_archives_raw_without_relinking_slides(tmp_path, monkeypatch):
+    _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        {"title": "원본 보존", "duration": 120.0, "video_id": "keep"},
+    )
+
+    result = cli._default_processor(
+        "https://youtu.be/keep",
+        str(tmp_path / "video_01"),
+        force_stt=False,
+        model="tiny",
+        keep_frames=True,
+    )
+
+    out_dir = Path(result["output_dir"])
+    frames_dir = out_dir / "frames"
+    assert sorted(p.name for p in frames_dir.glob("*.png")) == ["frame_00001.png", "frame_00003.png"]
+    assert sorted(p.name for p in (frames_dir / "raw").glob("*.png")) == [
+        "frame_00001.png",
+        "frame_00002.png",
+        "frame_00003.png",
+    ]
+    outline = (out_dir / "outline.md").read_text(encoding="utf-8")
+    assert "frames/frame_00001.png" in outline
+    assert "frames/raw/" not in outline
 
 
 def test_default_processor_falls_back_to_video_id_when_title_missing(tmp_path, monkeypatch):

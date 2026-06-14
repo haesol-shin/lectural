@@ -4,6 +4,7 @@ from lectural import visual
 from lectural.visual import (
     PHASH_HAMMING_THRESHOLD,
     Frame,
+    cleanup_raw_frames,
     is_same_phash,
     is_same_slide,
     parse_frame_timestamp_from_filename,
@@ -108,3 +109,48 @@ def test_dedupe_frames_routes_through_phash_with_metadata(monkeypatch):
     assert frames[1].meta["phash"] == f"{slide_b:016x}"
     assert frames[1].meta["phash_hamming_from_previous"] == 17
     assert frames[1].meta["phash_hamming_threshold"] == PHASH_HAMMING_THRESHOLD
+
+
+def test_cleanup_raw_frames_default_removes_non_final_images(tmp_path):
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    paths = [frames_dir / f"frame_{index:05d}.png" for index in range(1, 4)]
+    for path in paths:
+        path.write_text(path.name, encoding="utf-8")
+    stale_raw = frames_dir / "raw"
+    stale_raw.mkdir()
+    (stale_raw / "stale.png").write_text("stale", encoding="utf-8")
+
+    raw_frames = [Frame(timestamp=float(index), image_path=str(path)) for index, path in enumerate(paths)]
+    final_slides = [raw_frames[1]]
+
+    result = cleanup_raw_frames(raw_frames, final_slides)
+
+    assert paths[1].read_text(encoding="utf-8") == "frame_00002.png"
+    assert not paths[0].exists()
+    assert not paths[2].exists()
+    assert not (frames_dir / "raw").exists()
+    assert result["removed"] == [str(paths[0].resolve()), str(paths[2].resolve())]
+
+
+def test_cleanup_raw_frames_keep_mode_archives_raw_and_keeps_final_links(tmp_path):
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    paths = [frames_dir / f"frame_{index:05d}.png" for index in range(1, 4)]
+    for path in paths:
+        path.write_text(path.name, encoding="utf-8")
+
+    raw_frames = [Frame(timestamp=float(index), image_path=str(path)) for index, path in enumerate(paths)]
+    final_slides = [raw_frames[1]]
+
+    result = cleanup_raw_frames(raw_frames, final_slides, keep_frames=True)
+
+    assert sorted(p.name for p in frames_dir.glob("*.png")) == ["frame_00002.png"]
+    assert sorted(p.name for p in (frames_dir / "raw").glob("*.png")) == [
+        "frame_00001.png",
+        "frame_00002.png",
+        "frame_00003.png",
+    ]
+    assert (frames_dir / "raw" / "frame_00002.png").read_text(encoding="utf-8") == "frame_00002.png"
+    assert result["raw_dir"] == str((frames_dir / "raw").resolve())
+
