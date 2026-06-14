@@ -10,6 +10,7 @@ What does this PR change and why?
 
 - [ ] `uv run --with pytest --with numpy pytest -q`
 - [ ] `lectural doctor` reports ready, or the runtime dependency gap is documented.
+- [ ] `claude plugin validate .` passes.
 
 ## Checklist
 
