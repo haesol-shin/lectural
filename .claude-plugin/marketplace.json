@@ -1,8 +1,8 @@
 {
   "name": "lectural",
   "owner": {
-    "name": "LecturAL maintainer",
-    "url": "<GITHUB_REPO_URL>"
+    "name": "Haesol Shin",
+    "url": "https://github.com/haesol-shin/lectural"
   },
   "plugins": [
     {

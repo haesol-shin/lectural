@@ -1,0 +1,56 @@
+{
+  "exists": true,
+  "status": "active",
+  "paths": {
+    "dir": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal",
+    "briefPath": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\brief.md",
+    "goalsPath": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\goals.json",
+    "ledgerPath": "C:\\Users\\haesol\\dev\\LecturAL\\.gjc\\ultragoal\\ledger.jsonl"
+  },
+  "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+  "currentGoal": {
+    "id": "G001",
+    "title": "Package the Claude Code plugin and skills",
+    "objective": "Create .claude-plugin/plugin.json and .claude-plugin/marketplace.json (English; name lectural; plugins[].name lectural; plugins[].source exactly \"./\"; English descriptions; valid JSON). Create canonical plugin skill skills/lectural/SKILL.md (English, neutral completeness-verification/coverage-gate tone, zero 확신/confidence framing, anchors referenced symbolically from lectural.synthesis). Create hooks/hooks.json as pure comment-free JSON whose Stop hook command is exactly: python \"${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py\". Rewrite the existing .claude/skills/lectural/SKILL.md in English so that after frontmatter normalization its body is byte-identical (sha256 match) to the canonical skills/lectural/SKILL.md, preserving logic/run steps/anchor symbols and removing 확신 framing. Verification for this story: JSON parses for both .claude-plugin files; name/entry == lectural; marketplace source == \"./\"; hooks.json is comment-free valid JSON; Stop command first token is an interpreter (python/py) followed by quoted ${CLAUDE_PLUGIN_ROOT} and scripts/completeness_hook.py; Hangul-prose grep over all four English artifacts returns zero; confidence/exam/Ollama/local LLM grep returns zero in those artifacts; frontmatter-normalized sha256 of both SKILL.md bodies match. Commit per file/work-unit.",
+    "status": "active",
+    "createdAt": "2026-06-13T13:23:40.331Z",
+    "updatedAt": "2026-06-13T13:23:52.369Z",
+    "startedAt": "2026-06-13T13:23:52.369Z"
+  },
+  "counts": {
+    "pending": 2,
+    "active": 1,
+    "complete": 0,
+    "failed": 0,
+    "blocked": 0,
+    "review_blocked": 0,
+    "superseded": 0
+  },
+  "goals": [
+    {
+      "id": "G001",
+      "title": "Package the Claude Code plugin and skills",
+      "objective": "Create .claude-plugin/plugin.json and .claude-plugin/marketplace.json (English; name lectural; plugins[].name lectural; plugins[].source exactly \"./\"; English descriptions; valid JSON). Create canonical plugin skill skills/lectural/SKILL.md (English, neutral completeness-verification/coverage-gate tone, zero 확신/confidence framing, anchors referenced symbolically from lectural.synthesis). Create hooks/hooks.json as pure comment-free JSON whose Stop hook command is exactly: python \"${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py\". Rewrite the existing .claude/skills/lectural/SKILL.md in English so that after frontmatter normalization its body is byte-identical (sha256 match) to the canonical skills/lectural/SKILL.md, preserving logic/run steps/anchor symbols and removing 확신 framing. Verification for this story: JSON parses for both .claude-plugin files; name/entry == lectural; marketplace source == \"./\"; hooks.json is comment-free valid JSON; Stop command first token is an interpreter (python/py) followed by quoted ${CLAUDE_PLUGIN_ROOT} and scripts/completeness_hook.py; Hangul-prose grep over all four English artifacts returns zero; confidence/exam/Ollama/local LLM grep returns zero in those artifacts; frontmatter-normalized sha256 of both SKILL.md bodies match. Commit per file/work-unit.",
+      "status": "active",
+      "createdAt": "2026-06-13T13:23:40.331Z",
+      "updatedAt": "2026-06-13T13:23:52.369Z",
+      "startedAt": "2026-06-13T13:23:52.369Z"
+    },
+    {
+      "id": "G002",
+      "title": "Rewrite README in Korean for plugin install-first UX",
+      "objective": "Rewrite README.md (Korean prose; code/commands/paths English). Remove the 확신 goal framing, the 시험 기간 / 유튜브에만 framing, and the entire 기술 스택 section. Convert the 동작 방식 section to a Mermaid flowchart fenced block. Make the install section plugin install-first: /plugin marketplace add <GITHUB_REPO_URL> then /plugin install lectural@lectural. Honestly document the two-part install: plugin install does NOT auto-provide Python deps or ffmpeg; after install the host agent runs uv-based dependency setup and an ffmpeg/yt-dlp check. Remove any local LLM / Ollama wording. Clean badges accordingly. Verification: README contains a ```mermaid block; no 기술 스택 header; tone grep for 확신|시험 기간|시험기간|유튜브에만|Ollama|local LLM returns zero in README; install section references the two /plugin commands and <GITHUB_REPO_URL>; README stays Korean prose. Commit.",
+      "status": "pending",
+      "createdAt": "2026-06-13T13:23:40.331Z",
+      "updatedAt": "2026-06-13T13:23:40.331Z"
+    },
+    {
+      "id": "G003",
+      "title": "Run real-video performance smoke and record metrics",
+      "objective": "Create a non-product harness scripts/perf_smoke.py (English) that wraps existing lectural stage calls (acquisition; visual: extract_candidate_frames -> dedupe_frames -> ocr_frames; synthesis+coverage; completeness hook subprocess) measuring per-stage wall time via time.perf_counter, and samples process CPU%/RSS on a background thread at --sample-interval seconds, computing per-stage peak/avg. It must accept --url, --sample-interval, --out. Do not modify lectural/ logic. Preconditions: uv pip install -e \".[run]\"; ffmpeg and yt-dlp on PATH; lectural.deps.preflight passes. Then run exactly: uv run --with psutil python scripts/perf_smoke.py --url https://www.youtube.com/watch?v=19vYXnpDIyg --sample-interval 0.2 --out ./output/perf-smoke . Record results into an English docs/perf_smoke_<date>.md: exact command, dependency versions, video title/duration, machine spec (Intel Core Ultra 5 228V), cold/warm cache state, per-stage wall time, per-stage peak/avg RSS, CPU sampling method/interval, output file list, completeness hook exit code. If preflight or any external dependency/network is unavailable, record the blocker honestly in the artifact and checkpoint the blocker rather than fabricating metrics. Commit the harness and the metrics artifact.",
+      "status": "pending",
+      "createdAt": "2026-06-13T13:23:40.331Z",
+      "updatedAt": "2026-06-13T13:23:40.331Z"
+    }
+  ]
+}

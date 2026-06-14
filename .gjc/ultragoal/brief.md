@@ -1,0 +1,26 @@
+Shared constraints:
+- Execute approved ralplan plan `.gjc/plans/ralplan/2026-06-13-0738-79e5/pending-approval.md` (full body stage-04-revision.md, §0 R1..R5) and source spec `.gjc/specs/deep-interview-lectural-notes-redesign.md` (AC-1..AC-28).
+- User-facing prose Korean; paths/commands/identifiers English.
+- Preserve two-layer completeness gate: CLI exit code primary and marker-agnostic (bare skeleton exits 0); Stop hook additional, not a CLI wrapper, owns the `<!-- 미보강 -->` marker check + citation/structural checks.
+- Token-0 core (no external LLM API); lazy heavy imports.
+- Actual implementation delegated to `executor` subagents per work-unit; the Ultragoal leader owns integration, architect + executor-QA gates, unit commits, and `.gjc/ultragoal` checkpoints.
+- Unit commit per work-unit. Anchor id scheme: `t<HHMMSS>` then `-2/-3` by appearance, single shared pattern `t\d{6}(?:-\d+)?` across renderer/prompt/hook/rubric/tests.
+- Final real-video verification on `https://www.youtube.com/watch?v=19vYXnpDIyg`.
+
+@goal: WU-1 notes.md output structure and citation deeplinks
+Implement notes.md as the user-facing deliverable with 4 bullet sections (핵심 테이크어웨이 3-5 lines / 큰 흐름 narrative bullets / 개념 및 주요 이론 정리 / 세부 내용 per-slide heading+image+utterance-proportional bullets). Concept and detail bullets MUST carry a citation deeplink: `transcript.md#t<id>` plus a parenthetical `https://youtu.be/<VID>?t=<sec>` whose seconds match the anchor timestamp within ±1s. 핵심 테이크어웨이 and 큰 흐름 are narrative and citation-exempt. Add transcript.md per-cue anchors using the unique-id scheme `t<HHMMSS>` with `-2/-3` suffixes for duplicate timestamps. Add focused tests for rendering, anchor uniqueness, and citation link shape. Covers AC-1..AC-6, AC-8. Commit as WU-1.
+
+@goal: WU-2 deterministic core skeleton and grounding
+Make the deterministic core (LLM 0) emit notes.md as skeleton + grounding only: section headings + per-slide image/time + verbatim transcript bullets (with anchors) + `<!-- 미보강 -->` marker, with NO mechanical prose summary. Replace summary.md/outline.md generation paths. Keep synthesis_input.json as the enrichment input (text only). Preserve lazy imports. Add focused tests proving skeleton shape, grounding bullets, marker presence, and no fabricated prose. Covers AC-7, AC-9, AC-10. Commit as WU-2.
+
+@goal: WU-3 enrichment prompt single source and skill auto-enrich
+Create `skills/lectural/references/summary_prompt.md` as the single-source enrichment prompt: role + reference material (synthesis_input.json) placed before instructions + XML-tagged sections + output contract (4 sections in order, markdown only) + few-shot example (skeleton -> enriched) + Chain-of-Density + per-slide utterance-proportional detail + grounding/'불명확' rule + mandatory citation rule. Reference it from `skills/lectural/SKILL.md` and keep `.claude/skills/lectural/SKILL.md` body parity; wire skill-driven auto-enrichment of notes.md prose preserving anchors. Covers AC-11..AC-14. Commit as WU-3.
+
+@goal: WU-4 coverage and completeness hook to notes contract
+Update `lectural/coverage.py` and `scripts/completeness_hook.py` to the notes.md contract: verify 4 sections, image+bullets per slide, full citation enforcement (every concept/detail bullet has `transcript.md#t<id>` whose anchor exists in transcript.md AND a youtu.be ?t= whose seconds match ±1s), 핵심 테이크어웨이 3-5 lines and 큰 흐름 >=2 bullets structural checks (citation-exempt, no exact-prose). Add `NOTES_CONTRACT_VERSION` and make the hook fail-closed on contract import failure (remove legacy literal fallback). Stop hook blocks if `<!-- 미보강 -->` remains; CLI exit code does not check the marker. Apply grep-gate deletion of stale summary.md/outline.md/anchor references across code/hook/tests/docs/skills. Covers AC-15..AC-18, plus stale cleanup. Commit as WU-4.
+
+@goal: WU-5 lectural doctor and distribution
+Add `lectural doctor` command validating the full component manifest (python core + [run] deps with import+version / ffmpeg + yt-dlp / agent-side files SKILL+hooks+summary_prompt+AGENTS / plugin registration) with per-item status enum (ok/missing/incompatible/unfixable), overall exit-code map (0 ready / 2 user-action / 1 internal), and `--fix` safe idempotent autoinstall (yt-dlp via `uv tool install`, ffmpeg via OS package manager best-effort, one-line fallback on failure; bounded <=2 passes, stop on unfixable, no infinite loop). Update distribution: Claude plugin (/plugin) + Codex AGENTS + agent-driven uvx runtime; agent calls `lectural doctor --fix` before first run. Update README to a two-part honest install (agent-side plugin/AGENTS + uv/uvx runtime + ffmpeg external) keeping plugin-first. Covers AC-22..AC-28. Commit as WU-5.
+
+@goal: WU-6 verification and evidence
+Run full verification: offline focused tests across WUs, an executor rubric that auto-scores a skill-generated notes.md (structure/slide coverage/citation grounding, no exact-prose match), and a real-video before/after on `https://www.youtube.com/watch?v=19vYXnpDIyg` showing folder=title, 4 sections, working citation deeplinks, utterance-proportional detail, CLI exit 0, and Stop hook behavior (blocks on 미보강, passes when enriched). Record evidence in docs/artifacts. Covers AC-19..AC-21. Commit as WU-6 if evidence docs change.

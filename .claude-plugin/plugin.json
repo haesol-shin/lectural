@@ -9,8 +9,8 @@
     "ocr",
     "study-notes"
   ],
-  "homepage": "<GITHUB_REPO_URL>",
-  "repository": "<GITHUB_REPO_URL>",
-  "license": "UNLICENSED",
+  "homepage": "https://github.com/haesol-shin/lectural",
+  "repository": "https://github.com/haesol-shin/lectural",
+  "license": "MIT",
   "hooks": "./hooks/hooks.json"
 }
