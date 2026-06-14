@@ -1,0 +1,137 @@
+$ uv run --extra run python -m lectural.cli doctor --json
+exit_code: 0
+elapsed_seconds: 2.21
+
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "name": "lectural",
+      "kind": "python",
+      "status": "ok",
+      "detail": "version 0.1.1",
+      "hint": ""
+    },
+    {
+      "name": "yt_dlp (yt-dlp)",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "youtube_transcript_api (youtube-transcript-api)",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "faster_whisper (faster-whisper)",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "numpy",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "paddleocr",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "paddle",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "cv2",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "pytesseract",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "PIL (Pillow)",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "webrtcvad",
+      "kind": "python",
+      "status": "ok",
+      "detail": "import/version check passed",
+      "hint": ""
+    },
+    {
+      "name": "ffmpeg",
+      "kind": "binary",
+      "status": "ok",
+      "detail": "found on PATH",
+      "hint": ""
+    },
+    {
+      "name": "yt-dlp",
+      "kind": "binary",
+      "status": "ok",
+      "detail": "found on PATH",
+      "hint": ""
+    },
+    {
+      "name": "AGENTS.md",
+      "kind": "file",
+      "status": "ok",
+      "detail": "present",
+      "hint": ""
+    },
+    {
+      "name": "skills/lectural/references/summary_prompt.md",
+      "kind": "file",
+      "status": "ok",
+      "detail": "present",
+      "hint": ""
+    },
+    {
+      "name": "hooks/hooks.json",
+      "kind": "file",
+      "status": "ok",
+      "detail": "Stop command hook targets scripts/completeness_hook.py",
+      "hint": ""
+    },
+    {
+      "name": ".claude-plugin/plugin.json",
+      "kind": "plugin",
+      "status": "ok",
+      "detail": "name lectural; hooks ./hooks/hooks.json",
+      "hint": ""
+    },
+    {
+      "name": ".claude-plugin/marketplace.json",
+      "kind": "plugin",
+      "status": "ok",
+      "detail": "marketplace entry points at ./",
+      "hint": ""
+    }
+  ],
+  "overall_status": "ready",
+  "exit_code": 0
+}

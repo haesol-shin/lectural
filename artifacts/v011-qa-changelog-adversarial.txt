@@ -1,0 +1,48 @@
+$ python scripts/changelog_notes.py 0.1.1
+exit_code: 0
+### Removed
+- The standalone `lectural` plugin skill (`skills/lectural/SKILL.md`). Only the
+  `/lectural:notes` and `/lectural:setup` slash commands now surface in the
+  Claude Code menu; the enrichment references under `skills/lectural/references/`
+  are retained.
+
+### Changed
+- Shortened the `/lectural:notes` and `/lectural:setup` command descriptions and
+  dropped the `[lectural]` prefix.
+- De-skilled host-agent enrichment wording across `AGENTS.md`, the setup command,
+  and `docs/synthesis_contract.md` (command-driven, not skill-driven).
+
+### Added
+- Advisory, non-blocking `PR Check` workflow plus an `AGENTS.md`/`CONTRIBUTING.md`
+  rule to keep PR bodies aligned with `PULL_REQUEST_TEMPLATE.md`.
+- Release-notes automation: the Release workflow builds the GitHub Release body
+  from the matching `CHANGELOG.md` section via `scripts/changelog_notes.py`.
+- A `claude plugin validate .` CI gate (pinned `@anthropic-ai/claude-code`).
+- Tests guarding version-surface/CHANGELOG consistency and the release-notes
+  extractor.
+
+
+$ python scripts/changelog_notes.py 9.9.9
+exit_code: 0
+
+
+$ python scripts/changelog_notes.py 0.1.1 C:\Users\haesol\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-prefix.md
+exit_code: 0
+
+
+$ python scripts/changelog_notes.py 0.1.1 C:\Users\haesol\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-last.md
+exit_code: 0
+### Added
+- Last body.
+
+
+checks:
+{
+  "real_non_empty": true,
+  "real_excludes_next_header": true,
+  "real_excludes_link_refs": true,
+  "missing_empty": true,
+  "prefix_collision_empty": true,
+  "last_section_excludes_links": true
+}
+passed: True

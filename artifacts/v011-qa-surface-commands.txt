@@ -1,0 +1,17 @@
+{
+  "artifact": "artifacts/v011-qa-surface-commands.json",
+  "commands_dir_files": [
+    "notes.md",
+    "setup.md"
+  ],
+  "expected_commands_only": [
+    "notes.md",
+    "setup.md"
+  ],
+  "skill_md_files": [],
+  "reference_files_present": [
+    "skills/lectural/references/pipeline.md",
+    "skills/lectural/references/summary_prompt.md"
+  ],
+  "passed": true
+}

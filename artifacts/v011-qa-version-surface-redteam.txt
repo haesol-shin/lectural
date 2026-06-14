@@ -1,0 +1,37 @@
+{
+  "artifact": "artifacts/v011-qa-version-surface-redteam.json",
+  "real_surfaces": {
+    "plugin_json": "0.1.1",
+    "pyproject_toml": "0.1.1",
+    "lectural_init": "0.1.1",
+    "expected": "0.1.1"
+  },
+  "real_surface_verdict": true,
+  "changelog_counts": {
+    "heading_count": 1,
+    "link_count": 1
+  },
+  "negative_checks": [
+    {
+      "scenario": "plugin_json_mutated_version_surface",
+      "failed_as_expected": true,
+      "message": "pyproject.toml version != plugin.json"
+    },
+    {
+      "scenario": "pyproject_mutated_version_surface",
+      "failed_as_expected": true,
+      "message": "pyproject.toml version != plugin.json"
+    },
+    {
+      "scenario": "init_mutated_version_surface",
+      "failed_as_expected": true,
+      "message": "lectural/__init__.py __version__ != plugin.json"
+    },
+    {
+      "scenario": "changelog_heading_removed",
+      "count_after_mutation": 0,
+      "failed_as_expected": true
+    }
+  ],
+  "passed": true
+}
