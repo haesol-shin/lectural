@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "brief": "Shared constraints:\n- Execute approved ralplan plan `.gjc/plans/ralplan/2026-06-13-0738-79e5/pending-approval.md` (full body stage-04-revision.md, §0 R1..R5) and source spec `.gjc/specs/deep-interview-lectural-notes-redesign.md` (AC-1..AC-28).\n- User-facing prose Korean; paths/commands/identifiers English.\n- Preserve two-layer completeness gate: CLI exit code primary and marker-agnostic (bare skeleton exits 0); Stop hook additional, not a CLI wrapper, owns the `<!-- 미보강 -->` marker check + citation/structural checks.\n- Token-0 core (no external LLM API); lazy heavy imports.\n- Actual implementation delegated to `executor` subagents per work-unit; the Ultragoal leader owns integration, architect + executor-QA gates, unit commits, and `.gjc/ultragoal` checkpoints.\n- Unit commit per work-unit. Anchor id scheme: `t<HHMMSS>` then `-2/-3` by appearance, single shared pattern `t\\d{6}(?:-\\d+)?` across renderer/prompt/hook/rubric/tests.\n- Final real-video verification on `https://www.youtube.com/watch?v=19vYXnpDIyg`.\n\n@goal: WU-1 notes.md output structure and citation deeplinks\nImplement notes.md as the user-facing deliverable with 4 bullet sections (핵심 테이크어웨이 3-5 lines / 큰 흐름 narrative bullets / 개념 및 주요 이론 정리 / 세부 내용 per-slide heading+image+utterance-proportional bullets). Concept and detail bullets MUST carry a citation deeplink: `transcript.md#t<id>` plus a parenthetical `https://youtu.be/<VID>?t=<sec>` whose seconds match the anchor timestamp within ±1s. 핵심 테이크어웨이 and 큰 흐름 are narrative and citation-exempt. Add transcript.md per-cue anchors using the unique-id scheme `t<HHMMSS>` with `-2/-3` suffixes for duplicate timestamps. Add focused tests for rendering, anchor uniqueness, and citation link shape. Covers AC-1..AC-6, AC-8. Commit as WU-1.\n\n@goal: WU-2 deterministic core skeleton and grounding\nMake the deterministic core (LLM 0) emit notes.md as skeleton + grounding only: section headings + per-slide image/time + verbatim transcript bullets (with anchors) + `<!-- 미보강 -->` marker, with NO mechanical prose summary. Replace summary.md/outline.md generation paths. Keep synthesis_input.json as the enrichment input (text only). Preserve lazy imports. Add focused tests proving skeleton shape, grounding bullets, marker presence, and no fabricated prose. Covers AC-7, AC-9, AC-10. Commit as WU-2.\n\n@goal: WU-3 enrichment prompt single source and skill auto-enrich\nCreate `skills/lectural/references/summary_prompt.md` as the single-source enrichment prompt: role + reference material (synthesis_input.json) placed before instructions + XML-tagged sections + output contract (4 sections in order, markdown only) + few-shot example (skeleton -> enriched) + Chain-of-Density + per-slide utterance-proportional detail + grounding/'불명확' rule + mandatory citation rule. Reference it from `skills/lectural/SKILL.md` and keep `.claude/skills/lectural/SKILL.md` body parity; wire skill-driven auto-enrichment of notes.md prose preserving anchors. Covers AC-11..AC-14. Commit as WU-3.\n\n@goal: WU-4 coverage and completeness hook to notes contract\nUpdate `lectural/coverage.py` and `scripts/completeness_hook.py` to the notes.md contract: verify 4 sections, image+bullets per slide, full citation enforcement (every concept/detail bullet has `transcript.md#t<id>` whose anchor exists in transcript.md AND a youtu.be ?t= whose seconds match ±1s), 핵심 테이크어웨이 3-5 lines and 큰 흐름 >=2 bullets structural checks (citation-exempt, no exact-prose). Add `NOTES_CONTRACT_VERSION` and make the hook fail-closed on contract import failure (remove legacy literal fallback). Stop hook blocks if `<!-- 미보강 -->` remains; CLI exit code does not check the marker. Apply grep-gate deletion of stale summary.md/outline.md/anchor references across code/hook/tests/docs/skills. Covers AC-15..AC-18, plus stale cleanup. Commit as WU-4.\n\n@goal: WU-5 lectural doctor and distribution\nAdd `lectural doctor` command validating the full component manifest (python core + [run] deps with import+version / ffmpeg + yt-dlp / agent-side files SKILL+hooks+summary_prompt+AGENTS / plugin registration) with per-item status enum (ok/missing/incompatible/unfixable), overall exit-code map (0 ready / 2 user-action / 1 internal), and `--fix` safe idempotent autoinstall (yt-dlp via `uv tool install`, ffmpeg via OS package manager best-effort, one-line fallback on failure; bounded <=2 passes, stop on unfixable, no infinite loop). Update distribution: Claude plugin (/plugin) + Codex AGENTS + agent-driven uvx runtime; agent calls `lectural doctor --fix` before first run. Update README to a two-part honest install (agent-side plugin/AGENTS + uv/uvx runtime + ffmpeg external) keeping plugin-first. Covers AC-22..AC-28. Commit as WU-5.\n\n@goal: WU-6 verification and evidence\nRun full verification: offline focused tests across WUs, an executor rubric that auto-scores a skill-generated notes.md (structure/slide coverage/citation grounding, no exact-prose match), and a real-video before/after on `https://www.youtube.com/watch?v=19vYXnpDIyg` showing folder=title, 4 sections, working citation deeplinks, utterance-proportional detail, CLI exit 0, and Stop hook behavior (blocks on 미보강, passes when enriched). Record evidence in docs/artifacts. Covers AC-19..AC-21. Commit as WU-6 if evidence docs change.",
+  "gjcGoalMode": "aggregate",
+  "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+  "goals": [
+    {
+      "id": "G001",
+      "title": "WU-1 notes.md output structure and citation deeplinks",
+      "objective": "Implement notes.md as the user-facing deliverable with 4 bullet sections (핵심 테이크어웨이 3-5 lines / 큰 흐름 narrative bullets / 개념 및 주요 이론 정리 / 세부 내용 per-slide heading+image+utterance-proportional bullets). Concept and detail bullets MUST carry a citation deeplink: `transcript.md#t<id>` plus a parenthetical `https://youtu.be/<VID>?t=<sec>` whose seconds match the anchor timestamp within ±1s. 핵심 테이크어웨이 and 큰 흐름 are narrative and citation-exempt. Add transcript.md per-cue anchors using the unique-id scheme `t<HHMMSS>` with `-2/-3` suffixes for duplicate timestamps. Add focused tests for rendering, anchor uniqueness, and citation link shape. Covers AC-1..AC-6, AC-8. Commit as WU-1.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T08:12:08.795Z",
+      "startedAt": "2026-06-14T07:25:24.507Z",
+      "completedAt": "2026-06-14T08:12:08.795Z",
+      "evidence": "WU-1 completed in commit 1c182e5: notes.md 7-section skeleton renderer (한눈에 요약/목차/강의 흐름/핵심 개념·이론/상세 노트/복습 질문/정리 커버리지), unique transcript cue anchors t<HHMMSS>[-n], citation deeplinks (transcript.md#t + youtu.be ?t=) on concept/detail/question bullets with anchor-validity invariant, citation-exempt takeaway/toc/flow; focused tests 19 passed; architect CLEAR/APPROVE, executor QA passed.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "594d20c0-18e9-451c-94ce-0bdc76944945",
+        "verifiedAt": "2026-06-14T08:12:08.795Z",
+        "goalId": "G001",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "b5c4f665073d8e389500cdf76ceb18c43605e09d610f8b5ee2507671c5a52254",
+        "gjcGoalSnapshotHash": "d3022bdb714ba64dd4423e8828a8d566a305fbd11d2f250a2deb9bf635e79bd7",
+        "planGeneration": "acad5b146dc6740fd1bf3891c9458f7d37c0b966ab1397079880d9157139e1a2",
+        "basis": {
+          "planHashBeforeCheckpoint": "2e820b57f445777e0c57b8055094cda1f30ae51d56b4cd467079b5538ccf3391",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "04bc2bda-e6c0-4725-8c67-34d57945d115",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T08:12:08.795Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G001"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "9cec6d4dbb7bb67147fd5d658f8836ff620deb5d1969273c4b3fde25bcfc7b39"
+        },
+        "checkpointLedgerEventId": "7818316d-055c-4376-a37f-c8bf34078e83"
+      }
+    },
+    {
+      "id": "G002",
+      "title": "WU-2 deterministic core skeleton and grounding",
+      "objective": "Make the deterministic core (LLM 0) emit notes.md as skeleton + grounding only: section headings + per-slide image/time + verbatim transcript bullets (with anchors) + `<!-- 미보강 -->` marker, with NO mechanical prose summary. Replace summary.md/outline.md generation paths. Keep synthesis_input.json as the enrichment input (text only). Preserve lazy imports. Add focused tests proving skeleton shape, grounding bullets, marker presence, and no fabricated prose. Covers AC-7, AC-9, AC-10. Commit as WU-2.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T09:21:14.942Z",
+      "startedAt": "2026-06-14T08:12:08.809Z",
+      "completedAt": "2026-06-14T09:21:14.942Z",
+      "evidence": "WU-2 complete in commit 7b1f92b: deterministic token-0 core emits notes.md only (7-section skeleton+grounding); removed render_summary_md/render_outline_md/_excerpt; migrated coverage/completeness_hook/runstate/cli + perf_smoke + dependent tests to the notes artifact contract (notes_path/notes_nonempty); reconciled README.md + docs/synthesis_contract.md to the notes.md model. Offline suite 186 passed; red-team tests/test_redteam_notes.py 7 passed + real hook subprocess matrix; architect CLEAR/CLEAR/CLEAR+APPROVE (4-WU2ArchRecheck, 6-WU2ArchFinal), executor QA 2-WU2QA passed. Covers AC-7, AC-9, AC-10.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "f664fad8-1dc0-42be-b8a2-80690ea9ec7f",
+        "verifiedAt": "2026-06-14T09:21:14.942Z",
+        "goalId": "G002",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "995906194cc90f0fd3e1ac97aa4ac799ad3457de2bf6678fdbf569b3e12001e9",
+        "gjcGoalSnapshotHash": "99dd247ca05c4f4cd9fb43e002ea5d8170bc2f3d77d5bfd3e3e9888c2ce9797c",
+        "planGeneration": "a19ec347d79472fc50b319c34f0b3502b893496794f47940166878bd0a404348",
+        "basis": {
+          "planHashBeforeCheckpoint": "7936c2b03b2a15ad760174e74c2a2bcebd7ddd5d81845640961e7c1a56f1729d",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "b96d19ba-d2d4-48e4-ba2e-2e9e2ee6b5c3",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T09:21:14.942Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G002"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "5be70d847adbb40cadc7854f6a26165682c8d71ed689aea964418dc28802e525"
+        },
+        "checkpointLedgerEventId": "850549b5-6493-406d-b3d6-d1e2adddc248"
+      }
+    },
+    {
+      "id": "G003",
+      "title": "WU-3 enrichment prompt single source and skill auto-enrich",
+      "objective": "Create `skills/lectural/references/summary_prompt.md` as the single-source enrichment prompt: role + reference material (synthesis_input.json) placed before instructions + XML-tagged sections + output contract (4 sections in order, markdown only) + few-shot example (skeleton -> enriched) + Chain-of-Density + per-slide utterance-proportional detail + grounding/'불명확' rule + mandatory citation rule. Reference it from `skills/lectural/SKILL.md` and keep `.claude/skills/lectural/SKILL.md` body parity; wire skill-driven auto-enrichment of notes.md prose preserving anchors. Covers AC-11..AC-14. Commit as WU-3.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T09:42:43.742Z",
+      "startedAt": "2026-06-14T09:21:14.952Z",
+      "completedAt": "2026-06-14T09:42:43.742Z",
+      "evidence": "WU-3 complete in commit 7b1c6a5: single-source enrichment prompt skills/lectural/references/summary_prompt.md (role/reference-first/XML/7-section output contract/few-shot/Chain-of-Density/soft heuristic/불명확 grounding/mandatory citation) in both skill trees; SKILL.md (both trees, zero-Hangul, NOTES_* symbolic) references it + notes.md auto-enrichment; pipeline.md + AGENTS.md migrated; packaging test ANCHOR_SYMBOLS moved to nine NOTES_* constants. Offline 186 passed; packaging 9 passed; parity sha256 confirmed; architect 9-WU3Arch CLEAR/CLEAR/CLEAR+APPROVE; executor QA 10-WU3QA passed incl two adversarial guard proofs. Covers AC-11..AC-14.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "32553fcc-22c9-4ab4-9740-bd3ae4dac06c",
+        "verifiedAt": "2026-06-14T09:42:43.742Z",
+        "goalId": "G003",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "ea6687b196e4c0e76649c0093c9eede9f62ed34e28efbef893defa6b6b4e6517",
+        "gjcGoalSnapshotHash": "5286250dc8409ffefa32aeb3f9a22cd8c86ed5763df4fa3eaa7cceb984c330fb",
+        "planGeneration": "3b7e3c427ae8272be4e5c81e2ea81734c82b9aee00f11767c9e117d08384a071",
+        "basis": {
+          "planHashBeforeCheckpoint": "c209e8c84d2f447f2cbb1b1a26f485903c935b327c74b697ecbbcc9e8891a5e1",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "33ddfffb-c5fd-4ae6-b803-7a1ece8dfe15",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T09:42:43.742Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G003"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "73bfc525edf5f2f821c0b0da9404899fbaf629de9775e10566dff526c56d3757"
+        },
+        "checkpointLedgerEventId": "d98aebd9-b1ba-4f80-a49a-a61eb46b1855"
+      }
+    },
+    {
+      "id": "G004",
+      "title": "WU-4 coverage and completeness hook to notes contract",
+      "objective": "Update `lectural/coverage.py` and `scripts/completeness_hook.py` to the notes.md contract: verify 4 sections, image+bullets per slide, full citation enforcement (every concept/detail bullet has `transcript.md#t<id>` whose anchor exists in transcript.md AND a youtu.be ?t= whose seconds match ±1s), 핵심 테이크어웨이 3-5 lines and 큰 흐름 >=2 bullets structural checks (citation-exempt, no exact-prose). Add `NOTES_CONTRACT_VERSION` and make the hook fail-closed on contract import failure (remove legacy literal fallback). Stop hook blocks if `<!-- 미보강 -->` remains; CLI exit code does not check the marker. Apply grep-gate deletion of stale summary.md/outline.md/anchor references across code/hook/tests/docs/skills. Covers AC-15..AC-18, plus stale cleanup. Commit as WU-4.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T11:01:30.774Z",
+      "startedAt": "2026-06-14T09:42:43.758Z",
+      "completedAt": "2026-06-14T11:01:30.774Z",
+      "evidence": "WU-4 complete in commit 72e6d00: added import-safe lectural/notes_contract.py with NOTES_CONTRACT_VERSION and shared validators; coverage.py folds marker-agnostic notes_contract into overall_pass (bare skeleton exits 0); completeness_hook.py imports contract fail-closed and enforces full Layer-2 notes contract (미보강 blocks, seven sections, per-heading bullet, per-non-intro-slide image, citation validity). Removed legacy summary/outline anchor constants from synthesis.py, added structural NOTES_INTRO_MARKER for synthetic frameless intro exemption, and updated live AC docs. Full suite 227 passed; final architect 20-WU4ArchFinal2 CLEAR/APPROVE; final executor QA 21-WU4QAFinal2 passed. Covers AC-15..AC-18.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "2180824d-7323-4dab-afa0-975022a9b8ae",
+        "verifiedAt": "2026-06-14T11:01:30.774Z",
+        "goalId": "G004",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "b6062abd0b8e0c86265f5040e58ba9e983b62c45621827688727f3dddfe1eedb",
+        "gjcGoalSnapshotHash": "920dfbf578075934b2dcfe30bcf6ba2be9f913b254ebdcb3cee8cda7008e50f6",
+        "planGeneration": "47985a57a31d84592be3fe13f6ab1cf74caaa3ec812e78e082268ded52e949ae",
+        "basis": {
+          "planHashBeforeCheckpoint": "2a797350b8a5fcfba3bbbc20ee722f3c0604996d091d0484de35d4c027c56e06",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "6485d05b-43da-4102-9bf0-5e30d183e9dc",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T11:01:30.774Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G004"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "308c05dc354d89350900cd90994b446df459961c080640861e2e08b94992443a"
+        },
+        "checkpointLedgerEventId": "485f7fbc-bbc2-40cd-87f8-69e265a4810d"
+      }
+    },
+    {
+      "id": "G005",
+      "title": "WU-5 lectural doctor and distribution",
+      "objective": "Add `lectural doctor` command validating the full component manifest (python core + [run] deps with import+version / ffmpeg + yt-dlp / agent-side files SKILL+hooks+summary_prompt+AGENTS / plugin registration) with per-item status enum (ok/missing/incompatible/unfixable), overall exit-code map (0 ready / 2 user-action / 1 internal), and `--fix` safe idempotent autoinstall (yt-dlp via `uv tool install`, ffmpeg via OS package manager best-effort, one-line fallback on failure; bounded <=2 passes, stop on unfixable, no infinite loop). Update distribution: Claude plugin (/plugin) + Codex AGENTS + agent-driven uvx runtime; agent calls `lectural doctor --fix` before first run. Update README to a two-part honest install (agent-side plugin/AGENTS + uv/uvx runtime + ffmpeg external) keeping plugin-first. Covers AC-22..AC-28. Commit as WU-5.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T11:44:12.767Z",
+      "startedAt": "2026-06-14T11:01:30.784Z",
+      "completedAt": "2026-06-14T11:44:12.767Z",
+      "evidence": "WU-5 complete in commit cd8f41b: added lectural doctor [--fix] [--json] validating python core+[run] deps with import/version/provider, ffmpeg/yt-dlp, agent files, semantic hooks manifest, plugin registration, and mirror parity; status enum ok/missing/incompatible/unfixable; exit map 0/2/1; bounded safe --fix. Added setuptools>=68,<81 to [run] for webrtcvad/pkg_resources; doctor in --extra run env exits 0 ready. README/AGENTS/SKILL/pipeline updated for plugin-first two-part install and doctor-before-run. Full suite 252 passed; architect 34-WU5ArchFinal3 CLEAR/APPROVE; executor QA 35-WU5QAFinal3 passed. Covers AC-22..AC-28.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "3d58604c-8b40-4fe5-8075-a44cbaa7cbea",
+        "verifiedAt": "2026-06-14T11:44:12.767Z",
+        "goalId": "G005",
+        "receiptKind": "per-goal",
+        "goalStatusBeforeCheckpoint": "complete",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "fd0dd1f622985dc99160863da42fb6eb0318275068abd58909e4226d997e3c36",
+        "gjcGoalSnapshotHash": "e159f7a8bfb1c722537f1b1258155790b7c1b545479fa1b90a77671e53e9efc7",
+        "planGeneration": "ec6863cdf6aa9add5d47a8e7cf1bfe61ced344f54ef9bf5414ffb4caf5a7e234",
+        "basis": {
+          "planHashBeforeCheckpoint": "1a7c1a22f4275a973bd7fd327ea9e67e3c881d62c7cce7bf98dbfdb36669e0fd",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "044fb689-6ca7-4b92-90f0-826930630886",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T11:44:12.767Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G005"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "f333ae50fc2dcd7cf14d85c4f8e444308a95773997981e221b1e22e5815ff23e"
+        },
+        "checkpointLedgerEventId": "5293974b-2cce-4bdf-92b4-5fbb2137c63c"
+      }
+    },
+    {
+      "id": "G006",
+      "title": "WU-6 verification and evidence",
+      "objective": "Run full verification: offline focused tests across WUs, an executor rubric that auto-scores a skill-generated notes.md (structure/slide coverage/citation grounding, no exact-prose match), and a real-video before/after on `https://www.youtube.com/watch?v=19vYXnpDIyg` showing folder=title, 4 sections, working citation deeplinks, utterance-proportional detail, CLI exit 0, and Stop hook behavior (blocks on 미보강, passes when enriched). Record evidence in docs/artifacts. Covers AC-19..AC-21. Commit as WU-6 if evidence docs change.",
+      "status": "complete",
+      "createdAt": "2026-06-14T07:25:16.020Z",
+      "updatedAt": "2026-06-14T12:10:57.676Z",
+      "startedAt": "2026-06-14T11:26:39.812Z",
+      "completedAt": "2026-06-14T12:10:57.676Z",
+      "evidence": "WU-6 complete in commit c1c5005: real-video https://www.youtube.com/watch?v=19vYXnpDIyg produced folder/title slug 96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유 with CLI exit 0, coverage overall_pass=true, 4 slide/detail sections and 4 frames; executor enrichment removed 미보강 and Stop hook now exits 0 after pre-enrichment exit 2; executor rubric artifacts/wu6-rubric.json pass=true with 127 required citation bullets valid, 131 total citations resolved, no exact transcript prose copy, 117 detail bullets / 117 utterances; focused WU tests 175 passed, full suite 252 passed, doctor ready; architect 39-WU6FinalArchitect CLEAR/APPROVE and executor QA 40-WU6FinalQA passed with blockers empty.",
+      "completionVerification": {
+        "schemaVersion": 1,
+        "receiptId": "fbdcfb79-1acd-41d5-ac3f-861cd19e798e",
+        "verifiedAt": "2026-06-14T12:10:57.676Z",
+        "goalId": "G006",
+        "receiptKind": "final-aggregate",
+        "goalStatusBeforeCheckpoint": "active",
+        "gjcGoalMode": "aggregate",
+        "gjcObjective": "Complete the durable ultragoal plan in .gjc/ultragoal/goals.json, including later accepted/appended stories, under the original brief constraints; use .gjc/ultragoal/ledger.jsonl as the audit trail.",
+        "qualityGateHash": "37d45a85e860f8c42db39782684bb446b6199be85604d46d3c6ad073393babc9",
+        "gjcGoalSnapshotHash": "77f986a8cdafde122ecc7976aa748e7761b805e1501852d5a942ef0aefb9e98a",
+        "planGeneration": "50a1772b25fb07f8880f698f3bd6d34812732e18194342b10d18c164fba1f857",
+        "basis": {
+          "planHashBeforeCheckpoint": "e3aee91db09d750c5aebbb3324d9f73b462a2a9ad726604118066526c0f3b845",
+          "latestRelevantLedgerEventIdBeforeCheckpoint": "5293974b-2cce-4bdf-92b4-5fbb2137c63c",
+          "goalUpdatedAtBeforeCheckpoint": "2026-06-14T12:10:57.676Z",
+          "relevantGoalIdsBeforeCheckpoint": [
+            "G001",
+            "G002",
+            "G003",
+            "G004",
+            "G005",
+            "G006"
+          ],
+          "requiredGoalSetHashBeforeCheckpoint": "9b4da91fc29747a4041aa3f8fca62c57333905c86e146d9302cdef0728ba8be1"
+        },
+        "checkpointLedgerEventId": "2ffe807a-b3b9-4e78-a48b-6730e84b9de3"
+      }
+    }
+  ],
+  "createdAt": "2026-06-14T07:25:16.020Z",
+  "updatedAt": "2026-06-14T12:10:57.676Z"
+}
