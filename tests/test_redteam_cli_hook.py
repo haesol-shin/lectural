@@ -47,13 +47,21 @@ def _write_coverage(path: Path, overall_pass: bool = True) -> None:
     path.write_text(json.dumps(_coverage_payload(overall_pass), ensure_ascii=False), encoding="utf-8")
 
 
-def _summary_text(hook, *, frame_link: bool = False) -> str:
-    image_line = "![slide](frames/slide-001.png)\n" if frame_link else ""
+def _summary_text(hook) -> str:
     return (
         f"{hook.ENRICH_MARKER}\n"
         "# 강의 요약\n\n"
         f"{hook.COVERAGE_ANCHOR}\n"
         "- coverage: pass\n\n"
+        "## TO-ENRICH\n"
+        "TO-ENRICH: host agent는 요약을 보강할 수 있습니다.\n"
+    )
+
+
+def _outline_text(hook, *, frame_link: bool = False) -> str:
+    image_line = "![slide](frames/slide-001.png)\n" if frame_link else ""
+    return (
+        "# 강의 개요\n\n"
         f"{hook.TOC_ANCHOR}\n"
         "- [00:00:00 · 시작](#sec-0)\n\n"
         '<a id="sec-0"></a>\n'
@@ -92,12 +100,17 @@ def _make_run(
     malformed_coverage: bool = False,
     overall_pass: bool = True,
     summary_text: str | None = None,
+    outline_text: str | None = None,
+    write_outline: bool = True,
     frames_png: bool = False,
 ) -> dict:
     out = tmp_path / name
     out.mkdir()
     summary = out / "summary.md"
     summary.write_text(summary_text if summary_text is not None else _summary_text(hook), encoding="utf-8")
+    outline = out / "outline.md"
+    if write_outline:
+        outline.write_text(outline_text if outline_text is not None else _outline_text(hook, frame_link=frames_png), encoding="utf-8")
 
     coverage_path = out / "coverage.json"
     if malformed_coverage:
@@ -110,11 +123,15 @@ def _make_run(
         frames.mkdir()
         (frames / "slide-001.png").write_bytes(b"not-a-real-png-but-extension-is-enough")
 
-    return {
+    run = {
         "output_dir": str(out),
         "coverage_json": str(coverage_path),
         "summary_md": str(summary),
+        "outline_md": str(outline),
     }
+    if not write_outline:
+        run.pop("outline_md")
+    return run
 
 
 @pytest.mark.parametrize(
@@ -233,32 +250,60 @@ def test_hook_malformed_coverage_json_blocks_without_crashing(tmp_path, monkeypa
     assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
 
 
-@pytest.mark.parametrize(
-    "missing_anchor",
-    ["ENRICH_MARKER", "COVERAGE_ANCHOR", "TOC_ANCHOR", "timestamp"],
-)
+@pytest.mark.parametrize("missing_anchor", ["ENRICH_MARKER", "COVERAGE_ANCHOR"])
 def test_hook_blocks_when_each_required_summary_anchor_is_missing(tmp_path, monkeypatch, missing_anchor):
     hook = _load_hook()
-    text = _summary_text(hook)
-    if missing_anchor == "timestamp":
-        text = text.replace("[00:00:00]", "00:00:00").replace("[00:00:02]", "00:00:02")
-    else:
-        text = text.replace(getattr(hook, missing_anchor), "")
+    text = _summary_text(hook).replace(getattr(hook, missing_anchor), "")
     run = _make_run(tmp_path, hook, summary_text=text)
 
     assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
 
 
-def test_hook_blocks_when_frames_exist_but_summary_has_no_frame_link(tmp_path, monkeypatch):
+def test_hook_blocks_when_outline_missing(tmp_path, monkeypatch):
     hook = _load_hook()
-    run = _make_run(tmp_path, hook, frames_png=True, summary_text=_summary_text(hook, frame_link=False))
+    run = _make_run(tmp_path, hook, write_outline=False)
 
     assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
 
 
-def test_hook_all_good_with_frame_link_passes(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "outline_text",
+    [
+        "# 강의 개요\n\n- [00:00:00 · 시작](#sec-0)\n",
+        "# 강의 개요\n\n## 목차\n- 시작\n",
+    ],
+)
+def test_hook_blocks_when_required_outline_anchor_is_missing(tmp_path, monkeypatch, outline_text):
     hook = _load_hook()
-    run = _make_run(tmp_path, hook, frames_png=True, summary_text=_summary_text(hook, frame_link=True))
+    run = _make_run(tmp_path, hook, outline_text=outline_text)
+
+    assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
+
+
+def test_hook_blocks_when_outline_has_toc_and_section_timestamp_but_no_transcript_bullet(tmp_path, monkeypatch):
+    hook = _load_hook()
+    outline_text = (
+        "# 강의 개요\n\n"
+        f"{hook.TOC_ANCHOR}\n"
+        "- [00:00:00 · 시작](#sec-0)\n\n"
+        '<a id="sec-0"></a>\n'
+        "## 섹션 1. [00:00:00] 시작\n"
+    )
+    run = _make_run(tmp_path, hook, outline_text=outline_text)
+
+    assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
+
+
+def test_hook_blocks_when_frames_exist_but_outline_has_no_frame_link(tmp_path, monkeypatch):
+    hook = _load_hook()
+    run = _make_run(tmp_path, hook, frames_png=True, outline_text=_outline_text(hook, frame_link=False))
+
+    assert _hook_exit(tmp_path, monkeypatch, [run]) == 2
+
+
+def test_hook_all_good_with_outline_frame_link_passes(tmp_path, monkeypatch):
+    hook = _load_hook()
+    run = _make_run(tmp_path, hook, frames_png=True, outline_text=_outline_text(hook, frame_link=True))
 
     assert _hook_exit(tmp_path, monkeypatch, [run]) == 0
 

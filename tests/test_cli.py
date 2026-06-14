@@ -41,6 +41,7 @@ def _fake_processor(url, out_dir, force_stt, model):
         "coverage_json": f"./output/{url[-1]}/coverage.json",
         "summary_md": f"./output/{url[-1]}/summary.md",
         "transcript_md": f"./output/{url[-1]}/transcript.md",
+        "outline_md": f"./output/{url[-1]}/outline.md",
         "overall_pass": True,
     }
 
@@ -135,11 +136,24 @@ def test_default_processor_uses_title_slug_before_acquiring_speech(tmp_path, mon
     assert calls["download_out_dir"] == expected_dir
     assert calls["frames_dir"] == os.path.join(expected_dir, "frames")
     assert result["output_dir"] == expected_dir
+    assert result["outline_md"] == os.path.join(expected_dir, "outline.md")
     assert "video_01" not in calls["acquire_out_dir"]
 
     coverage = json.loads((tmp_path / "운영체제-1강-프로세스-스레드" / "coverage.json").read_text(encoding="utf-8"))
     assert coverage["video_title"] == "운영체제 1강: 프로세스/스레드"
     assert coverage["duration_sec"] == 120.0
+    assert coverage["artifacts"]["outline_md"] == os.path.join(expected_dir, "outline.md")
+    assert coverage["artifacts"]["outline_nonempty"] is True
+    assert coverage["artifacts"]["summary_nonempty"] is True
+    assert coverage["artifacts"]["transcript_nonempty"] is True
+
+    summary = (tmp_path / "운영체제-1강-프로세스-스레드" / "summary.md").read_text(encoding="utf-8")
+    outline = (tmp_path / "운영체제-1강-프로세스-스레드" / "outline.md").read_text(encoding="utf-8")
+    assert "TO-ENRICH" in summary
+    assert "## 목차" not in summary
+    assert "## 목차" in outline
+    assert "frames/frame_00001.png" in outline
+    assert "- [00:00:30] 두 번째 문장입니다" in outline
 
 
 def test_default_processor_falls_back_to_video_id_when_title_missing(tmp_path, monkeypatch):

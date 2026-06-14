@@ -12,7 +12,7 @@ Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smok
 | AC-5 | ffmpeg keyframe/scene extract + histogram/SSIM dedup | `tests/test_dedup.py`, `tests/test_ssim.py` (windowed SSIM); ffmpeg extraction → **smoke** | unit (dedup/SSIM) + smoke |
 | AC-6 | OCR (ko/en) on slides, incremental re-split | `tests/test_ocr.py` (classify/re-split, is_slide); PaddleOCR/Tesseract run → **smoke** | unit (logic) + smoke |
 | AC-7 | transcript.md (raw) + summary.md produced | `tests/test_summary_anchors.py::test_transcript_md_has_all_utterances`, `test_summary_md_required_anchors_present` | unit ✅ |
-| AC-8 | summary.md TOC + coverage header + timestamp/slide links | `tests/test_summary_anchors.py` (anchors, escaping, no-drop); hook validates anchors `tests/test_hook.py` | unit ✅ |
+| AC-8 | summary.md/outline.md pair contract: summary has ENRICH_MARKER, COVERAGE_ANCHOR, deterministic prose, TO-ENRICH; outline has TOC_ANCHOR, timestamps, slide links, transcript bullets | `tests/test_summary_anchors.py` (pair anchors, escaping, no-drop); hook validates summary/outline pair `tests/test_hook.py` | unit ✅ |
 | AC-9 | Transcript covers full duration; no >60s untranscribed speech gap | `tests/test_vad.py` (long-silence PASS, real-gap FAIL, quiet-speech); `coverage.gap_check` | unit ✅ |
 | AC-10 | SKILL.md + scripts + references; callable in Claude/Codex | `.claude/skills/lectural/SKILL.md` + `references/`; `.claude/settings.json` Stop hook; `uv run python -m lectural.cli --help` | artifact + CLI ✅ |
 | AC-11 | Core pipeline runs as standalone CLI/module | `lectural` console script + `python -m lectural.cli`; `tests/test_cli.py` parse/run; package imports offline | unit + CLI ✅ |

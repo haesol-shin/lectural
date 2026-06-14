@@ -4,10 +4,9 @@ The core writes ALL artifacts with NO LLM (token-zero):
   - synthesis_input.json : compact, deduped handoff for OPTIONAL host-agent
                            enrichment (text only, no images).
   - transcript.md        : raw timestamped transcript (every utterance).
-  - summary.md           : a deterministic BASELINE structured summary with the
-                           required anchors (TOC, coverage header, per-section
-                           timestamp + slide links). A host agent MAY later
-                           enrich the prose but MUST preserve these anchors.
+  - summary.md           : deterministic prose-first baseline summary with
+                           required enrichment/coverage anchors.
+  - outline.md           : deterministic TOC/section/slide/transcript outline.
 
 The renderers are pure and unit-tested for anchor presence (AC-7, AC-8, AC-12).
 """
@@ -133,17 +132,64 @@ def render_transcript_md(video: dict, segments: list[dict]) -> str:
         lines.append(f"[{format_timestamp(float(s.get('t', 0.0)))}] {s.get('text', '').strip()}")
     return "\n".join(lines).rstrip() + "\n"
 
+def _renderable_section_hints(segments: list[dict], hints: list[dict]) -> tuple[list[dict], dict[int, list[dict]]]:
+    """Pure: section list + transcript buckets used by summary and outline."""
+    buckets = assign_segments_to_sections(segments, hints)
 
-def render_summary_md(synthesis_input: dict, coverage: dict) -> str:
-    """Pure: deterministic baseline summary with required anchors (AC-8)."""
+    def _renderable(h: dict) -> bool:
+        if len(hints) == 1:
+            return True
+        return bool(h.get("frame")) or bool(buckets.get(h["index"]))
+
+    return [h for h in hints if _renderable(h)], buckets
+
+
+def render_outline_md(synthesis_input: dict) -> str:
+    """Pure: deterministic outline with TOC, slides, and transcript bullets."""
     video = synthesis_input.get("video", {})
     segments = synthesis_input.get("transcript_segments", [])
     hints = synthesis_input.get("section_hints", [])
     title = video.get("title", "Untitled")
 
-    out: list[str] = [ENRICH_MARKER, f"# {title} — 학습 정리", ""]
+    shown, buckets = _renderable_section_hints(segments, hints)
+    out: list[str] = [f"# {title} — 강의 개요", "", TOC_ANCHOR]
+    for h in shown:
+        out.append(
+            f"- [{format_timestamp(h['t'])} · {_safe_title(h['title'])}](#sec-{h['index']})"
+        )
+    out.append("")
 
-    # Coverage header (anchor)
+    for h in shown:
+        out.append(f'<a id="sec-{h["index"]}"></a>')
+        out.append(f"{SECTION_PREFIX} {h['index'] + 1}. [{format_timestamp(h['t'])}] {_safe_title(h['title'])}")
+        if h.get("frame"):
+            out.append(f"![슬라이드 {h['index'] + 1}]({h['frame']})")
+        body = buckets.get(h["index"], [])
+        if body:
+            out.append("")
+            for s in body:
+                out.append(f"- [{format_timestamp(float(s.get('t', 0.0)))}] {s.get('text', '').strip()}")
+        out.append("")
+
+    return "\n".join(out).rstrip() + "\n"
+
+
+def _excerpt(items: list[str], max_items: int = 3, max_chars: int = 220) -> str:
+    cleaned = [" ".join(item.split()) for item in items if item and item.strip()]
+    text = " / ".join(cleaned[:max_items])
+    if len(text) > max_chars:
+        text = text[: max_chars - 1].rstrip() + "…"
+    return text
+
+def render_summary_md(synthesis_input: dict, coverage: dict) -> str:
+    """Pure: deterministic prose-first baseline summary with required anchors."""
+    video = synthesis_input.get("video", {})
+    segments = synthesis_input.get("transcript_segments", [])
+    hints = synthesis_input.get("section_hints", [])
+    title = video.get("title", "Untitled")
+
+    out: list[str] = [ENRICH_MARKER, f"# {title} — 학습 요약", ""]
+
     gap = coverage.get("gap_check", {})
     scene = coverage.get("scene_coverage", {})
     arts = coverage.get("artifacts", {})
@@ -157,42 +203,45 @@ def render_summary_md(synthesis_input: dict, coverage: dict) -> str:
         f"- 슬라이드: {scene.get('slide_frames_with_text', 0)}/{scene.get('slide_frames_total', 0)} (OCR 텍스트 보유)",
         f"- OCR 엔진: {coverage.get('ocr_engine', 'none')}",
         f"- 산출물: transcript={'O' if arts.get('transcript_nonempty') else 'X'}, "
-        f"summary={'O' if arts.get('summary_nonempty') else 'X'}",
+        f"summary={'O' if arts.get('summary_nonempty') else 'X'}, "
+        f"outline={'O' if arts.get('outline_nonempty') else 'X'}",
         "",
     ]
 
-    # Determine which sections to render. Skip a synthetic intro section
-    # (no frame) that ended up with no pre-slide speech, but never skip the
-    # only section. Every segment is assigned to exactly one section (no drops).
-    buckets = assign_segments_to_sections(segments, hints)
-
-    def _renderable(h: dict) -> bool:
-        if len(hints) == 1:
-            return True
-        return bool(h.get("frame")) or bool(buckets.get(h["index"]))
-
-    shown = [h for h in hints if _renderable(h)]
-
-    # Table of contents (anchor) with intra-doc links
-    out += [TOC_ANCHOR]
-    for h in shown:
-        out.append(
-            f"- [{format_timestamp(h['t'])} · {_safe_title(h['title'])}](#sec-{h['index']})"
-        )
+    shown, buckets = _renderable_section_hints(segments, hints)
+    segment_excerpt = _excerpt([s.get("text", "") for s in segments])
+    slide_excerpt = _excerpt([h.get("title", "") for h in shown])
+    out += ["## 핵심 요약"]
+    if segment_excerpt:
+        if slide_excerpt:
+            out.append(f"이 강의는 {slide_excerpt} 흐름을 따라가며, 전사에서는 {segment_excerpt} 내용을 중심으로 전개됩니다.")
+        else:
+            out.append(f"이 강의는 전사 발화 {segment_excerpt} 내용을 중심으로 전개됩니다.")
+    else:
+        out.append("이 강의는 사용 가능한 전사 발화가 없어 슬라이드와 커버리지 정보만 기준으로 요약되었습니다.")
     out.append("")
 
-    # Sections: each has a timestamp anchor + slide link (when present) + body.
+    out.append("## 구간별 요약")
     for h in shown:
-        out.append(f'<a id="sec-{h["index"]}"></a>')
-        out.append(f"{SECTION_PREFIX} {h['index'] + 1}. [{format_timestamp(h['t'])}] {_safe_title(h['title'])}")
-        if h.get("frame"):
-            out.append(f"![슬라이드 {h['index'] + 1}]({h['frame']})")
         body = buckets.get(h["index"], [])
-        if body:
-            out.append("")
-            for s in body:
-                out.append(f"- [{format_timestamp(float(s.get('t', 0.0)))}] {s.get('text', '').strip()}")
+        section_excerpt = _excerpt([s.get("text", "") for s in body], max_items=2, max_chars=180)
+        slide_title = _safe_title(h.get("title", ""))
+        out.append(f"### 구간 {h['index'] + 1} · {slide_title}")
+        if section_excerpt and h.get("frame"):
+            out.append(f"{slide_title} 슬라이드를 기준으로 {section_excerpt} 내용을 설명합니다.")
+        elif section_excerpt:
+            out.append(f"이 구간에서는 {section_excerpt} 내용을 설명합니다.")
+        elif h.get("frame"):
+            out.append(f"{slide_title} 슬라이드가 제시되지만 이 구간에 배정된 전사 발화는 없습니다.")
+        else:
+            out.append("이 구간에 배정된 전사 발화와 슬라이드가 없습니다.")
         out.append("")
+
+    out += [
+        "## TO-ENRICH",
+        "TO-ENRICH: host agent는 위 결정적 요약을 보강할 수 있지만 ENRICH_MARKER와 COVERAGE_ANCHOR는 유지해야 합니다.",
+        "",
+    ]
 
     return "\n".join(out).rstrip() + "\n"
 

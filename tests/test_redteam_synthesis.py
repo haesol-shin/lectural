@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 
 import pytest
 
@@ -18,11 +19,13 @@ from lectural.synthesis import (
     build_synthesis_input,
     format_timestamp,
     render_summary_md,
+    render_outline_md,
     render_transcript_md,
     write_synthesis_input,
     write_text,
 )
 
+_BRACKETED_TIMESTAMP = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
 
 def _video(duration: float = 120.0, title: str = "Redteam # [Lecture] | Δ") -> dict:
     return {
@@ -63,6 +66,14 @@ def _summary_for(video: dict, segments: list[dict], slides: list[dict]) -> str:
     )
 
 
+def _synthesis_for(video: dict, segments: list[dict], slides: list[dict]) -> dict:
+    return build_synthesis_input(video, segments, slides)
+
+
+def _outline_for(video: dict, segments: list[dict], slides: list[dict]) -> str:
+    return render_outline_md(_synthesis_for(video, segments, slides))
+
+
 def test_render_transcript_md_property_captures_all_speech_fixed_seed():
     rng = random.Random(90210)
     video = _video(duration=90.0)
@@ -91,7 +102,7 @@ def test_render_transcript_md_property_captures_all_speech_fixed_seed():
     assert md.count("[00:00:12] duplicate-text") == 2
 
 
-def test_render_summary_md_assigns_each_in_duration_segment_once_and_boundary_to_one_section():
+def test_render_outline_md_assigns_each_in_duration_segment_once_and_boundary_to_one_section():
     video = _video(duration=100.0)
     slides = [
         {"t": 0.0, "frame": "frames/0001.png", "ocr_text": "Intro", "is_slide": True},
@@ -104,7 +115,7 @@ def test_render_summary_md_assigns_each_in_duration_segment_once_and_boundary_to
         {"t": 99.999, "text": "summary-seg-before-end"},
     ]
 
-    md = _summary_for(video, segments, slides)
+    md = _outline_for(video, segments, slides)
 
     for segment in segments:
         assert md.count(segment["text"]) == 1
@@ -114,7 +125,7 @@ def test_render_summary_md_assigns_each_in_duration_segment_once_and_boundary_to
     assert "summary-seg-on-boundary" in sec2
 
 
-def test_render_summary_md_does_not_drop_in_duration_segments_before_first_slide_or_at_duration():
+def test_render_outline_md_does_not_drop_in_duration_segments_before_first_slide_or_at_duration():
     video = _video(duration=100.0)
     slides = [
         {"t": 25.0, "frame": "frames/0025.png", "ocr_text": "Starts late", "is_slide": True},
@@ -126,25 +137,38 @@ def test_render_summary_md_does_not_drop_in_duration_segments_before_first_slide
         {"t": 100.0, "text": "dropped-at-duration-boundary"},
     ]
 
-    md = _summary_for(video, segments, slides)
+    md = _outline_for(video, segments, slides)
 
     for segment in segments:
         assert md.count(segment["text"]) == 1
 
 
-def test_render_summary_md_no_slides_keeps_required_anchors_and_single_section():
+def test_render_summary_and_outline_md_no_slides_keep_pair_contract_and_single_outline_section():
     video = _video(duration=75.0, title="No slides # [empty] | unicode 한글")
     segments = [{"t": 0.0, "text": "no-slides-segment"}, {"t": 74.999, "text": "no-slides-tail"}]
 
-    md = _summary_for(video, segments, [])
+    synthesis_input = _synthesis_for(video, segments, [])
+    summary_md = render_summary_md(
+        synthesis_input,
+        _coverage(video["duration_sec"], slide_total=0, slide_text=0),
+    )
+    outline_md = render_outline_md(synthesis_input)
 
-    assert md.splitlines()[0] == ENRICH_MARKER
-    assert COVERAGE_ANCHOR in md
-    assert TOC_ANCHOR in md
-    assert md.count(SECTION_PREFIX) == 1
-    assert md.count('<a id="sec-') == 1
+    assert summary_md.splitlines()[0] == ENRICH_MARKER
+    assert COVERAGE_ANCHOR in summary_md
+    assert "TO-ENRICH" in summary_md
+    assert TOC_ANCHOR not in summary_md
+    assert _BRACKETED_TIMESTAMP.search(summary_md) is None
+
+
+    assert TOC_ANCHOR in outline_md
+    assert outline_md.count(SECTION_PREFIX) == 1
+    assert outline_md.count('<a id="sec-') == 1
+    assert "- [00:00:00 · 전체](#sec-0)" in outline_md
+    assert f"{SECTION_PREFIX} 1. [00:00:00] 전체" in outline_md
+
     for segment in segments:
-        assert segment["text"] in md
+        assert outline_md.count(segment["text"]) == 1
 
 
 @pytest.mark.parametrize(
@@ -159,15 +183,29 @@ def test_anchor_stability_across_no_empty_and_markdown_special_slides(slides):
     video = _video(duration=60.0, title="Anchor # [stability] | Δ")
     segments = [{"t": 0.0, "text": "anchor-stability-segment"}]
 
-    md = _summary_for(video, segments, slides)
+    synthesis_input = _synthesis_for(video, segments, slides)
+    summary_md = render_summary_md(
+        synthesis_input,
+        _coverage(video["duration_sec"], len(slides), len([s for s in slides if s.get("ocr_text", "").strip()])),
+    )
+    outline_md = render_outline_md(synthesis_input)
 
-    assert md.startswith(ENRICH_MARKER + "\n")
-    assert COVERAGE_ANCHOR in md
-    assert TOC_ANCHOR in md
-    assert SECTION_PREFIX in md
-    assert '<a id="sec-0"></a>' in md
+    assert summary_md.startswith(ENRICH_MARKER + "\n")
+    assert COVERAGE_ANCHOR in summary_md
+    assert "TO-ENRICH" in summary_md
+    assert TOC_ANCHOR not in summary_md
+    assert _BRACKETED_TIMESTAMP.search(summary_md) is None
+
+
+    assert TOC_ANCHOR in outline_md
+    assert SECTION_PREFIX in outline_md
+    assert '<a id="sec-0"></a>' in outline_md
+    assert _BRACKETED_TIMESTAMP.search(outline_md) is not None
+    assert outline_md.count("anchor-stability-segment") == 1
     if slides and slides[0].get("frame"):
-        assert slides[0]["frame"] in md
+        assert slides[0]["frame"] in outline_md
+    if slides and slides[0].get("ocr_text"):
+        assert "# Title (brackets) / pipe" in outline_md
 
 
 def test_build_section_hints_adversarial_order_single_duplicate_and_past_duration():

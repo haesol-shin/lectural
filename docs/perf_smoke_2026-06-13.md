@@ -73,7 +73,8 @@ video on the captions path.
 - `transcript.md`: real, 117 caption cues (Korean), non-empty.
 - 734 raw keyframes -> 20 deduped slide frames, **all 20 OCR'd with Korean
   text** (`slide_frames_with_text: 20/20`, `ocr_engine: paddleocr`).
-- `summary.md`: written, ~8.8 KB, with all required anchors and slide links.
+- `summary.md`: written, ~8.8 KB, with prose/coverage/enrichment anchors.
+- `outline.md`: written with required slide links.
 
 ## Completeness gate result
 
@@ -81,8 +82,8 @@ video on the captions path.
 
 - `gap_check.pass`: true
 - `scene_coverage.pass`: true (20/20 slide frames carry OCR text)
-- `artifacts.pass`: true (transcript + summary non-empty, all anchors + slide
-  links present)
+- `artifacts.pass`: true (transcript + summary non-empty; summary anchors and
+  outline slide links present)
 - `overall_pass`: true
 
 ### Fixes applied to reach a clean gate (in scope, product correctness)

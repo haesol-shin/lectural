@@ -4,7 +4,7 @@ Three checks (all pure, unit-tested):
   1. gap_check     - max untranscribed SPEECH gap <= MAX_GAP_SEC (AC-9).
   2. scene_coverage- every timeline bin that contains speech also contains a
                      keyframe, and every slide-classified frame has OCR text.
-  3. artifacts     - transcript.md and summary.md exist and are non-empty.
+  3. artifacts     - transcript.md, summary.md, and outline.md exist and are non-empty.
 
 `overall_pass` is the AND of the three. The hook (G003) reads this file.
 """
@@ -100,31 +100,38 @@ def scene_coverage(
 def artifact_check(
     transcript_path: str,
     summary_path: str,
+    outline_path: str | None = None,
     *,
     transcript_text: str | None = None,
     summary_text: str | None = None,
+    outline_text: str | None = None,
 ) -> dict:
-    """Both artifacts must be non-empty.
+    """Required artifacts must be non-empty.
 
-    When the rendered text is supplied (`transcript_text` / `summary_text`),
-    non-emptiness is judged from that content, decoupling the check from file
-    write ordering. Otherwise it falls back to a filesystem stat (used by the
-    Stop hook, which only ever sees the written files).
+    When rendered text is supplied, non-emptiness is judged from that content,
+    decoupling the check from file write ordering. Otherwise it falls back to a
+    filesystem stat (used by the Stop hook, which only ever sees written files).
+    `outline_path` / `outline_text` are optional for compatibility with older
+    callers, but when either is supplied the outline participates in `pass`.
     """
-    if transcript_text is not None:
-        t_ok = bool(transcript_text.strip())
-    else:
-        t_ok = os.path.isfile(transcript_path) and os.path.getsize(transcript_path) > 0
-    if summary_text is not None:
-        s_ok = bool(summary_text.strip())
-    else:
-        s_ok = os.path.isfile(summary_path) and os.path.getsize(summary_path) > 0
+
+    def _nonempty(path: str | None, text: str | None) -> bool:
+        if text is not None:
+            return bool(text.strip())
+        return bool(path and os.path.isfile(path) and os.path.getsize(path) > 0)
+
+    t_ok = _nonempty(transcript_path, transcript_text)
+    s_ok = _nonempty(summary_path, summary_text)
+    outline_supplied = outline_path is not None or outline_text is not None
+    o_ok = _nonempty(outline_path, outline_text) if outline_supplied else True
     return {
         "transcript_md": transcript_path,
         "summary_md": summary_path,
+        "outline_md": outline_path,
         "transcript_nonempty": bool(t_ok),
         "summary_nonempty": bool(s_ok),
-        "pass": bool(t_ok and s_ok),
+        "outline_nonempty": bool(o_ok),
+        "pass": bool(t_ok and s_ok and o_ok),
     }
 
 
@@ -137,11 +144,13 @@ class CoverageInputs:
     frame_times: list[float]
     transcript_path: str
     summary_path: str
+    outline_path: str | None = None
     ocr_engine: str = "none"
     slide_frames_total: int = 0
     slide_frames_with_text: int = 0
     transcript_text: str | None = None
     summary_text: str | None = None
+    outline_text: str | None = None
 
     @property
     def raw_frame_times(self) -> list[float]:
@@ -159,9 +168,11 @@ def coverage_inputs_from_extraction(
     slides: list[dict],
     transcript_path: str,
     summary_path: str,
+    outline_path: str | None = None,
     ocr_engine: str = "none",
     transcript_text: str | None = None,
     summary_text: str | None = None,
+    outline_text: str | None = None,
 ) -> "CoverageInputs":
     """Enforce the scene-coverage contract at the call site (the orchestrator).
 
@@ -181,11 +192,13 @@ def coverage_inputs_from_extraction(
         frame_times=list(raw_sample_times),
         transcript_path=transcript_path,
         summary_path=summary_path,
+        outline_path=outline_path,
         ocr_engine=ocr_engine,
         slide_frames_total=slide_total,
         slide_frames_with_text=slide_with_text,
         transcript_text=transcript_text,
         summary_text=summary_text,
+        outline_text=outline_text,
     )
 
 
@@ -202,8 +215,10 @@ def build_coverage(inp: CoverageInputs) -> dict:
     artifacts = artifact_check(
         inp.transcript_path,
         inp.summary_path,
+        inp.outline_path,
         transcript_text=inp.transcript_text,
         summary_text=inp.summary_text,
+        outline_text=inp.outline_text,
     )
     return {
         "schema_version": SCHEMA_VERSION,

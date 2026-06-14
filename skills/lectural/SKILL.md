@@ -28,8 +28,9 @@ cost is zero.
 2. **Visual**: ffmpeg keyframe/scene extraction (2fps) -> histogram/SSIM dedup ->
    PaddleOCR (Korean and English, Tesseract fallback) for slide text. Incremental
    slides are kept separate.
-3. **Synthesize**: `transcript.md` (raw, timestamped) + `summary.md` (table of
-   contents + coverage summary + per-section timestamps and slide links) +
+3. **Synthesize**: `transcript.md` (raw, timestamped) + `summary.md` (coverage
+   summary + deterministic prose + `TO-ENRICH` cue) + `outline.md` (TOC,
+   per-section timestamps, slide links, and transcript bullets) +
    `synthesis_input.json` + `coverage.json`.
 4. **Completeness**: check speech gaps, scene coverage, and artifact presence via
    `coverage.json`.
@@ -53,16 +54,18 @@ lectural "<url>" --force-stt --model medium       # ignore captions, force STT
 ```
 
 Artifacts: under `./output/<video-title>/` -> `transcript.md`, `summary.md`,
-`frames/`, `coverage.json`, `synthesis_input.json`.
+`outline.md`, `frames/`, `coverage.json`, `synthesis_input.json`.
 
 ## Optional: summary enrichment (still zero tokens)
 
-`summary.md` is already a deterministic baseline. If richer prose is wanted, read
-only `synthesis_input.json` (text only, no images) and enrich the prose. You MUST
-preserve the required anchors defined in `lectural.synthesis`: `ENRICH_MARKER`,
-`COVERAGE_ANCHOR`, `TOC_ANCHOR`, the `SECTION_PREFIX` section headings, the
-per-section timestamps, and the `frames/` links. Do not put raw images into
-context.
+`summary.md` is already a deterministic prose baseline. If richer prose is
+wanted, read only `synthesis_input.json` (text only, no images) and enrich the
+summary prose. You MUST preserve the summary-owned anchors defined in
+`lectural.synthesis`: `ENRICH_MARKER` and `COVERAGE_ANCHOR`, plus the `TO-ENRICH`
+host-agent cue. Do not add the TOC, per-section timestamps, slide links, or
+transcript bullets to `summary.md`; `outline.md` owns `TOC_ANCHOR`, the
+`SECTION_PREFIX` section headings, timestamps, slide/frame links, and transcript
+bullets, and its structural anchors MUST remain intact.
 
 ## Completeness gate (must pass)
 
@@ -73,9 +76,10 @@ gap, scene coverage, non-empty artifacts). Any agent wrapping the CLI MUST treat
 a non-zero exit as a hard failure and must not work around it with arbitrary
 summarization. Layer 2 (additional, Claude Code only): the Stop hook
 (`scripts/completeness_hook.py`) is a session-final verifier that independently
-reads run state (rejecting failed/pending runs), `coverage.json`, and validates
-`summary.md` anchors and slide-frame links; it does not call the CLI. On Windows
-without `python`, use `py -3` for the hook script.
+reads run state (rejecting failed/pending runs), `coverage.json`, validates
+`summary.md` anchors, and validates `outline.md` TOC/timestamps/transcript
+bullets/slide-frame links; it does not call the CLI. On Windows without
+`python`, use `py -3` for the hook script.
 
 ## Scope
 

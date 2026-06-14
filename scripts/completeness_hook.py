@@ -4,8 +4,8 @@
 Blocks "done" (exit 2) until every LecturAL run produced this session is
 complete. For each run recorded in the run-state file it checks:
   (a) coverage.json overall_pass (speech-gap + scene coverage + artifacts)
-  (b) summary.md carries the required anchors (TOC, coverage header,
-      per-section timestamp, and a slide image link when frames exist)
+  (b) summary.md carries summary-only anchors (baseline marker + coverage header)
+  (c) outline.md carries navigation anchors (TOC, timestamps, transcript bullets, slide links)
 
 When no run-state file exists, the current turn was not a LecturAL run and the
 hook is a NO-OP (exit 0). Cross-platform: invoked via `python`/`py -3`; the
@@ -35,6 +35,7 @@ except Exception:  # noqa: BLE001
 
 _DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
 _TIMESTAMP_RE = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
+_TRANSCRIPT_BULLET_RE = re.compile(r"(?m)^\s*-\s+\[\d{2}:\d{2}:\d{2}\]\s+\S.*$")
 
 
 def _read_runstate() -> dict | None:
@@ -66,17 +67,67 @@ def _validate_summary_anchors(summary_path: str) -> list[str]:
         problems.append("summary.md: ENRICH_MARKER 누락")
     if COVERAGE_ANCHOR not in text:
         problems.append("summary.md: 커버리지 요약 헤더 누락")
+    return problems
+
+
+def _outline_candidates(run: dict, summary_path: str) -> list[str]:
+    if run.get("outline_md"):
+        return [run["outline_md"]]
+
+    candidates: list[str] = []
+    output_dir = run.get("output_dir")
+    if output_dir:
+        candidates.append(os.path.join(output_dir, "outline.md"))
+    if summary_path:
+        candidates.append(os.path.join(os.path.dirname(summary_path), "outline.md"))
+
+    unique: list[str] = []
+    for path in candidates:
+        if path and path not in unique:
+            unique.append(path)
+    return unique
+
+
+def _has_frame_png(run: dict, summary_path: str, outline_path: str) -> bool:
+    roots: list[str] = []
+    for root in (
+        run.get("output_dir"),
+        os.path.dirname(summary_path) if summary_path else "",
+        os.path.dirname(outline_path) if outline_path else "",
+    ):
+        if root and root not in roots:
+            roots.append(root)
+
+    for root in roots:
+        frames_dir = os.path.join(root, "frames")
+        try:
+            if os.path.isdir(frames_dir) and any(
+                name.lower().endswith(".png") for name in os.listdir(frames_dir)
+            ):
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _validate_outline_anchors(run: dict, summary_path: str) -> list[str]:
+    candidates = _outline_candidates(run, summary_path)
+    outline_path = next((path for path in candidates if os.path.isfile(path)), "")
+
+    if not outline_path:
+        expected = " 또는 ".join(candidates) if candidates else "outline_md/output_dir 없음"
+        return [f"outline.md 없음: {expected}"]
+
+    text = open(outline_path, encoding="utf-8").read()
+    problems: list[str] = []
     if TOC_ANCHOR not in text:
-        problems.append("summary.md: 목차 누락")
+        problems.append("outline.md: 목차(TOC_ANCHOR) 누락")
     if not _TIMESTAMP_RE.search(text):
-        problems.append("summary.md: 타임스탬프 링크 누락")
-    # Slide image link required only when the run actually produced frames.
-    frames_dir = os.path.join(os.path.dirname(summary_path), "frames")
-    has_frames = os.path.isdir(frames_dir) and any(
-        n.lower().endswith(".png") for n in os.listdir(frames_dir)
-    )
-    if has_frames and "frames/" not in text:
-        problems.append("summary.md: 슬라이드 이미지 링크 누락(frames 존재)")
+        problems.append("outline.md: [HH:MM:SS] 타임스탬프 누락")
+    if not _TRANSCRIPT_BULLET_RE.search(text):
+        problems.append("outline.md: [HH:MM:SS] transcript bullet 누락")
+    if _has_frame_png(run, summary_path, outline_path) and "frames/" not in text:
+        problems.append("outline.md: frames/ 슬라이드 링크 누락(frames png 존재)")
     return problems
 
 
@@ -110,7 +161,9 @@ def _validate_run(run: dict) -> list[str]:
             )
         if not arts.get("pass"):
             problems.append("산출물 누락/빈 파일")
-    problems += _validate_summary_anchors(run.get("summary_md", ""))
+    summary_path = run.get("summary_md", "")
+    problems += _validate_summary_anchors(summary_path)
+    problems += _validate_outline_anchors(run, summary_path)
     return problems
 
 

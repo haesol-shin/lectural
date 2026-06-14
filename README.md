@@ -10,7 +10,7 @@
 
 ## 왜 LecturAL인가
 
-- 🧾 **완전 전사본 + 구조화 요약본 둘 다** — 원본 한 줄도 잃지 않는 raw `transcript.md`와, 목차·슬라이드 링크가 달린 `summary.md`.
+- 🧾 **완전 전사본 + 요약/개요 한 쌍** — 원본 한 줄도 잃지 않는 raw `transcript.md`, 산문 중심 `summary.md`, 목차·타임스탬프·슬라이드 링크가 있는 `outline.md`.
 - 💸 **외부 LLM 토큰 0** — 전사·OCR·기본 요약 전부 결정론적으로 생성. 요약 보강은 이미 켜져 있는 호스트 에이전트(Claude)가 직접 하므로 별도 API 비용이 없습니다.
 - 💻 **노트북(CPU)에서 동작** — GPU 불필요. `faster-whisper medium int8`을 CPU로 구동.
 - 🇰🇷 **한국어·영어 자동** — 자막이 있으면 쓰고, 없으면 STT로 전사.
@@ -27,14 +27,14 @@ flowchart TD
     D --> E
     E --> F[중복 제거: 히스토그램 / SSIM]
     F --> G[OCR: PaddleOCR → Tesseract 폴백]
-    G --> H[합성: transcript.md · summary.md · frames/ · coverage.json]
+    G --> H[합성: transcript.md · summary.md · outline.md · frames/ · coverage.json]
     H --> I{완전성 게이트}
     I -->|통과| J[완료]
     I -->|실패 · exit 2| K[누락 원인 해결 후 재시도]
     K --> H
 ```
 
-`transcript.md`·OCR·기본 `summary.md`는 **LLM 없이** 만들어집니다. 호스트 에이전트는 `synthesis_input.json`(텍스트만, 이미지 미포함)만 읽고 요약 산문을 *선택적으로* 보강합니다.
+`transcript.md`·OCR·기본 `summary.md`/`outline.md`는 **LLM 없이** 만들어집니다. 호스트 에이전트는 `synthesis_input.json`(텍스트만, 이미지 미포함)만 읽고 `summary.md` 산문을 *선택적으로* 보강하며, `outline.md` 구조 앵커는 그대로 둡니다.
 
 ## 요구 사항
 
@@ -123,7 +123,8 @@ lectural "<url>" --force-stt --model medium
 ```text
 output/<video-title>/
 ├── transcript.md          # 원본 전사본(raw, 타임스탬프 포함) — 모든 발화
-├── summary.md             # 학습 정리본: 목차 + 커버리지 요약 + 섹션별 타임스탬프/슬라이드 링크
+├── summary.md             # 학습 요약: 커버리지 요약 + 결정론적 산문 + TO-ENRICH 보강 cue
+├── outline.md             # 개요: 목차 + 섹션별 타임스탬프/슬라이드 링크 + 전사 bullet
 ├── synthesis_input.json   # (선택) 호스트 에이전트 요약 보강용 입력 — 텍스트만
 ├── coverage.json          # 완전성 게이트 입력(대사 공백/장면 커버리지/산출물)
 └── frames/                # 중복 제거된 슬라이드 이미지
@@ -147,7 +148,7 @@ lectural --help
 LecturAL의 완료 판정은 두 계층입니다.
 
 1. **1계층(주, 에이전트 무관): `lectural` CLI 종료 코드** — CLI는 모든 run의 `overall_pass`를 AND하여 하나라도 실패하면 non-zero(`2`)로 종료합니다. CLI를 감싸는 에이전트는 이 비정상 종료를 하드 실패로 취급해야 합니다.
-2. **2계층(추가, Claude Code 전용): Stop 훅** — `scripts/completeness_hook.py`는 CLI를 호출하지 않고 run 상태(실패/미처리 거부), `coverage.json`, `summary.md`의 앵커와 슬라이드 프레임 링크를 독립 검증합니다. 하나라도 걸리면 exit 2로 "완료"를 차단합니다.
+2. **2계층(추가, Claude Code 전용): Stop 훅** — `scripts/completeness_hook.py`는 CLI를 호출하지 않고 run 상태(실패/미처리 거부), `coverage.json`, `summary.md`의 요약 앵커, `outline.md`의 목차·타임스탬프·전사 bullet·슬라이드 프레임 링크를 독립 검증합니다. 하나라도 걸리면 exit 2로 "완료"를 차단합니다.
 
 Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude Code Stop 훅은 Claude Code 세션에서 추가로 fail-closed를 보강하는 계층이며, CLI를 감싸는 래퍼가 아닙니다.
 
@@ -157,7 +158,7 @@ Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude 
 
 ## 개발·테스트
 
-결정론적 로직(중복 제거·대사 공백·OCR 분리·요약 앵커·커버리지·훅·CLI)은 외부 바이너리/모델 없이 **오프라인 단위 테스트**로 검증됩니다.
+결정론적 로직(중복 제거·대사 공백·OCR 분리·summary/outline 앵커·커버리지·훅·CLI)은 외부 바이너리/모델 없이 **오프라인 단위 테스트**로 검증됩니다.
 
 ```bash
 uv run --with pytest --with numpy pytest -q     # 112 passed

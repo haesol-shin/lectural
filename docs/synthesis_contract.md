@@ -1,4 +1,4 @@
-# Synthesis Contract (`synthesis_input.json` + `summary.md` anchors)
+# Synthesis Contract (`synthesis_input.json` + `summary.md`/`outline.md` pair)
 
 `schema_version` is `1` (`lectural.config.SCHEMA_VERSION`). Bump it on any
 incompatible change to the shapes below; readers MUST check it.
@@ -22,23 +22,46 @@ ever sent to the model (token minimization).
 }
 ```
 
-## `summary.md` required anchors (validated by the completeness hook)
+## Markdown outputs (`transcript.md` + `summary.md`/`outline.md` pair)
 
-The deterministic BASELINE `summary.md` MUST contain these anchors. A host
-agent MAY rewrite/expand prose but MUST preserve them, so the hook can verify
-structure regardless of who wrote the file:
+The deterministic core writes three markdown outputs with separate ownership:
+
+| File | Ownership |
+|------|-----------|
+| `transcript.md` | verbatim, timestamped transcript; no summarization or enrichment |
+| `summary.md` | prose-first deterministic baseline; owns `ENRICH_MARKER`, `COVERAGE_ANCHOR`, deterministic summary prose, and the `TO-ENRICH` host-agent cue |
+| `outline.md` | structural navigation/detail file; owns `TOC_ANCHOR`, section anchors/headings, `[HH:MM:SS]` timestamps, slide image links, and transcript bullets |
+
+A host agent MAY enrich only the prose in `summary.md`. It MUST preserve
+`summary.md` anchors (`ENRICH_MARKER`, `COVERAGE_ANCHOR`, `TO-ENRICH`) and MUST
+leave `outline.md` structural anchors and transcript bullets intact. Do not move
+the TOC, timestamps, slide links, or transcript bullets into `summary.md`; those
+belong to `outline.md`.
+
+## `summary.md` required anchors (validated by the completeness hook)
 
 | Anchor | Constant | Meaning |
 |--------|----------|---------|
 | `<!-- lectural:baseline -->` | `ENRICH_MARKER` | first line; marks a LecturAL summary |
-| `## 커버리지 요약` | `COVERAGE_ANCHOR` | coverage header (gap / scene / OCR engine) |
-| `## 목차` | `TOC_ANCHOR` | table of contents with `(#sec-N)` links |
-| `## 섹션 N. [HH:MM:SS] ...` | `SECTION_PREFIX` | per-section heading with timestamp |
-| `![...](frames/...)` | — | slide image link (present when slides exist) |
+| `## 커버리지 요약` | `COVERAGE_ANCHOR` | coverage header (gap / scene / OCR engine / artifact status) |
+| `## TO-ENRICH` + `TO-ENRICH:` | — | host-agent cue for optional prose enrichment |
 
-The hook checks: ENRICH_MARKER present, COVERAGE_ANCHOR present, TOC_ANCHOR
-present, at least one `[HH:MM:SS]` timestamp link, and — when `frames/` images
-exist for the run — at least one `frames/` image link.
+The hook checks `summary.md` for `ENRICH_MARKER` and `COVERAGE_ANCHOR`. The
+`TO-ENRICH` cue is part of the summary contract: enrichment may rewrite prose but
+must not remove the cue or the required summary anchors.
+
+## `outline.md` required structure (validated by the completeness hook)
+
+| Anchor/shape | Constant | Meaning |
+|--------------|----------|---------|
+| `## 목차` | `TOC_ANCHOR` | table of contents with `(#sec-N)` links |
+| `<a id="sec-N"></a>` + `## 섹션 N. [HH:MM:SS] ...` | `SECTION_PREFIX` | per-section structural anchor and timestamped heading |
+| `![...](frames/...)` | — | slide image link (present when slide frames exist) |
+| `- [HH:MM:SS] transcript text` | — | transcript bullet assigned to a section |
+
+The hook checks `outline.md` for `TOC_ANCHOR`, `[HH:MM:SS]` timestamps,
+transcript bullets, and — when `frames/` images exist for the run — at least one
+`frames/` image link.
 
 ## `coverage.json`
 

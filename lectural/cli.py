@@ -58,7 +58,7 @@ def run(
 
     `processor(url, out_dir, force_stt, model) -> dict` is injectable; the
     default uses the real pipeline. Each result dict must include output_dir,
-    coverage_json, summary_md, transcript_md, and overall_pass.
+    coverage_json, summary_md, outline_md, transcript_md, and overall_pass.
 
     Every URL is pre-registered as `pending` so a failed or unproduced video
     stays visible to the completeness hook (it cannot be hidden by aborting).
@@ -95,6 +95,7 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     from .ocr import ocr_frames
     from .synthesis import (
         build_synthesis_input,
+        render_outline_md,
         render_summary_md,
         render_transcript_md,
         write_synthesis_input,
@@ -144,33 +145,41 @@ def _default_processor(url: str, out_dir_hint: str, force_stt: bool, model: str)
     si = build_synthesis_input(video, segments, slide_dicts)
     transcript_path = os.path.join(out_dir, "transcript.md")
     summary_path = os.path.join(out_dir, "summary.md")
+    outline_path = os.path.join(out_dir, "outline.md")
     transcript_md = render_transcript_md(video, segments)
+    outline_md = render_outline_md(si)
     write_text(transcript_md, transcript_path)
     write_synthesis_input(si, os.path.join(out_dir, "synthesis_input.json"))
 
-    # 5. Coverage (raw sample times enforce the carry-cap contract). Render the
-    # summary first so the artifact check judges the rendered content, not file
-    # write ordering: build a coverage view to render the summary header, then
-    # finalize coverage with the actual rendered transcript/summary text.
-    def _cov_inputs(summary_md_text: str | None) -> "object":
+    # 5. Coverage (raw sample times enforce the carry-cap contract). Render
+    # summary/outline before the final coverage write so artifact checks judge
+    # rendered content, not filesystem write ordering.
+    def _cov_inputs(summary_md_text: str | None, outline_md_text: str | None) -> "object":
         return coverage_inputs_from_extraction(
             video_title=title, duration_sec=duration, speech_spans=speech_spans,
             segment_times=[s["t"] for s in segments],
             raw_sample_times=[f.timestamp for f in raw_frames],
             slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
+            outline_path=outline_path,
             ocr_engine=ocr_engine,
             transcript_text=transcript_md, summary_text=summary_md_text,
+            outline_text=outline_md_text,
         )
 
-    summary_md = render_summary_md(si, build_coverage(_cov_inputs("")))
-    coverage = build_coverage(_cov_inputs(summary_md))
+    draft_coverage = build_coverage(_cov_inputs("", outline_md))
+    draft_summary_md = render_summary_md(si, draft_coverage)
+    coverage = build_coverage(_cov_inputs(draft_summary_md, outline_md))
+    summary_md = render_summary_md(si, coverage)
+    coverage = build_coverage(_cov_inputs(summary_md, outline_md))
     write_text(summary_md, summary_path)
+    write_text(outline_md, outline_path)
     coverage_path = write_coverage(coverage, os.path.join(out_dir, "coverage.json"))
 
     return {
         "output_dir": out_dir,
         "coverage_json": coverage_path,
         "summary_md": summary_path,
+        "outline_md": outline_path,
         "transcript_md": transcript_path,
         "overall_pass": coverage["overall_pass"],
     }
