@@ -1,0 +1,38 @@
+name: Size Label
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply size label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const changes = pr.additions + pr.deletions;
+            const desired = changes < 50
+              ? 'size/S'
+              : changes < 200
+                ? 'size/M'
+                : changes < 500
+                  ? 'size/L'
+                  : 'size/XL';
+
+            const { owner, repo } = context.repo;
+            const issue_number = pr.number;
+            const currentLabels = pr.labels.map((label) => label.name);
+
+            for (const label of currentLabels.filter((name) => name.startsWith('size/') && name !== desired)) {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label });
+            }
+
+            if (!currentLabels.includes(desired)) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [desired] });
+            }
