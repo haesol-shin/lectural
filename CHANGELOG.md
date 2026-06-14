@@ -6,6 +6,15 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-14
+
+### Fixed
+- Plugin failed to load with "Duplicate hooks file detected" because
+  `plugin.json` referenced `./hooks/hooks.json`, which Claude Code now auto-loads.
+  Removed the `hooks` key from `plugin.json`; the standard `hooks/hooks.json`
+  (the completeness Stop hook) is loaded automatically. `lectural doctor` now
+  flags a manifest `hooks` key that points at the auto-loaded file.
+
 ## [0.1.1] - 2026-06-14
 
 ### Removed
@@ -43,6 +52,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Two-layer completeness gate: CLI exit code (structure) plus Stop hook
   (citations, enrichment, per-slide checks).
 
-[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/haesol-shin/lectural/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/haesol-shin/lectural/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/haesol-shin/lectural/releases/tag/v0.1.0
