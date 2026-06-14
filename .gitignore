@@ -24,7 +24,10 @@ ffmpeg.exe
 ffprobe.exe
 /output/
 
-.gjc/
+# GJC: ignore runtime state and the shared-run-id plans dir; track the audit subset
+# (.gjc/ultragoal goals/ledger/quality-gate + .gjc/specs) committed for an in-repo audit trail
+.gjc/state/
+.gjc/plans/
 .tmp/
 
 # Claude Code local workspace config (use `claude --plugin-dir .` for plugin dev)
