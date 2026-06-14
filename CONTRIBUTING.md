@@ -26,7 +26,7 @@ lectural doctor
 ## Project layout
 
 - `lectural/`: Python package and CLI/runtime implementation.
-- `skills/lectural/`: Claude Code skill and references.
+- `skills/lectural/references/`: host-agent enrichment prompt and pipeline reference.
 - `commands/`: plugin slash-command markdown.
 - `hooks/`: plugin hook configuration.
 - `docs/`: contracts and verification evidence.
