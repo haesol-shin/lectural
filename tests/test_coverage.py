@@ -12,7 +12,20 @@ from lectural.coverage import (
     scene_coverage,
     write_coverage,
 )
-from lectural.synthesis import build_synthesis_input, render_notes_md, render_transcript_md
+from lectural.notes_contract import hook_contract_problems
+from lectural.synthesis import (
+    NOTES_CONCEPTS_ANCHOR,
+    NOTES_COVERAGE_ANCHOR,
+    NOTES_DETAIL_ANCHOR,
+    NOTES_FLOW_ANCHOR,
+    NOTES_QUESTIONS_ANCHOR,
+    NOTES_TAKEAWAY_ANCHOR,
+    NOTES_TOC_ANCHOR,
+    NOTES_UNENRICHED_MARKER,
+    build_synthesis_input,
+    render_notes_md,
+    render_transcript_md,
+)
 
 
 def _rendered_notes_and_transcript() -> tuple[str, str]:
@@ -50,6 +63,68 @@ def _passing_inputs(tmp_path, *, notes_text: str | None = None, transcript_text:
         transcript_text=transcript_text,
         notes_text=notes_text,
     )
+
+
+def _replace_section_body(text: str, anchor: str, next_anchor: str, lines: list[str]) -> str:
+    body_start = text.index("\n", text.index(anchor)) + 1
+    body_end = text.index(next_anchor, body_start)
+    return text[:body_start] + "\n".join(lines).rstrip() + "\n\n" + text[body_end:]
+
+
+def _layer2_enriched_notes(notes_text: str) -> str:
+    notes = "\n".join(line for line in notes_text.splitlines() if line != NOTES_UNENRICHED_MARKER) + "\n"
+    notes = _replace_section_body(
+        notes,
+        NOTES_TAKEAWAY_ANCHOR,
+        NOTES_TOC_ANCHOR,
+        ["- 요약 1", "- 요약 2", "- 요약 3"],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_FLOW_ANCHOR,
+        NOTES_CONCEPTS_ANCHOR,
+        ["- 흐름 1", "- 흐름 2"],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_CONCEPTS_ANCHOR,
+        NOTES_DETAIL_ANCHOR,
+        ["- **핵심 설명**: 핵심 정의. ([영상 0:02](https://youtu.be/abc12345678?t=2))"],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_QUESTIONS_ANCHOR,
+        NOTES_COVERAGE_ANCHOR,
+        [
+            "**Q1. 핵심은 무엇인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "핵심 설명입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))",
+            "",
+            "</details>",
+            "",
+            "**Q2. 근거는 어디인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "전사 발화입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))",
+            "",
+            "</details>",
+            "",
+            "**Q3. 언제 나오나요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "2초 지점입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))",
+            "",
+            "</details>",
+        ],
+    )
+    return notes
 
 
 
@@ -131,22 +206,24 @@ def test_bare_skeleton_notes_contract_is_marker_agnostic(tmp_path):
     assert cov["overall_pass"] is True
 
 
-def test_notes_contract_dangling_concept_anchor_fails_coverage(tmp_path):
+def test_layer1_coverage_ignores_dangling_or_non_youtube_citation_text(tmp_path):
     notes_text, transcript_text = _rendered_notes_and_transcript()
-    broken = notes_text.replace("transcript.md#t000002", "transcript.md#t999999", 1)
+    broken = notes_text.replace("- 미보강: 핵심 용어", "- 미보강: [깨진 전사](transcript.md#t999999) 핵심 용어", 1)
     cov = build_coverage(_passing_inputs(tmp_path, notes_text=broken, transcript_text=transcript_text))
-    assert cov["notes_contract"]["pass"] is False
-    assert cov["overall_pass"] is False
-    assert any("전사본에 없는 앵커" in p for p in cov["notes_contract"]["problems"])
+
+    assert cov["notes_contract"]["pass"] is True
+    assert cov["notes_contract"]["problems"] == []
+    assert cov["overall_pass"] is True
 
 
-def test_notes_contract_youtube_seconds_mismatch_fails_coverage(tmp_path):
+def test_layer2_hook_rejects_youtube_seconds_mismatch():
     notes_text, transcript_text = _rendered_notes_and_transcript()
-    broken = notes_text.replace("https://youtu.be/abc12345678?t=2", "https://youtu.be/abc12345678?t=10", 1)
-    cov = build_coverage(_passing_inputs(tmp_path, notes_text=broken, transcript_text=transcript_text))
-    assert cov["notes_contract"]["pass"] is False
-    assert cov["overall_pass"] is False
-    assert any("1초 넘게 다릅니다" in p for p in cov["notes_contract"]["problems"])
+    enriched = _layer2_enriched_notes(notes_text)
+    broken = enriched.replace("https://youtu.be/abc12345678?t=2", "https://youtu.be/abc12345678?t=10", 1)
+
+    problems = hook_contract_problems(broken, transcript_text, has_frames=False)
+
+    assert any("1초 넘게 다릅니다" in p for p in problems)
 
 
 def test_build_and_write_coverage(tmp_path):

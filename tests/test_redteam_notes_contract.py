@@ -136,7 +136,7 @@ def _remove_image_from_detail_heading(notes: str, heading_text: str) -> str:
             in_target_heading = False
         elif in_detail and line.startswith("### "):
             in_target_heading = heading_text in line
-        if in_target_heading and line.startswith("![") and not removed:
+        if in_target_heading and (line.startswith("![") or line.startswith("<img")) and not removed:
             removed = True
             continue
         lines.append(line)
@@ -174,7 +174,7 @@ def _enriched_notes(
         notes,
         NOTES_TAKEAWAY_ANCHOR,
         NOTES_TOC_ANCHOR,
-        [f"요약 문장 {i}" for i in range(1, takeaway_lines + 1)],
+        [f"- 요약 문장 {i}" for i in range(1, takeaway_lines + 1)],
     )
     notes = _replace_section_body(
         notes,
@@ -184,12 +184,44 @@ def _enriched_notes(
     )
     notes = _replace_section_body(
         notes,
+        NOTES_CONCEPTS_ANCHOR,
+        NOTES_DETAIL_ANCHOR,
+        [
+            "- **핵심 개념**: 핵심 개념을 근거와 함께 설명합니다. ([영상 1:05](https://youtu.be/abc12345678?t=65))",
+            "- **보충 설명**: 같은 초에 나온 보충 설명입니다. ([영상 1:05](https://youtu.be/abc12345678?t=65))",
+        ],
+    )
+    notes = _replace_section_body(
+        notes,
         NOTES_QUESTIONS_ANCHOR,
         NOTES_COVERAGE_ANCHOR,
         [
-            "- 질문 1: 도입의 핵심 문제는 무엇인가요?",
-            "- 질문 2: 핵심 개념의 근거는 무엇인가요?",
-            "- 질문 3: 보충 설명은 어디에 연결되나요?",
+            "**Q1. 도입의 핵심 문제는 무엇인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "전체 문제 제시입니다. ([영상 0:05](https://youtu.be/abc12345678?t=5))",
+            "",
+            "</details>",
+            "",
+            "**Q2. 핵심 개념의 근거는 무엇인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "핵심 개념 설명입니다. ([영상 1:05](https://youtu.be/abc12345678?t=65))",
+            "",
+            "</details>",
+            "",
+            "**Q3. 보충 설명은 어디에 연결되나요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "같은 65초 발화에 연결됩니다. ([영상 1:05](https://youtu.be/abc12345678?t=65))",
+            "",
+            "</details>",
         ],
     )
     if not detail_bullets:
@@ -205,7 +237,10 @@ def _enriched_notes(
             lines.append(line)
         notes = "\n".join(lines) + "\n"
     if not frame_links:
-        notes = "\n".join(line for line in notes.splitlines() if not line.startswith("![")) + "\n"
+        notes = "\n".join(
+            line for line in notes.splitlines()
+            if not line.startswith("![") and not line.startswith("<img")
+        ) + "\n"
     return notes
 
 
@@ -291,40 +326,40 @@ def test_layer1_coverage_is_marker_agnostic_for_bare_skeleton():
 @pytest.mark.parametrize(
     ("mutator", "problem"),
     [
-        (lambda line: re.sub(r"transcript\.md#t\d{6}(?:-\d+)?", "transcript.md#t999999", line, count=1), "전사본에 없는 앵커"),
-        (lambda line: re.sub(r" \(\[영상\]\(https://youtu\.be/[^)]*\)\)", "", line, count=1), "영상 시간 링크"),
+        (lambda line: re.sub(r"https://youtu\.be/[^)?]+\?t=\d+", "https://youtu.be/abc12345678?t=999", line, count=1), "1초 넘게 다릅니다"),
+        (lambda line: re.sub(r" \(\[영상 [^)]*\]\(https://youtu\.be/[^)]*\)\)", "", line, count=1), "영상 딥링크"),
     ],
 )
-def test_coverage_contract_rejects_dangling_anchor_and_missing_youtube(mutator, problem):
-    skeleton, transcript = _fixture_texts()
-    mutated = _mutate_first_concept_bullet(skeleton, mutator)
+def test_hook_contract_rejects_bad_or_missing_youtube_citation(mutator, problem):
+    _skeleton, transcript = _fixture_texts()
+    mutated = _mutate_first_concept_bullet(_enriched_notes(), mutator)
 
-    coverage = _coverage_for(mutated, transcript)
-
-    assert coverage["notes_contract"]["pass"] is False
-    assert coverage["overall_pass"] is False
-    assert any(problem in item for item in coverage["notes_contract"]["problems"])
+    assert coverage_contract_problems(mutated, transcript) == []
+    problems = hook_contract_problems(mutated, transcript, has_frames=True)
+    assert any(problem in item for item in problems)
 
 
 @pytest.mark.parametrize(("offset", "passes"), [(1, True), (2, False)])
 def test_youtube_seconds_tolerance_is_one_second(offset: int, passes: bool):
-    skeleton, transcript = _fixture_texts()
+    _skeleton, transcript = _fixture_texts()
 
     def shift_youtube(line: str) -> str:
-        match = re.search(r"transcript\.md#(t\d{6}(?:-\d+)?)", line)
-        assert match is not None
-        shifted = anchor_seconds(match.group(1)) + offset
-        return re.sub(r"https://youtu\.be/([^)?]+)\?t=\d+", rf"https://youtu.be/\1?t={shifted}", line, count=1)
+        return re.sub(
+            r"https://youtu\.be/([^)?]+)\?t=\d+",
+            lambda match: f"https://youtu.be/{match.group(1)}?t={65 + offset}",
+            line,
+            count=1,
+        )
 
-    mutated = _mutate_first_concept_bullet(skeleton, shift_youtube)
+    mutated = _mutate_first_concept_bullet(_enriched_notes(), shift_youtube)
+    problems = hook_contract_problems(mutated, transcript, has_frames=True)
 
-    assert _coverage_for(mutated, transcript)["notes_contract"]["pass"] is passes
+    assert (not [p for p in problems if "1초 넘게 다릅니다" in p]) is passes
 
 
-def test_anchor_seconds_decodes_duplicate_suffix_and_rendered_duplicate_citations_pass():
+def test_anchor_seconds_decodes_duplicate_suffix_and_layer1_accepts_bare_skeleton():
     skeleton, transcript = _fixture_texts()
 
-    assert "transcript.md#t000105-2" in skeleton
     assert anchor_seconds("t000105-2") == 65
     assert coverage_contract_problems(skeleton, transcript) == []
 
@@ -360,8 +395,8 @@ def test_hook_enrichment_rejects_remaining_unenriched_marker():
     assert any("미보강 마커" in item for item in problems)
 
 
-@pytest.mark.parametrize(("count", "passes"), [(2, False), (3, True), (4, True), (5, True), (6, False)])
-def test_hook_enrichment_takeaway_requires_three_to_five_content_lines(count: int, passes: bool):
+@pytest.mark.parametrize(("count", "passes"), [(2, False), (3, True), (4, False)])
+def test_hook_enrichment_takeaway_requires_exactly_three_bullets(count: int, passes: bool):
     notes = _enriched_notes(takeaway_lines=count)
 
     assert (enrichment_problems(notes) == []) is passes
@@ -445,11 +480,11 @@ def test_real_completeness_hook_subprocess_matrix(tmp_path):
     valid_notes = _enriched_notes()
     valid_out = _write_run_dir(tmp_path, "valid", valid_notes, transcript)
     bare_out = _write_run_dir(tmp_path, "bare", skeleton, transcript)
-    dangling_notes = _mutate_first_concept_bullet(
+    bad_youtube_notes = _mutate_first_concept_bullet(
         valid_notes,
-        lambda line: re.sub(r"transcript\.md#t\d{6}(?:-\d+)?", "transcript.md#t999999", line, count=1),
+        lambda line: re.sub(r"https://youtu\.be/[^)?]+\?t=\d+", "https://youtu.be/abc12345678?t=999", line, count=1),
     )
-    dangling_out = _write_run_dir(tmp_path, "dangling", dangling_notes, transcript)
+    bad_youtube_out = _write_run_dir(tmp_path, "bad-youtube", bad_youtube_notes, transcript)
 
     records: list[tuple[str, subprocess.CompletedProcess[str]]] = []
 
@@ -462,9 +497,9 @@ def test_real_completeness_hook_subprocess_matrix(tmp_path):
     _write_runstate(bare_rs, [_complete_run(bare_out)])
     cases.append(("bare-skeleton", bare_rs, 2))
 
-    dangling_rs = tmp_path / "dangling-runstate.json"
-    _write_runstate(dangling_rs, [_complete_run(dangling_out)])
-    cases.append(("dangling-anchor", dangling_rs, 2))
+    bad_youtube_rs = tmp_path / "bad-youtube-runstate.json"
+    _write_runstate(bad_youtube_rs, [_complete_run(bad_youtube_out)])
+    cases.append(("bad-youtube-second", bad_youtube_rs, 2))
 
     failed_rs = tmp_path / "failed-runstate.json"
     _write_runstate(failed_rs, [{"status": "failed", "error": "intentional failure", "output_dir": str(tmp_path / "failed")}])

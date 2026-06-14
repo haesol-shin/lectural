@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from lectural import cli, runstate
-from lectural.notes_contract import coverage_contract_problems
+from lectural.notes_contract import hook_contract_problems
 
 
 _HOOK_PATH = Path(__file__).resolve().parents[1] / "scripts" / "completeness_hook.py"
@@ -49,22 +49,33 @@ def _write_coverage(path: Path, overall_pass: bool = True) -> None:
 
 
 def _notes_text(hook, *, frame_link: bool = False) -> str:
-    image_line = "![slide](frames/slide-001.png)\n" if frame_link else ""
+    image_line = '<img src="frames/slide-001.png" alt="슬라이드 1" width="480">\n\n' if frame_link else ""
     return (
         f"{hook.NOTES_ENRICH_MARKER}\n"
         "# 강의 정리\n\n"
-        f"{hook.NOTES_TAKEAWAY_ANCHOR}\n요약 1\n요약 2\n요약 3\n\n"
-        f"{hook.NOTES_TOC_ANCHOR}\n- [00:00:00 · 시작](#sec-1)\n\n"
+        f"{hook.NOTES_TAKEAWAY_ANCHOR}\n- 요약 1\n- 요약 2\n- 요약 3\n\n"
+        f"{hook.NOTES_TOC_ANCHOR}\n- [시작](#sec-1)\n\n"
         f"{hook.NOTES_FLOW_ANCHOR}\n- 도입 흐름\n- 핵심 흐름\n\n"
         f"{hook.NOTES_CONCEPTS_ANCHOR}\n"
-        "- 핵심 설명 [00:00:02](transcript.md#t000002) ([영상](https://youtu.be/abc12345678?t=2))\n\n"
+        "- **핵심 설명**: 핵심 정의. ([영상 0:02](https://youtu.be/abc12345678?t=2))\n\n"
         f"{hook.NOTES_DETAIL_ANCHOR}\n"
         '<a id="sec-1"></a>\n'
-        "### [00:00:02](transcript.md#t000002) 시작\n"
+        "### 시작\n"
         f"{image_line}"
-        "- 핵심 설명 [00:00:02](transcript.md#t000002) ([영상](https://youtu.be/abc12345678?t=2))\n\n"
+        "- 핵심 설명을 정리합니다.\n\n"
         f"{hook.NOTES_QUESTIONS_ANCHOR}\n"
-        "- 질문 1: 핵심은 무엇인가요? [00:00:02](transcript.md#t000002)\n\n"
+        "**Q1. 핵심은 무엇인가요?**\n\n"
+        "<details>\n<summary>답 보기</summary>\n\n"
+        "핵심 설명입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))\n\n"
+        "</details>\n\n"
+        "**Q2. 근거는 어디인가요?**\n\n"
+        "<details>\n<summary>답 보기</summary>\n\n"
+        "전사 발화입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))\n\n"
+        "</details>\n\n"
+        "**Q3. 언제 나오나요?**\n\n"
+        "<details>\n<summary>답 보기</summary>\n\n"
+        "2초 지점입니다. ([영상 0:02](https://youtu.be/abc12345678?t=2))\n\n"
+        "</details>\n\n"
         f"{hook.NOTES_COVERAGE_ANCHOR}\n"
         "- coverage: pass\n"
     )
@@ -310,20 +321,20 @@ def test_hook_batch_with_one_failed_run_blocks_whole_gate(tmp_path, monkeypatch)
     assert _hook_exit(tmp_path, monkeypatch, runs) == 2
 
 
-def test_notes_contract_adversarial_dangling_anchor_fails():
+def test_notes_contract_adversarial_bad_youtube_second_fails():
     hook = _load_hook()
-    text = _notes_text(hook).replace("transcript.md#t000002", "transcript.md#t999999", 1)
-    problems = coverage_contract_problems(text, _transcript_text())
+    text = _notes_text(hook).replace("https://youtu.be/abc12345678?t=2", "https://youtu.be/abc12345678?t=999", 1)
+    problems = hook_contract_problems(text, _transcript_text(), has_frames=False)
 
-    assert any("전사본에 없는 앵커" in p for p in problems)
+    assert any("1초 넘게 다릅니다" in p for p in problems)
 
 
 def test_notes_contract_adversarial_missing_youtube_fails():
     hook = _load_hook()
-    text = _notes_text(hook).replace(" ([영상](https://youtu.be/abc12345678?t=2))", "", 1)
-    problems = coverage_contract_problems(text, _transcript_text())
+    text = _notes_text(hook).replace(" ([영상 0:02](https://youtu.be/abc12345678?t=2))", "", 1)
+    problems = hook_contract_problems(text, _transcript_text(), has_frames=False)
 
-    assert any("영상 시간 링크" in p for p in problems)
+    assert any("영상 딥링크" in p for p in problems)
 
 
 @pytest.mark.parametrize(
@@ -336,6 +347,6 @@ def test_notes_contract_adversarial_missing_youtube_fails():
 def test_notes_contract_adversarial_youtube_seconds_tolerance(offset, passes):
     hook = _load_hook()
     text = _notes_text(hook).replace("https://youtu.be/abc12345678?t=2", f"https://youtu.be/abc12345678?t={2 + offset}", 1)
-    problems = coverage_contract_problems(text, _transcript_text())
+    problems = hook_contract_problems(text, _transcript_text(), has_frames=False)
 
-    assert (not problems) is passes
+    assert (not [p for p in problems if "1초 넘게 다릅니다" in p]) is passes

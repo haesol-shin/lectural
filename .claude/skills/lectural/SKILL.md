@@ -69,10 +69,11 @@ Artifacts are written under `./output/<video-title>/`: `transcript.md`,
 ## Required: host-agent notes enrichment (still zero external tokens)
 
 After `lectural` exits successfully, the host agent MUST enrich `notes.md` prose
-by following `references/summary_prompt.md` and reading only
-`synthesis_input.json` (text only, no external LLM, no images). It MUST enrich
-the four sections marked by `NOTES_UNENRICHED_MARKER`: `NOTES_TAKEAWAY_ANCHOR`,
-`NOTES_FLOW_ANCHOR`, `NOTES_CONCEPTS_ANCHOR`, and `NOTES_QUESTIONS_ANCHOR`.
+by following `references/summary_prompt.md` and reading only local run artifacts
+(`synthesis_input.json`, `transcript.md`, and frame images when OCR text is
+garbled; no external LLM). It MUST enrich the five sections marked by
+`NOTES_UNENRICHED_MARKER`: `NOTES_TAKEAWAY_ANCHOR`, `NOTES_FLOW_ANCHOR`,
+`NOTES_CONCEPTS_ANCHOR`, `NOTES_DETAIL_ANCHOR`, and `NOTES_QUESTIONS_ANCHOR`.
 It MUST preserve `NOTES_ENRICH_MARKER` on line 1, the seven section anchors
 (`NOTES_TAKEAWAY_ANCHOR`, `NOTES_TOC_ANCHOR`, `NOTES_FLOW_ANCHOR`,
 `NOTES_CONCEPTS_ANCHOR`, `NOTES_DETAIL_ANCHOR`, `NOTES_QUESTIONS_ANCHOR`, and

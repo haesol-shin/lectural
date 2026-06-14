@@ -10,6 +10,8 @@ from lectural.synthesis import (
     NOTES_CONCEPTS_ANCHOR,
     NOTES_DETAIL_ANCHOR,
     NOTES_FLOW_ANCHOR,
+    NOTES_COVERAGE_ANCHOR,
+    NOTES_QUESTIONS_ANCHOR,
     NOTES_INTRO_MARKER,
     NOTES_TAKEAWAY_ANCHOR,
     NOTES_TOC_ANCHOR,
@@ -97,13 +99,52 @@ def _enrich_rendered_notes(*, notes: str, takeaway_lines: int = 3, flow_bullets:
         notes,
         NOTES_TAKEAWAY_ANCHOR,
         NOTES_TOC_ANCHOR,
-        [f"요약 {i}" for i in range(1, takeaway_lines + 1)],
+        [f"- 요약 {i}" for i in range(1, takeaway_lines + 1)],
     )
     notes = _replace_section_body(
         notes,
         NOTES_FLOW_ANCHOR,
         NOTES_CONCEPTS_ANCHOR,
         [f"- 흐름 {i}" for i in range(1, flow_bullets + 1)],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_CONCEPTS_ANCHOR,
+        NOTES_DETAIL_ANCHOR,
+        ["- **핵심 설명**: 핵심 정의. ([영상 0:05](https://youtu.be/abc12345678?t=5))"],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_QUESTIONS_ANCHOR,
+        NOTES_COVERAGE_ANCHOR,
+        [
+            "**Q1. 핵심은 무엇인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "핵심 설명입니다. ([영상 0:05](https://youtu.be/abc12345678?t=5))",
+            "",
+            "</details>",
+            "",
+            "**Q2. 근거는 어디인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "전사 발화입니다. ([영상 0:05](https://youtu.be/abc12345678?t=5))",
+            "",
+            "</details>",
+            "",
+            "**Q3. 언제 나오나요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            "5초 지점입니다. ([영상 0:05](https://youtu.be/abc12345678?t=5))",
+            "",
+            "</details>",
+        ],
     )
     if not detail_bullets:
         lines = []
@@ -118,7 +159,10 @@ def _enrich_rendered_notes(*, notes: str, takeaway_lines: int = 3, flow_bullets:
             lines.append(line)
         notes = "\n".join(lines) + "\n"
     if not frame_link:
-        notes = "\n".join(line for line in notes.splitlines() if not line.startswith("![")) + "\n"
+        notes = "\n".join(
+            line for line in notes.splitlines()
+            if not line.startswith("![") and not line.startswith("<img")
+        ) + "\n"
     return notes
 
 
@@ -171,7 +215,7 @@ def _remove_image_from_detail_heading(notes: str, heading_text: str) -> str:
             in_target_heading = False
         elif in_detail and line.startswith("### "):
             in_target_heading = heading_text in line
-        if in_target_heading and line.startswith("![") and not removed:
+        if in_target_heading and (line.startswith("![") or line.startswith("<img")) and not removed:
             removed = True
             continue
         lines.append(line)
@@ -252,7 +296,7 @@ def test_hook_allows_intro_heading_without_image_when_real_slides_have_images(tm
     intro_block = _detail_heading_block(enriched, "도입")
 
     assert NOTES_INTRO_MARKER in intro_block
-    assert "![" not in intro_block
+    assert "<img" not in intro_block
     real_slide_block = _detail_heading_block(enriched, "첫 슬라이드")
     assert NOTES_INTRO_MARKER not in real_slide_block
     assert "frames/slide-001.png" in real_slide_block
@@ -287,7 +331,7 @@ def test_hook_blocks_when_notes_missing(tmp_path, monkeypatch):
 def test_hook_blocks_when_required_notes_section_missing(tmp_path, monkeypatch):
     for filename, missing_anchor in [
         ("missing_toc", "## 목차"),
-        ("missing_detail", "## 상세 노트"),
+        ("missing_detail", NOTES_DETAIL_ANCHOR),
     ]:
         run_dir = tmp_path / filename
         run_dir.mkdir()

@@ -19,14 +19,15 @@ NOTES_ENRICH_MARKER = "<!-- lectural:notes -->"
 NOTES_UNENRICHED_MARKER = "<!-- 미보강 -->"
 NOTES_INTRO_TITLE = "도입"
 NOTES_INTRO_MARKER = "<!-- lectural:intro -->"
-NOTES_TAKEAWAY_ANCHOR = "## 한눈에 요약"
+NOTES_TAKEAWAY_ANCHOR = "## 3줄 요약"
 NOTES_TOC_ANCHOR = "## 목차"
-NOTES_FLOW_ANCHOR = "## 강의 흐름"
+NOTES_FLOW_ANCHOR = "## 흐름"
 NOTES_CONCEPTS_ANCHOR = "## 핵심 개념·이론"
-NOTES_DETAIL_ANCHOR = "## 상세 노트"
+NOTES_DETAIL_ANCHOR = "## 정리 노트"
 NOTES_QUESTIONS_ANCHOR = "## 복습 질문"
 NOTES_COVERAGE_ANCHOR = "## 정리 커버리지"
 ANCHOR_ID_PATTERN = r"t\d{6}(?:-\d+)?"
+NOTES_SLIDE_IMG_WIDTH = 480
 
 
 def format_timestamp(sec: float) -> str:
@@ -48,29 +49,6 @@ def build_transcript_anchor_ids(segments: list[dict]) -> list[str]:
     return ids
 
 
-def _whole_seconds(sec: float) -> int:
-    return max(int(round(sec)), 0)
-
-
-def _video_id(video: dict) -> str | None:
-    video_id = str(video.get("video_id") or "").strip()
-    if video_id:
-        return video_id
-    url = str(video.get("url") or "").strip()
-    if not url:
-        return None
-    from .acquisition import extract_video_id
-
-    return extract_video_id(url)
-
-
-def _citation_deeplink(video: dict, sec: float, anchor_id: str) -> str:
-    stamp = format_timestamp(sec)
-    citation = f"[{stamp}](transcript.md#{anchor_id})"
-    video_id = _video_id(video)
-    if video_id:
-        citation += f" ([영상](https://youtu.be/{video_id}?t={_whole_seconds(sec)}))"
-    return citation
 
 
 def _first_line(text: str, fallback: str) -> str:
@@ -215,76 +193,55 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
     hints = synthesis_input.get("section_hints", [])
     title = video.get("title", "Untitled")
 
-    shown, buckets = _renderable_section_hints(segments, hints)
-    anchor_ids = build_transcript_anchor_ids(segments)
-    anchors_by_segment = {id(segment): anchor_id for segment, anchor_id in zip(segments, anchor_ids)}
-    segment_rows = list(zip(segments, anchor_ids))
+    shown, _buckets = _renderable_section_hints(segments, hints)
 
     out: list[str] = [NOTES_ENRICH_MARKER, f"# {title} — 학습 정리", ""]
 
     out += [
         NOTES_TAKEAWAY_ANCHOR,
         NOTES_UNENRICHED_MARKER,
-        "- 미보강: 강의 전체의 핵심 메시지를 2~3문장으로 정리하세요.",
-        "- 미보강: 학습자가 먼저 기억해야 할 흐름과 용어를 표시하세요.",
+        "- 미보강: 핵심 메시지 한 줄.",
+        "- 미보강: 핵심 메시지 한 줄.",
+        "- 미보강: 핵심 메시지 한 줄.",
         "",
         NOTES_TOC_ANCHOR,
     ]
     for section_no, h in enumerate(shown, start=1):
-        out.append(
-            f"- [{format_timestamp(float(h.get('t', 0.0)))} · "
-            f"{_safe_title(h.get('title', ''))}](#sec-{section_no})"
-        )
+        out.append(f"- [{_safe_title(h.get('title', ''))}](#sec-{section_no})")
     out += [
         "",
         NOTES_FLOW_ANCHOR,
         NOTES_UNENRICHED_MARKER,
-        "- 미보강: 목차의 이동 링크를 따라 강의 전개를 서술하세요.",
-        "- 미보강: 도입, 전개, 마무리의 논리적 연결을 보강하세요.",
+        "- 미보강: 도입→전개→마무리 흐름을 짧게 정리하세요.",
+        "- 미보강: 핵심 전개를 한 줄씩 정리하세요.",
         "",
         NOTES_CONCEPTS_ANCHOR,
         NOTES_UNENRICHED_MARKER,
+        "- 미보강: 핵심 용어 → 정의를 영상 딥링크와 함께 정리하세요.",
+        "",
+        NOTES_DETAIL_ANCHOR,
+        NOTES_UNENRICHED_MARKER,
     ]
-    for s, anchor_id in segment_rows:
-        sec = float(s.get("t", 0.0))
-        out.append(f"- {s.get('text', '').strip()} {_citation_deeplink(video, sec, anchor_id)}")
-    out += ["", NOTES_DETAIL_ANCHOR]
 
     for section_no, h in enumerate(shown, start=1):
-        body = buckets.get(h["index"], [])
-        heading_segment = body[0] if body else None
-        heading_sec = float(heading_segment.get("t", h.get("t", 0.0))) if heading_segment else float(h.get("t", 0.0))
         out.append(f'<a id="sec-{section_no}"></a>')
-        title_text = _safe_title(h.get('title', ''))
-        if heading_segment:
-            heading_anchor = anchors_by_segment[id(heading_segment)]
-            out.append(f"### [{format_timestamp(heading_sec)}](transcript.md#{heading_anchor}) {title_text}")
-        else:
-            out.append(f"### [{format_timestamp(heading_sec)}] {title_text}")
-        if not h.get("frame") and h.get("title") == NOTES_INTRO_TITLE:
-            out.append(NOTES_INTRO_MARKER)
+        out.append(f"### {_safe_title(h.get('title', ''))}")
         if h.get("frame"):
-            out.append(f"![슬라이드 {section_no}]({h['frame']})")
-        for s in body:
-            sec = float(s.get("t", 0.0))
-            anchor_id = anchors_by_segment[id(s)]
-            out.append(f"- {s.get('text', '').strip()} {_citation_deeplink(video, sec, anchor_id)}")
+            out.append("")
+            out.append(
+                f'<img src="{h["frame"]}" alt="슬라이드 {section_no}" width="{NOTES_SLIDE_IMG_WIDTH}">'
+            )
+            out.append("")
+        elif h.get("title") == NOTES_INTRO_TITLE:
+            out.append(NOTES_INTRO_MARKER)
+        out.append("- 미보강: 이 슬라이드 핵심을 요약 글머리표로 정리하세요.")
         out.append("")
 
     out += [
         NOTES_QUESTIONS_ANCHOR,
         NOTES_UNENRICHED_MARKER,
+        "- 미보강 질문: 핵심 확인 질문과 답을 작성하세요.",
     ]
-    question_sources = segment_rows[:3]
-    if question_sources:
-        while len(question_sources) < 3:
-            question_sources.append(question_sources[-1])
-        for i, (s, anchor_id) in enumerate(question_sources[:3], start=1):
-            sec = float(s.get("t", 0.0))
-            out.append(f"- 미보강 질문 {i}: 이 대목에서 확인해야 할 핵심은 무엇인가요? {_citation_deeplink(video, sec, anchor_id)}")
-    else:
-        for i in range(1, 4):
-            out.append(f"- 미보강 질문 {i}: 이 대목에서 확인해야 할 핵심은 무엇인가요?")
 
     out += ["", NOTES_COVERAGE_ANCHOR, *_coverage_footer_lines(coverage), ""]
     return "\n".join(out).rstrip() + "\n"

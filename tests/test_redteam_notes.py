@@ -118,18 +118,60 @@ def _enrich(notes_md: str) -> str:
         NOTES_TAKEAWAY_ANCHOR,
         NOTES_TOC_ANCHOR,
         [
-            "강의는 자동 생성된 전사와 슬라이드 근거를 바탕으로 핵심 흐름을 정리한다.",
-            "학습자는 각 개념의 출처를 전사 링크와 영상 시간으로 되짚을 수 있다.",
-            "상세 노트는 슬라이드별 설명을 보강해 복습 가능한 기록으로 완성한다.",
+            "- 강의는 자동 생성된 전사와 슬라이드 근거를 바탕으로 핵심 흐름을 정리한다.",
+            "- 학습자는 각 개념의 영상 시간을 되짚을 수 있다.",
+            "- 상세 노트는 슬라이드별 설명을 보강해 복습 가능한 기록으로 완성한다.",
         ],
     )
-    return _replace_section_body(
+    notes = _replace_section_body(
         notes,
         NOTES_FLOW_ANCHOR,
         NOTES_CONCEPTS_ANCHOR,
         [
             "- 도입부에서 강의의 문제의식과 확인할 자료를 제시한다.",
             "- 본문에서는 전사 근거를 따라 개념과 예시를 순서대로 연결한다.",
+        ],
+    )
+    notes = _replace_section_body(
+        notes,
+        NOTES_CONCEPTS_ANCHOR,
+        NOTES_DETAIL_ANCHOR,
+        [
+            f"- **핵심 개념**: hook smoke utterance. ([영상 0:02](https://youtu.be/{VIDEO_ID}?t=2))",
+            f"- **보충 설명**: 같은 발화를 다시 확인합니다. ([영상 0:02](https://youtu.be/{VIDEO_ID}?t=2))",
+        ],
+    )
+    return _replace_section_body(
+        notes,
+        NOTES_QUESTIONS_ANCHOR,
+        NOTES_COVERAGE_ANCHOR,
+        [
+            "**Q1. 첫 번째 개념은 무엇인가요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            f"hook smoke utterance입니다. ([영상 0:02](https://youtu.be/{VIDEO_ID}?t=2))",
+            "",
+            "</details>",
+            "",
+            "**Q2. 두 번째 세부는 어디에서 나오나요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            f"같은 2초 발화에 연결됩니다. ([영상 0:02](https://youtu.be/{VIDEO_ID}?t=2))",
+            "",
+            "</details>",
+            "",
+            "**Q3. 후반부 비교는 언제 확인하나요?**",
+            "",
+            "<details>",
+            "<summary>답 보기</summary>",
+            "",
+            f"2초 지점에서 확인합니다. ([영상 0:02](https://youtu.be/{VIDEO_ID}?t=2))",
+            "",
+            "</details>",
         ],
     )
 
@@ -173,7 +215,7 @@ def _all_keys(value) -> list[str]:
     return []
 
 
-def test_anchor_uniqueness_pattern_and_notes_deeplinks_are_grounded_in_transcript():
+def test_anchor_uniqueness_pattern_and_notes_skeleton_avoids_transcript_deeplinks():
     notes_md, transcript_md, _video, segments, _slides = _render_notes_and_transcript()
 
     anchor_ids = build_transcript_anchor_ids(segments)
@@ -182,35 +224,27 @@ def test_anchor_uniqueness_pattern_and_notes_deeplinks_are_grounded_in_transcrip
     assert all(re.fullmatch(ANCHOR_ID_PATTERN, anchor_id) for anchor_id in anchor_ids)
 
     transcript_ids = set(re.findall(r'<a id="(t\d{6}(?:-\d+)?)"></a>', transcript_md))
-    referenced_ids = set(re.findall(r"transcript\.md#(t\d{6}(?:-\d+)?)", notes_md))
-    assert referenced_ids
-    assert referenced_ids <= transcript_ids
+    assert set(anchor_ids) == transcript_ids
+    assert "transcript.md#" not in notes_md
 
 
-def test_citation_correctness_and_narrative_sections_are_citation_exempt():
+def test_skeleton_citation_exempt_sections_and_detail_have_no_citation_links():
     notes_md, _transcript_md, _video, _segments, _slides = _render_notes_and_transcript()
 
-    cited_blocks = [
-        _block(notes_md, NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR),
-        _block(notes_md, NOTES_DETAIL_ANCHOR, NOTES_QUESTIONS_ANCHOR),
-        _block(notes_md, NOTES_QUESTIONS_ANCHOR, NOTES_COVERAGE_ANCHOR),
-    ]
-    for block in cited_blocks:
-        for line in _bullet_lines(block):
-            anchor = re.search(r"transcript\.md#(t\d{6}(?:-\d+)?)", line)
-            video = re.search(rf"youtu\.be/{VIDEO_ID}\?t=(\d+)", line)
-            assert anchor, line
-            assert video, line
-            assert int(video.group(1)) == _anchor_seconds(anchor.group(1))
-
-    narrative_blocks = [
+    for block in [
         _block(notes_md, NOTES_TAKEAWAY_ANCHOR, NOTES_TOC_ANCHOR),
         _block(notes_md, NOTES_TOC_ANCHOR, NOTES_FLOW_ANCHOR),
         _block(notes_md, NOTES_FLOW_ANCHOR, NOTES_CONCEPTS_ANCHOR),
-    ]
-    for block in narrative_blocks:
+        _block(notes_md, NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR),
+        _block(notes_md, NOTES_DETAIL_ANCHOR, NOTES_QUESTIONS_ANCHOR),
+        _block(notes_md, NOTES_QUESTIONS_ANCHOR, NOTES_COVERAGE_ANCHOR),
+    ]:
         assert "transcript.md#" not in block
         assert "youtu.be/" not in block
+
+    assert _bullet_lines(_block(notes_md, NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR)) == [
+        "- 미보강: 핵심 용어 → 정의를 영상 딥링크와 함께 정리하세요."
+    ]
 
 
 def test_narrative_sections_are_marker_and_placeholder_only_with_no_legacy_markers():
@@ -231,20 +265,19 @@ def test_narrative_sections_are_marker_and_placeholder_only_with_no_legacy_marke
 
 def test_boundary_empty_zero_missing_video_id_past_duration_and_markdown_special_titles():
     no_video_notes, _transcript_md, _video, _segments, _slides = _render_notes_and_transcript(video_id=None, url=None)
-    cited_lines = _bullet_lines(_block(no_video_notes, NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR))
-    assert cited_lines
-    assert all("transcript.md#" in line for line in cited_lines)
-    assert all("youtu.be/" not in line for line in cited_lines)
+    assert "youtu.be/" not in no_video_notes
+    assert "transcript.md#" not in no_video_notes
 
     empty_notes, empty_transcript, _video, _segments, _slides = _render_notes_and_transcript(segments=[], slides=[])
     assert "<a id=" not in empty_transcript
-    assert "transcript.md#" not in _block(empty_notes, NOTES_QUESTIONS_ANCHOR, NOTES_COVERAGE_ANCHOR)
-    assert "youtu.be/" not in _block(empty_notes, NOTES_QUESTIONS_ANCHOR, NOTES_COVERAGE_ANCHOR)
+    assert _bullet_lines(_block(empty_notes, NOTES_QUESTIONS_ANCHOR, NOTES_COVERAGE_ANCHOR)) == [
+        "- 미보강 질문: 핵심 확인 질문과 답을 작성하세요."
+    ]
 
     notes_md, _transcript_md, _video, _segments, _slides = _render_notes_and_transcript()
     detail = _block(notes_md, NOTES_DETAIL_ANCHOR, NOTES_QUESTIONS_ANCHOR)
-    assert "### [00:01:30] Empty (Slide/Only)" in detail
-    assert "### [00:01:30](transcript.md#" not in detail
+    assert "### Empty (Slide/Only)" in detail
+    assert "### [00:01:30]" not in detail
     assert "Opening (A/B)" in notes_md
     assert "[A|B]" not in notes_md
     assert "[Slide|Only]" not in notes_md
@@ -253,10 +286,9 @@ def test_boundary_empty_zero_missing_video_id_past_duration_and_markdown_special
     segments = [{"t": 130.0, "text": "duration 이후에도 캡처된 설명"}]
     slides = [{"t": 120.0, "frame": "frames/past.png", "ocr_text": "Past [Duration|Slide]", "is_slide": True}]
     past_notes = render_notes_md(build_synthesis_input(video, segments, slides), _coverage_payload(True))
-    assert "duration 이후에도 캡처된 설명" in past_notes
+    assert "duration 이후에도 캡처된 설명" not in past_notes
     assert "Past (Duration/Slide)" in past_notes
-    assert "transcript.md#t000210" in past_notes
-    assert "youtu.be/WU2VID00001?t=130" in past_notes
+    assert '<img src="frames/past.png" alt="슬라이드 1" width="480">' in past_notes
 
 
 def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components():
@@ -338,16 +370,10 @@ def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components
     assert forbidden.isdisjoint(_all_keys(coverage))
     assert forbidden.isdisjoint(_all_keys(artifact_fail))
 
-    dangling_notes = re.sub(
-        r"(transcript\.md#)t\d{6}(?:-\d+)?",
-        lambda match: f"{match.group(1)}t999999",
-        notes_text,
-        count=1,
-    )
-    assert dangling_notes != notes_text
-    dangling_fail = build_coverage(CoverageInputs(**{**all_pass.__dict__, "notes_text": dangling_notes}))
-    assert dangling_fail["notes_contract"]["pass"] is False
-    assert dangling_fail["overall_pass"] is False
+    missing_marker = notes_text.replace(NOTES_ENRICH_MARKER + "\n", "", 1)
+    structure_fail = build_coverage(CoverageInputs(**{**all_pass.__dict__, "notes_text": missing_marker}))
+    assert structure_fail["notes_contract"]["pass"] is False
+    assert structure_fail["overall_pass"] is False
 
 
 def test_fresh_synthesis_import_keeps_heavy_runtime_modules_lazy():
@@ -437,7 +463,7 @@ def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
 
         record("malformed-runstate-fails-closed", _invoke_hook(tmp_path / "malformed-runstate.json", [], malformed_runstate=True), 2)
 
-        no_frame_link_text = re.sub(r"\n!\[[^\n]*\]\(frames/slide-001\.png\)", "", Path(valid_run["notes_md"]).read_text(encoding="utf-8"))
+        no_frame_link_text = re.sub(r'\n<img[^\n]*frames/slide-001\.png[^\n]*>', "", Path(valid_run["notes_md"]).read_text(encoding="utf-8"))
         no_frame_link_run = _write_hook_case(tmp_path, "frames-without-link", notes_text=no_frame_link_text, frames_png=True)
         record("frames-present-without-slide-link", _invoke_hook(tmp_path / "frames-no-link-runstate.json", [no_frame_link_run]), 2)
         bare_skeleton_text, _ = _hook_fixture_texts()

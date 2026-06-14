@@ -31,9 +31,10 @@ SECTION_ANCHORS_IN_ORDER = [
 ]
 
 _TRANSCRIPT_ANCHOR_RE = re.compile(r'<a\s+id="(' + ANCHOR_ID_PATTERN + r')"></a>')
-_TRANSCRIPT_LINK_RE = re.compile(r"transcript\.md#(" + ANCHOR_ID_PATTERN + r")")
 _YOUTUBE_TIME_RE = re.compile(r"https://youtu\.be/[^\s)]+\?t=(\d+)")
-_SLIDE_IMAGE_LINK_RE = re.compile(r"!\[[^\]]*\]\([^)]*frames/[^)]*\)", re.IGNORECASE)
+_SLIDE_IMAGE_LINK_RE = re.compile(
+    r"(?:!\[[^\]]*\]\([^)]*frames/[^)]*\))|(?:<img[^>]*frames/[^>]*>)", re.IGNORECASE
+)
 
 
 def transcript_anchor_ids(transcript_text: str) -> set[str]:
@@ -69,31 +70,37 @@ def _bullet_lines(block: str) -> list[str]:
     return [line for line in (block or "").splitlines() if line.startswith("- ")]
 
 
-def citation_problems(notes_text: str, transcript_text: str) -> list[str]:
-    """Validate transcript and YouTube citation pairs on grounded note bullets."""
+def _citation_line_problems(line: str, cue_seconds: set[int], section_anchor: str) -> list[str]:
     problems: list[str] = []
-    known_anchors = transcript_anchor_ids(transcript_text)
-    for section_anchor in (NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR):
-        for line in _bullet_lines(_section_block(notes_text, section_anchor)):
-            if line.strip() == NOTES_UNENRICHED_MARKER:
-                continue
-            transcript_match = _TRANSCRIPT_LINK_RE.search(line)
-            if not transcript_match:
-                problems.append(f"{section_anchor}: 글머리표에 transcript.md#tHHMMSS 링크가 없습니다: {line}")
-                continue
-            anchor_id = transcript_match.group(1)
-            if anchor_id not in known_anchors:
-                problems.append(f"{section_anchor}: 전사본에 없는 앵커입니다: transcript.md#{anchor_id}")
-            youtube_match = _YOUTUBE_TIME_RE.search(line)
-            if not youtube_match:
-                problems.append(f"{section_anchor}: 영상 시간 링크(https://youtu.be/...?...t=초)가 없습니다: {line}")
-                continue
-            video_sec = int(youtube_match.group(1))
-            expected_sec = anchor_seconds(anchor_id)
-            if abs(video_sec - expected_sec) > 1:
-                problems.append(
-                    f"{section_anchor}: 영상 시간 {video_sec}s와 전사 앵커 {anchor_id}({expected_sec}s)가 1초 넘게 다릅니다"
-                )
+    youtube_match = _YOUTUBE_TIME_RE.search(line)
+    if not youtube_match:
+        problems.append(f"{section_anchor}: 영상 딥링크(https://youtu.be/...?t=초)가 없습니다: {line.strip()}")
+        return problems
+    video_sec = int(youtube_match.group(1))
+    if cue_seconds and min(abs(video_sec - s) for s in cue_seconds) > 1:
+        problems.append(f"{section_anchor}: 영상 시각 {video_sec}s가 전사 발화 시점과 1초 넘게 다릅니다")
+    return problems
+
+
+def citation_problems(notes_text: str, transcript_text: str) -> list[str]:
+    """Validate YouTube deeplinks on 핵심 개념·이론 bullets and 복습 질문 answers.
+
+    Each cited link must point at a real transcript cue second (within ±1s).
+    """
+    problems: list[str] = []
+    cue_seconds = {anchor_seconds(a) for a in transcript_anchor_ids(transcript_text)}
+
+    for line in _bullet_lines(_section_block(notes_text, NOTES_CONCEPTS_ANCHOR)):
+        if line.strip() == NOTES_UNENRICHED_MARKER:
+            continue
+        problems += _citation_line_problems(line, cue_seconds, NOTES_CONCEPTS_ANCHOR)
+
+    questions_block = _section_block(notes_text, NOTES_QUESTIONS_ANCHOR)
+    cited_question_lines = [line for line in questions_block.splitlines() if "youtu.be/" in line]
+    for line in cited_question_lines:
+        problems += _citation_line_problems(line, cue_seconds, NOTES_QUESTIONS_ANCHOR)
+    if len(cited_question_lines) < 3:
+        problems.append(f"복습 질문에 영상 딥링크가 3개 이상 필요합니다(현재 {len(cited_question_lines)}개)")
     return problems
 
 
@@ -129,9 +136,9 @@ def slide_detail_problems(notes_text: str, *, has_frames: bool) -> list[str]:
         body = lines[heading_index + 1:next_heading]
         is_intro = NOTES_INTRO_MARKER in "\n".join([heading, *body])
         if not any(line.startswith("- ") for line in body):
-            problems.append(f"상세 노트 슬라이드에 설명 글머리표가 없습니다: {heading}")
+            problems.append(f"정리 노트 슬라이드에 설명 글머리표가 없습니다: {heading}")
         if has_frames and not is_intro and not any(_SLIDE_IMAGE_LINK_RE.search(line) for line in body):
-            problems.append(f"상세 노트 슬라이드에 frames/ 이미지 링크가 없습니다: {heading}")
+            problems.append(f"정리 노트 슬라이드에 frames/ 이미지 링크가 없습니다: {heading}")
     return problems
 
 
@@ -142,22 +149,19 @@ def enrichment_problems(notes_text: str) -> list[str]:
     if NOTES_UNENRICHED_MARKER in text:
         problems.append("notes.md에 미보강 마커가 남아 있습니다")
 
-    takeaway_lines = [
-        line for line in _section_block(text, NOTES_TAKEAWAY_ANCHOR).splitlines()[1:]
-        if line.strip()
-    ]
-    if not 3 <= len(takeaway_lines) <= 5:
-        problems.append(f"한눈에 요약은 비어 있지 않은 본문 3~5줄이어야 합니다(현재 {len(takeaway_lines)}줄)")
+    takeaway_bullets = _bullet_lines(_section_block(text, NOTES_TAKEAWAY_ANCHOR))
+    if len(takeaway_bullets) != 3:
+        problems.append(f"3줄 요약은 글머리표 3개여야 합니다(현재 {len(takeaway_bullets)}개)")
 
     flow_count = len(_bullet_lines(_section_block(text, NOTES_FLOW_ANCHOR)))
     if flow_count < 2:
-        problems.append(f"강의 흐름은 글머리표가 2개 이상이어야 합니다(현재 {flow_count}개)")
+        problems.append(f"흐름은 글머리표가 2개 이상이어야 합니다(현재 {flow_count}개)")
     return problems
 
 
 def coverage_contract_problems(notes_text: str, transcript_text: str) -> list[str]:
-    """Layer 1 contract for CLI coverage: marker-agnostic and skeleton-safe."""
-    return base_structure_problems(notes_text) + citation_problems(notes_text, transcript_text)
+    """Layer 1 contract for CLI coverage: structure-only and skeleton-safe."""
+    return base_structure_problems(notes_text)
 
 
 def hook_contract_problems(notes_text: str, transcript_text: str, *, has_frames: bool) -> list[str]:

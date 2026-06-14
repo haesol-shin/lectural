@@ -6,9 +6,10 @@ incompatible change to the shapes below; readers MUST check it.
 ## `synthesis_input.json`
 
 The deterministic core writes this compact, **text-only** handoff. It is the
-ONLY input a skill-driven host-agent enrichment step reads to enrich `notes.md`
-— no raw images are ever sent to the model (token minimization). Bare CLI runs
-stop at deterministic low-level artifacts and do not call an external LLM.
+primary input a skill-driven host-agent enrichment step reads to enrich
+`notes.md`; raw frame images remain separate under `frames/` and may be opened
+on disk when OCR text is garbled. Bare CLI runs stop at deterministic low-level
+artifacts and do not call an external LLM.
 
 ```jsonc
 {
@@ -43,11 +44,11 @@ enrichment.
 | Anchor/shape | Constant | Meaning |
 |--------------|----------|---------|
 | `<!-- lectural:notes -->` | `NOTES_ENRICH_MARKER` | first line; marks a LecturAL notes file |
-| `## 한눈에 요약` | `NOTES_TAKEAWAY_ANCHOR` | takeaway section |
+| `## 3줄 요약` | `NOTES_TAKEAWAY_ANCHOR` | takeaway section |
 | `## 목차` | `NOTES_TOC_ANCHOR` | table of contents section |
-| `## 강의 흐름` | `NOTES_FLOW_ANCHOR` | lecture-flow prose section |
+| `## 흐름` | `NOTES_FLOW_ANCHOR` | flow prose section |
 | `## 핵심 개념·이론` | `NOTES_CONCEPTS_ANCHOR` | concept and theory section |
-| `## 상세 노트` | `NOTES_DETAIL_ANCHOR` | per-slide image and utterance details |
+| `## 정리 노트` | `NOTES_DETAIL_ANCHOR` | per-slide image and condensed details |
 | `## 복습 질문` | `NOTES_QUESTIONS_ANCHOR` | review-question section |
 | `## 정리 커버리지` | `NOTES_COVERAGE_ANCHOR` | coverage footer section |
 | `<!-- 미보강 -->` | `NOTES_UNENRICHED_MARKER` | deterministic placeholder marker for host-agent prose enrichment |

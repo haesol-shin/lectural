@@ -177,7 +177,8 @@ def test_default_processor_uses_title_slug_before_acquiring_speech(tmp_path, mon
     assert notes.startswith("<!-- lectural:notes -->")
     assert "## 목차" in notes
     assert "frames/frame_00001.png" in notes
-    assert "transcript.md#t000030" in notes
+    assert "## 정리 노트" in notes
+    assert '<img src="frames/frame_00001.png"' in notes
     assert '<a id="t000030"></a> [00:00:30] 두 번째 문장입니다' in transcript
     assert not (tmp_path / "운영체제-1강-프로세스-스레드" / "summary.md").exists()
     assert not (tmp_path / "운영체제-1강-프로세스-스레드" / "outline.md").exists()
