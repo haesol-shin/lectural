@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-14T11:59:16.650478+00:00",
+  "command": "uv run python -c \"$WU6_RUBRIC_CODE\"",
+  "pass": true,
+  "target_url": "https://www.youtube.com/watch?v=19vYXnpDIyg",
+  "notes_path": "output\\wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\notes.md",
+  "transcript_path": "output\\wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\transcript.md",
+  "coverage_path": "output\\wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\coverage.json",
+  "synthesis_input_path": "output\\wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\synthesis_input.json",
+  "notes_sha256": "299db1a196b9287d010570743e70708f4e33340e1adad5bd5783501ee4a8f14d",
+  "checks": [
+    {
+      "name": "seven_section_notes_structure",
+      "pass": true,
+      "expected": [
+        "## 한눈에 요약",
+        "## 목차",
+        "## 강의 흐름",
+        "## 핵심 개념·이론",
+        "## 상세 노트",
+        "## 복습 질문",
+        "## 정리 커버리지"
+      ],
+      "actual": [
+        "## 한눈에 요약",
+        "## 목차",
+        "## 강의 흐름",
+        "## 핵심 개념·이론",
+        "## 상세 노트",
+        "## 복습 질문",
+        "## 정리 커버리지"
+      ]
+    },
+    {
+      "name": "exactly_4_toc_entries_and_detail_sections",
+      "pass": true,
+      "toc_entries": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "detail_anchors": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "detail_heading_count": 4
+    },
+    {
+      "name": "exactly_4_slide_image_links",
+      "pass": true,
+      "slide_links": [
+        {
+          "slide": "1",
+          "path": "frames/frame_00000.png"
+        },
+        {
+          "slide": "2",
+          "path": "frames/frame_00017.png"
+        },
+        {
+          "slide": "3",
+          "path": "frames/frame_00393.png"
+        },
+        {
+          "slide": "4",
+          "path": "frames/frame_00577.png"
+        }
+      ]
+    },
+    {
+      "name": "all_concept_detail_question_bullets_have_valid_transcript_and_youtube_deeplinks",
+      "pass": true,
+      "bullet_count": 127,
+      "citation_count": 127,
+      "missing": [],
+      "invalid": []
+    },
+    {
+      "name": "all_notes_citations_resolve_to_transcript_anchors_and_matching_youtube_seconds",
+      "pass": true,
+      "citation_count": 131,
+      "invalid": []
+    },
+    {
+      "name": "no_unenriched_marker_or_placeholder_residue",
+      "pass": true,
+      "hits": []
+    },
+    {
+      "name": "enriched_prose_sections_do_not_copy_exact_transcript_prose_lines",
+      "pass": true,
+      "exact_copy_hits": []
+    },
+    {
+      "name": "detail_bullets_are_utterance_proportional_for_4_real_sections",
+      "pass": true,
+      "total_utterances": 117,
+      "total_detail_bullets": 117,
+      "rows": [
+        {
+          "section": 1,
+          "utterance_count": 2,
+          "detail_bullet_count": 2,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.017,
+          "bullet_share": 0.017
+        },
+        {
+          "section": 2,
+          "utterance_count": 62,
+          "detail_bullet_count": 62,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.53,
+          "bullet_share": 0.53
+        },
+        {
+          "section": 3,
+          "utterance_count": 28,
+          "detail_bullet_count": 28,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.239,
+          "bullet_share": 0.239
+        },
+        {
+          "section": 4,
+          "utterance_count": 25,
+          "detail_bullet_count": 25,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.214,
+          "bullet_share": 0.214
+        }
+      ],
+      "failures": []
+    },
+    {
+      "name": "coverage_overall_pass_true_and_slide_frames_total_4",
+      "pass": true,
+      "overall_pass": true,
+      "slide_frames_total": 4,
+      "scene_pass": true,
+      "notes_contract_pass": true
+    }
+  ]
+}

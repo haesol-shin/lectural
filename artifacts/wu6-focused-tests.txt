@@ -1,0 +1,16 @@
+# WU-6 focused offline tests
+
+Environment:
+- PYTHONUTF8=1
+- PYTHONIOENCODING=utf-8
+
+Command:
+uv run --with pytest --with numpy --with psutil pytest -q tests/test_notes.py tests/test_cli.py tests/test_coverage.py tests/test_hook.py tests/test_redteam_notes.py tests/test_redteam_notes_contract.py tests/test_doctor.py tests/test_deps.py tests/test_redteam_packaging.py tests/test_redteam_cli_hook.py tests/test_redteam_readme.py tests/test_redteam_synthesis.py
+
+Result:
+- Exit code: 0
+- Summary: 175 passed in 5.59s
+
+Windows encoding retry note:
+- An earlier untrusted/control run without PYTHONUTF8=1 failed on Windows due cp949 subprocess text decoding around hook subprocess stdout/stderr.
+- The UTF-8 rerun above passed and is the authoritative WU-6 focused offline test evidence; the control failure is recorded as an environment encoding retry, not a product failure.

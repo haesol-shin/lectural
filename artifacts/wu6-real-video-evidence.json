@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-14T12:00:49.374561+00:00",
+  "target_url": "https://www.youtube.com/watch?v=19vYXnpDIyg",
+  "video_title": "96강.  강박장애: 손에 피가날 정도로 씻어도 불안한 이유",
+  "duration_sec": 367.0,
+  "output": {
+    "root": "output/wu6-real",
+    "folder": "96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유",
+    "expected_title_slug": "96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유",
+    "folder_matches_title_slug": true,
+    "heavy_output_note": "Large generated files, including video.mkv and frame PNGs, remain under output/ and are not committed."
+  },
+  "paths": {
+    "notes_md": "output/wu6-real/96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유/notes.md",
+    "transcript_md": "output/wu6-real/96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유/transcript.md",
+    "coverage_json": "output/wu6-real/96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유/coverage.json",
+    "synthesis_input_json": "output/wu6-real/96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유/synthesis_input.json",
+    "rubric_json": "artifacts/wu6-rubric.json",
+    "runstate_json": ".lectural_runstate.json"
+  },
+  "cli_exit_0_evidence": {
+    "command": "lectural https://www.youtube.com/watch?v=19vYXnpDIyg --out ./output/wu6-real",
+    "exit_code": 0,
+    "source": "leader-observed existing real-video run, corroborated by .lectural_runstate.json status=complete and coverage overall_pass=true",
+    "runstate_status": "complete",
+    "runstate_output_dir": "./output/wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유",
+    "coverage_overall_pass": true
+  },
+  "focused_offline_tests": {
+    "command": "uv run --with pytest --with numpy --with psutil pytest -q tests/test_notes.py tests/test_cli.py tests/test_coverage.py tests/test_hook.py tests/test_redteam_notes.py tests/test_redteam_notes_contract.py tests/test_doctor.py tests/test_deps.py tests/test_redteam_packaging.py tests/test_redteam_cli_hook.py tests/test_redteam_readme.py tests/test_redteam_synthesis.py",
+    "env": {
+      "PYTHONUTF8": "1",
+      "PYTHONIOENCODING": "utf-8"
+    },
+    "exit_code": 0,
+    "result_summary": "175 passed in 5.59s",
+    "artifact": "artifacts/wu6-focused-tests.txt",
+    "windows_encoding_retry_note": "Earlier untrusted/control run without PYTHONUTF8=1 failed on Windows due cp949 subprocess text decoding around hook subprocess stdout/stderr; the UTF-8 rerun passed and is authoritative evidence, not a product failure."
+  },
+  "before_enrichment": {
+    "notes_state": "bare/unenriched skeleton still contained <!-- 미보강 -->",
+    "stop_hook": {
+      "command": "uv run python scripts/completeness_hook.py",
+      "exit_code": 2,
+      "source": "leader-observed pre-enrichment Stop hook run from assignment context",
+      "failure_reason": "notes.md contained <!-- 미보강 -->",
+      "output_excerpt": "LecturAL 완전성 게이트 실패 — notes.md에 미보강 마커가 남아 있습니다."
+    }
+  },
+  "after_enrichment": {
+    "notes_marker_absent": true,
+    "stop_hook": {
+      "command": "uv run python scripts/completeness_hook.py",
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      },
+      "exit_code": 0,
+      "source": "executor-run post-enrichment verification in this assignment",
+      "output_excerpt": "LecturAL 완전성 게이트 통과: 1개 run 모두 완전."
+    },
+    "rubric": {
+      "command": "uv run python -c \"$WU6_RUBRIC_CODE\"",
+      "exit_code": 0,
+      "pass": true,
+      "artifact": "artifacts/wu6-rubric.json"
+    }
+  },
+  "coverage_metrics": {
+    "overall_pass": true,
+    "gap_check": {
+      "max_untranscribed_speech_gap_sec": 0.52,
+      "threshold_sec": 60.0,
+      "pass": true
+    },
+    "scene_coverage": {
+      "bins": 20,
+      "carry_max_sec": 120.0,
+      "speech_bins": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "covered_speech_bins": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "uncovered_speech_bins": [],
+      "slide_frames_total": 4,
+      "slide_frames_with_text": 4,
+      "pass": true
+    },
+    "artifacts": {
+      "transcript_md": "./output/wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\transcript.md",
+      "notes_md": "./output/wu6-real\\96강-강박장애-손에-피가날-정도로-씻어도-불안한-이유\\notes.md",
+      "transcript_nonempty": true,
+      "notes_nonempty": true,
+      "pass": true
+    },
+    "notes_contract": {
+      "version": 1,
+      "checked": true,
+      "problems": [],
+      "pass": true
+    }
+  },
+  "rubric_verdicts": {
+    "pass": true,
+    "seven_section_structure": true,
+    "four_toc_and_detail_sections": true,
+    "four_slide_image_links": true,
+    "citation_deeplinks": {
+      "pass": true,
+      "bullet_count": 127,
+      "citation_count": 127,
+      "invalid": [],
+      "missing": []
+    },
+    "no_placeholder_residue": true,
+    "no_exact_transcript_prose_copy": true,
+    "utterance_proportional_detail": {
+      "name": "detail_bullets_are_utterance_proportional_for_4_real_sections",
+      "pass": true,
+      "total_utterances": 117,
+      "total_detail_bullets": 117,
+      "rows": [
+        {
+          "section": 1,
+          "utterance_count": 2,
+          "detail_bullet_count": 2,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.017,
+          "bullet_share": 0.017
+        },
+        {
+          "section": 2,
+          "utterance_count": 62,
+          "detail_bullet_count": 62,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.53,
+          "bullet_share": 0.53
+        },
+        {
+          "section": 3,
+          "utterance_count": 28,
+          "detail_bullet_count": 28,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.239,
+          "bullet_share": 0.239
+        },
+        {
+          "section": 4,
+          "utterance_count": 25,
+          "detail_bullet_count": 25,
+          "bullet_to_utterance_ratio": 1.0,
+          "utterance_share": 0.214,
+          "bullet_share": 0.214
+        }
+      ],
+      "failures": []
+    },
+    "coverage_pass_and_slide_total": {
+      "name": "coverage_overall_pass_true_and_slide_frames_total_4",
+      "pass": true,
+      "overall_pass": true,
+      "slide_frames_total": 4,
+      "scene_pass": true,
+      "notes_contract_pass": true
+    }
+  }
+}
