@@ -42,9 +42,8 @@ def _fake_processor(url, out_dir, force_stt, model):
     return {
         "output_dir": f"./output/{url[-1]}",
         "coverage_json": f"./output/{url[-1]}/coverage.json",
-        "summary_md": f"./output/{url[-1]}/summary.md",
+        "notes_md": f"./output/{url[-1]}/notes.md",
         "transcript_md": f"./output/{url[-1]}/transcript.md",
-        "outline_md": f"./output/{url[-1]}/outline.md",
         "overall_pass": True,
     }
 
@@ -145,24 +144,25 @@ def test_default_processor_uses_title_slug_before_acquiring_speech(tmp_path, mon
     assert calls["download_out_dir"] == expected_dir
     assert calls["frames_dir"] == os.path.join(expected_dir, "frames")
     assert result["output_dir"] == expected_dir
-    assert result["outline_md"] == os.path.join(expected_dir, "outline.md")
+    assert result["notes_md"] == os.path.join(expected_dir, "notes.md")
     assert "video_01" not in calls["acquire_out_dir"]
 
     coverage = json.loads((tmp_path / "운영체제-1강-프로세스-스레드" / "coverage.json").read_text(encoding="utf-8"))
     assert coverage["video_title"] == "운영체제 1강: 프로세스/스레드"
     assert coverage["duration_sec"] == 120.0
-    assert coverage["artifacts"]["outline_md"] == os.path.join(expected_dir, "outline.md")
-    assert coverage["artifacts"]["outline_nonempty"] is True
-    assert coverage["artifacts"]["summary_nonempty"] is True
+    assert coverage["artifacts"]["notes_md"] == os.path.join(expected_dir, "notes.md")
+    assert coverage["artifacts"]["notes_nonempty"] is True
     assert coverage["artifacts"]["transcript_nonempty"] is True
 
-    summary = (tmp_path / "운영체제-1강-프로세스-스레드" / "summary.md").read_text(encoding="utf-8")
-    outline = (tmp_path / "운영체제-1강-프로세스-스레드" / "outline.md").read_text(encoding="utf-8")
-    assert "TO-ENRICH" in summary
-    assert "## 목차" not in summary
-    assert "## 목차" in outline
-    assert "frames/frame_00001.png" in outline
-    assert "- [00:00:30] 두 번째 문장입니다" in outline
+    notes = (tmp_path / "운영체제-1강-프로세스-스레드" / "notes.md").read_text(encoding="utf-8")
+    transcript = (tmp_path / "운영체제-1강-프로세스-스레드" / "transcript.md").read_text(encoding="utf-8")
+    assert notes.startswith("<!-- lectural:notes -->")
+    assert "## 목차" in notes
+    assert "frames/frame_00001.png" in notes
+    assert "transcript.md#t000030" in notes
+    assert '<a id="t000030"></a> [00:00:30] 두 번째 문장입니다' in transcript
+    assert not (tmp_path / "운영체제-1강-프로세스-스레드" / "summary.md").exists()
+    assert not (tmp_path / "운영체제-1강-프로세스-스레드" / "outline.md").exists()
 
 
 def test_default_processor_cleanup_keeps_coverage_raw_times(tmp_path, monkeypatch):
@@ -220,9 +220,9 @@ def test_default_processor_keep_frames_archives_raw_without_relinking_slides(tmp
         "frame_00002.png",
         "frame_00003.png",
     ]
-    outline = (out_dir / "outline.md").read_text(encoding="utf-8")
-    assert "frames/frame_00001.png" in outline
-    assert "frames/raw/" not in outline
+    notes = (out_dir / "notes.md").read_text(encoding="utf-8")
+    assert "frames/frame_00001.png" in notes
+    assert "frames/raw/" not in notes
 
 
 def test_default_processor_falls_back_to_video_id_when_title_missing(tmp_path, monkeypatch):

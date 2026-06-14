@@ -51,7 +51,7 @@ def _fixture():
             "slide_frames_with_text": 2,
             "pass": True,
         },
-        "artifacts": {"transcript_nonempty": True, "summary_nonempty": True, "outline_nonempty": True},
+        "artifacts": {"transcript_nonempty": True, "notes_nonempty": True},
     }
     return video, segments, slides, coverage
 
@@ -220,3 +220,20 @@ def test_zero_segment_review_questions_have_no_transcript_citation_and_do_not_cr
     assert len(question_lines) == 3
     assert all("transcript.md#" not in line for line in question_lines)
     assert all("youtu.be/" not in line for line in question_lines)
+
+
+def test_narrative_sections_are_skeleton_only_with_no_fabricated_prose():
+    md = _notes_md()
+    # 한눈에 요약 and 강의 흐름 are narrative+citation-exempt: they must contain ONLY
+    # the unenriched marker + `- 미보강` placeholder bullets, never deterministic prose.
+    for start, end in (
+        (NOTES_TAKEAWAY_ANCHOR, NOTES_TOC_ANCHOR),
+        (NOTES_FLOW_ANCHOR, NOTES_CONCEPTS_ANCHOR),
+    ):
+        block = _block(md, start, end)
+        assert NOTES_UNENRICHED_MARKER in block
+        for line in _bullet_lines(block):
+            assert line.startswith("- 미보강"), line
+    # No legacy mechanical-summary headings/markers leak into notes.md.
+    for legacy in ("<!-- lectural:baseline -->", "## 핵심 요약", "## 구간별 요약", "## TO-ENRICH", "## 커버리지 요약"):
+        assert legacy not in md

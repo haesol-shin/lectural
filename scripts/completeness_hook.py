@@ -4,8 +4,8 @@
 Blocks "done" (exit 2) until every LecturAL run produced this session is
 complete. For each run recorded in the run-state file it checks:
   (a) coverage.json overall_pass (speech-gap + scene coverage + artifacts)
-  (b) summary.md carries summary-only anchors (baseline marker + coverage header)
-  (c) outline.md carries navigation anchors (TOC, timestamps, transcript bullets, slide links)
+  (b) notes.md carries the notes marker and all required section anchors
+  (c) notes.md links at least one slide image when frames/*.png exists
 
 When no run-state file exists, the current turn was not a LecturAL run and the
 hook is a NO-OP (exit 0). Cross-platform: invoked via `python`/`py -3`; the
@@ -24,18 +24,41 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-# Anchors: import from the package, else fall back to literals. This MUST NOT
-# affect run-state reading (a completeness gate must not fail open).
+# Notes anchors: import from the package, else fall back to literals. This MUST
+# NOT affect run-state reading (a completeness gate must not fail open).
 try:
-    from lectural.synthesis import COVERAGE_ANCHOR, ENRICH_MARKER, TOC_ANCHOR
+    from lectural.synthesis import (
+        NOTES_CONCEPTS_ANCHOR,
+        NOTES_COVERAGE_ANCHOR,
+        NOTES_DETAIL_ANCHOR,
+        NOTES_ENRICH_MARKER,
+        NOTES_FLOW_ANCHOR,
+        NOTES_QUESTIONS_ANCHOR,
+        NOTES_TAKEAWAY_ANCHOR,
+        NOTES_TOC_ANCHOR,
+    )
 except Exception:  # noqa: BLE001
-    ENRICH_MARKER = "<!-- lectural:baseline -->"
-    COVERAGE_ANCHOR = "## 커버리지 요약"
-    TOC_ANCHOR = "## 목차"
+    NOTES_ENRICH_MARKER = "<!-- lectural:notes -->"
+    NOTES_TAKEAWAY_ANCHOR = "## 한눈에 요약"
+    NOTES_TOC_ANCHOR = "## 목차"
+    NOTES_FLOW_ANCHOR = "## 강의 흐름"
+    NOTES_CONCEPTS_ANCHOR = "## 핵심 개념·이론"
+    NOTES_DETAIL_ANCHOR = "## 상세 노트"
+    NOTES_QUESTIONS_ANCHOR = "## 복습 질문"
+    NOTES_COVERAGE_ANCHOR = "## 정리 커버리지"
 
+_NOTES_SECTION_ANCHORS = [
+    NOTES_TAKEAWAY_ANCHOR,
+    NOTES_TOC_ANCHOR,
+    NOTES_FLOW_ANCHOR,
+    NOTES_CONCEPTS_ANCHOR,
+    NOTES_DETAIL_ANCHOR,
+    NOTES_QUESTIONS_ANCHOR,
+    NOTES_COVERAGE_ANCHOR,
+]
+_SLIDE_IMAGE_LINK_RE = re.compile(r"!\[[^\]]*\]\([^)]*frames/[^)]*\.png[^)]*\)", re.IGNORECASE)
 _DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
-_TIMESTAMP_RE = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
-_TRANSCRIPT_BULLET_RE = re.compile(r"(?m)^\s*-\s+\[\d{2}:\d{2}:\d{2}\]\s+\S.*$")
+
 
 
 def _read_runstate() -> dict | None:
@@ -58,42 +81,22 @@ def _read_runstate() -> dict | None:
                           "output_dir": path}]}
 
 
-def _validate_summary_anchors(summary_path: str) -> list[str]:
-    problems: list[str] = []
-    if not os.path.isfile(summary_path):
-        return [f"summary.md 없음: {summary_path}"]
-    text = open(summary_path, encoding="utf-8").read()
-    if ENRICH_MARKER not in text:
-        problems.append("summary.md: ENRICH_MARKER 누락")
-    if COVERAGE_ANCHOR not in text:
-        problems.append("summary.md: 커버리지 요약 헤더 누락")
-    return problems
-
-
-def _outline_candidates(run: dict, summary_path: str) -> list[str]:
-    if run.get("outline_md"):
-        return [run["outline_md"]]
-
-    candidates: list[str] = []
+def _resolve_notes_path(run: dict, cov_path: str) -> str:
+    if run.get("notes_md"):
+        return run["notes_md"]
     output_dir = run.get("output_dir")
     if output_dir:
-        candidates.append(os.path.join(output_dir, "outline.md"))
-    if summary_path:
-        candidates.append(os.path.join(os.path.dirname(summary_path), "outline.md"))
-
-    unique: list[str] = []
-    for path in candidates:
-        if path and path not in unique:
-            unique.append(path)
-    return unique
+        return os.path.join(output_dir, "notes.md")
+    if cov_path:
+        return os.path.join(os.path.dirname(cov_path), "notes.md")
+    return ""
 
 
-def _has_frame_png(run: dict, summary_path: str, outline_path: str) -> bool:
+def _has_frame_png(run: dict, notes_path: str) -> bool:
     roots: list[str] = []
     for root in (
         run.get("output_dir"),
-        os.path.dirname(summary_path) if summary_path else "",
-        os.path.dirname(outline_path) if outline_path else "",
+        os.path.dirname(notes_path) if notes_path else "",
     ):
         if root and root not in roots:
             roots.append(root)
@@ -110,25 +113,27 @@ def _has_frame_png(run: dict, summary_path: str, outline_path: str) -> bool:
     return False
 
 
-def _validate_outline_anchors(run: dict, summary_path: str) -> list[str]:
-    candidates = _outline_candidates(run, summary_path)
-    outline_path = next((path for path in candidates if os.path.isfile(path)), "")
+def _validate_notes(run: dict, cov_path: str) -> list[str]:
+    notes_path = _resolve_notes_path(run, cov_path)
+    if not os.path.isfile(notes_path):
+        return [f"notes.md 없음: {notes_path or 'notes_md/output_dir/coverage sibling 없음'}"]
 
-    if not outline_path:
-        expected = " 또는 ".join(candidates) if candidates else "outline_md/output_dir 없음"
-        return [f"outline.md 없음: {expected}"]
+    try:
+        text = open(notes_path, encoding="utf-8").read()
+    except OSError as exc:
+        return [f"notes.md 읽기 실패: {exc}"]
 
-    text = open(outline_path, encoding="utf-8").read()
     problems: list[str] = []
-    if TOC_ANCHOR not in text:
-        problems.append("outline.md: 목차(TOC_ANCHOR) 누락")
-    if not _TIMESTAMP_RE.search(text):
-        problems.append("outline.md: [HH:MM:SS] 타임스탬프 누락")
-    if not _TRANSCRIPT_BULLET_RE.search(text):
-        problems.append("outline.md: [HH:MM:SS] transcript bullet 누락")
-    if _has_frame_png(run, summary_path, outline_path) and "frames/" not in text:
-        problems.append("outline.md: frames/ 슬라이드 링크 누락(frames png 존재)")
+    first_line = text.splitlines()[0] if text.splitlines() else ""
+    if first_line != NOTES_ENRICH_MARKER:
+        problems.append("notes.md: NOTES_ENRICH_MARKER line1 누락")
+    for anchor in _NOTES_SECTION_ANCHORS:
+        if anchor not in text:
+            problems.append(f"notes.md: 필수 섹션 앵커 누락: {anchor}")
+    if _has_frame_png(run, notes_path) and not _SLIDE_IMAGE_LINK_RE.search(text):
+        problems.append("notes.md: frames/ 슬라이드 이미지 링크 누락(frames png 존재)")
     return problems
+
 
 
 def _validate_run(run: dict) -> list[str]:
@@ -161,9 +166,7 @@ def _validate_run(run: dict) -> list[str]:
             )
         if not arts.get("pass"):
             problems.append("산출물 누락/빈 파일")
-    summary_path = run.get("summary_md", "")
-    problems += _validate_summary_anchors(summary_path)
-    problems += _validate_outline_anchors(run, summary_path)
+    problems += _validate_notes(run, cov_path)
     return problems
 
 

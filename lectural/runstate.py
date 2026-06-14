@@ -40,7 +40,7 @@ def start_session(urls: list[str] | None = None, path: str | None = None) -> dic
                 "status": "pending",
                 "output_dir": None,
                 "coverage_json": None,
-                "summary_md": None,
+                "notes_md": None,
             }
             for i, url in enumerate(urls or [])
         ],
@@ -55,7 +55,7 @@ def update_run(
     status: str,
     output_dir: str | None = None,
     coverage_json: str | None = None,
-    summary_md: str | None = None,
+    notes_md: str | None = None,
     error: str | None = None,
     path: str | None = None,
 ) -> dict:
@@ -67,7 +67,7 @@ def update_run(
         "status": status,
         "output_dir": output_dir,
         "coverage_json": coverage_json,
-        "summary_md": summary_md,
+        "notes_md": notes_md,
         "error": error,
         "updated_at": time.time(),
     }

@@ -1,21 +1,11 @@
-"""Unit tests for synthesis renderers + required anchors (AC-7, AC-8, AC-12)."""
-
-import re
+"""Unit tests for synthesis helpers still used by notes.md."""
 
 from lectural.synthesis import (
-    COVERAGE_ANCHOR,
-    ENRICH_MARKER,
-    SECTION_PREFIX,
-    TOC_ANCHOR,
     build_section_hints,
     build_synthesis_input,
     format_timestamp,
-    render_summary_md,
-    render_outline_md,
     render_transcript_md,
 )
-
-_BRACKETED_TIMESTAMP = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
 
 def _fixture():
     video = {"title": "운영체제 1강", "url": "u", "duration_sec": 300.0,
@@ -59,91 +49,3 @@ def test_transcript_md_has_all_utterances():
     assert "[00:01:05]" in md  # 65s
 
 
-def test_summary_md_required_anchors_present():
-    video, segments, slides = _fixture()
-    si = build_synthesis_input(video, segments, slides)
-    coverage = {
-        "duration_sec": 300.0,
-        "ocr_engine": "paddleocr",
-        "gap_check": {"max_untranscribed_speech_gap_sec": 10, "threshold_sec": 60, "pass": True},
-        "scene_coverage": {"speech_bins": [0, 1, 2], "uncovered_speech_bins": [],
-                            "slide_frames_total": 2, "slide_frames_with_text": 2, "pass": True},
-        "artifacts": {"transcript_nonempty": True, "summary_nonempty": True,
-                      "outline_nonempty": True, "pass": True},
-    }
-    md = render_summary_md(si, coverage)
-    assert md.splitlines()[0] == ENRICH_MARKER
-    assert COVERAGE_ANCHOR in md
-    assert "TO-ENRICH" in md
-    assert TOC_ANCHOR not in md
-    assert SECTION_PREFIX not in md
-    assert "안녕하세요 운영체제 강의입니다" in md
-    assert "스케줄링 알고리즘" in md
-    assert not any(line.startswith("### [") for line in md.splitlines())
-    assert _BRACKETED_TIMESTAMP.search(md) is None
-
-
-
-def test_outline_md_required_anchors_present():
-    video, segments, slides = _fixture()
-    si = build_synthesis_input(video, segments, slides)
-    md = render_outline_md(si)
-    assert TOC_ANCHOR in md
-    assert SECTION_PREFIX in md
-    assert "frames/00001.png" in md  # slide link
-    assert "(#sec-0)" in md          # TOC intra-doc link
-    assert "[00:03:20]" in md        # 200s utterance timestamp present
-    assert "- [00:01:05] 프로세스와 스레드의 차이" in md
-    assert f"{SECTION_PREFIX} 1. [00:00:00] 운영체제 개요" in md
-    assert f"{SECTION_PREFIX} 2. [00:03:00] CPU 스케줄링" in md
-
-
-def test_summary_md_assigns_segments_to_sections():
-    video, segments, slides = _fixture()
-    si = build_synthesis_input(video, segments, slides)
-    coverage = {"duration_sec": 300.0, "ocr_engine": "none",
-                "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
-                "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [],
-                                   "slide_frames_total": 2, "slide_frames_with_text": 2, "pass": True},
-                "artifacts": {"transcript_nonempty": True, "summary_nonempty": True,
-                              "outline_nonempty": True, "pass": True}}
-    md = render_outline_md(si)
-    # 200s utterance must land under section 2 (starts 180s), not section 1.
-    sec2_idx = md.index("섹션 2")
-    assert md.index("스케줄링 알고리즘") > sec2_idx
-
-
-def test_summary_escapes_markdown_special_titles():
-    video = {"title": "x", "url": "u", "duration_sec": 100.0, "source": "stt"}
-    segments = [{"t": 0.0, "text": "\ubcf8\ubb38"}]
-    slides = [{"t": 0.0, "frame": "frames/a.png",
-               "ocr_text": "Topic [draft] | v2\n\uc138\ubd80", "is_slide": True}]
-    si = build_synthesis_input(video, segments, slides)
-    coverage = {"duration_sec": 100.0, "ocr_engine": "none",
-                "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
-                "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [],
-                                   "slide_frames_total": 1, "slide_frames_with_text": 1, "pass": True},
-                "artifacts": {"transcript_nonempty": True, "summary_nonempty": True,
-                              "outline_nonempty": True, "pass": True}}
-    md = render_outline_md(si)
-    toc_line = next(ln for ln in md.splitlines() if ln.startswith("- [00:00:00"))
-    link_text = toc_line.split("](")[0]
-    assert "]" not in link_text.split("\u00b7 ", 1)[1]
-    assert "|" not in link_text
-
-
-def test_summary_skips_empty_intro_section_but_keeps_pre_slide_speech():
-    video = {"title": "x", "url": "u", "duration_sec": 200.0, "source": "stt"}
-    slides = [{"t": 60.0, "frame": "frames/a.png", "ocr_text": "Slide", "is_slide": True}]
-    si = build_synthesis_input(video, [{"t": 120.0, "text": "\ud6c4\ubc18\ubd80"}], slides)
-    cov = {"duration_sec": 200.0, "ocr_engine": "none",
-           "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
-           "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [],
-                              "slide_frames_total": 1, "slide_frames_with_text": 1, "pass": True},
-           "artifacts": {"transcript_nonempty": True, "summary_nonempty": True,
-                         "outline_nonempty": True, "pass": True}}
-    md = render_outline_md(si)
-    assert "\ub3c4\uc785" not in md
-    si2 = build_synthesis_input(video, [{"t": 5.0, "text": "\ub3c4\uc785\ubd80 \ubc1c\ud654"}, {"t": 120.0, "text": "\ud6c4\ubc18\ubd80"}], slides)
-    md2 = render_outline_md(si2)
-    assert "\ub3c4\uc785\ubd80 \ubc1c\ud654" in md2

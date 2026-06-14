@@ -206,7 +206,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     from lectural.runstate import start_session, update_run
     from lectural.synthesis import (
         build_synthesis_input,
-        render_summary_md,
+        render_notes_md,
         render_transcript_md,
         write_synthesis_input,
         write_text,
@@ -251,7 +251,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
                         "ocr_text": f.ocr_text, "is_slide": True} for f in slide_frames]
 
         transcript_path = os.path.join(out_dir, "transcript.md")
-        summary_path = os.path.join(out_dir, "summary.md")
+        notes_path = os.path.join(out_dir, "notes.md")
 
         def _synth():
             si = build_synthesis_input(video, segments, slide_dicts)
@@ -263,19 +263,22 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
         (si, transcript_md), _ = timed("synthesis", _synth)
 
         def _coverage():
-            def _cov_inputs(summary_md_text):
+            def _cov_inputs(notes_md_text):
                 return coverage_inputs_from_extraction(
                     video_title=title, duration_sec=duration, speech_spans=speech_spans,
                     segment_times=[s["t"] for s in segments],
                     raw_sample_times=[f.timestamp for f in raw_frames],
-                    slides=slide_dicts, transcript_path=transcript_path, summary_path=summary_path,
+                    slides=slide_dicts, transcript_path=transcript_path, notes_path=notes_path,
                     ocr_engine=ocr_engine,
-                    transcript_text=transcript_md, summary_text=summary_md_text,
+                    transcript_text=transcript_md, notes_text=notes_md_text,
                 )
 
-            summary_md = render_summary_md(si, build_coverage(_cov_inputs("")))
-            cov = build_coverage(_cov_inputs(summary_md))
-            write_text(summary_md, summary_path)
+            draft_coverage = build_coverage(_cov_inputs(""))
+            draft_notes_md = render_notes_md(si, draft_coverage)
+            cov = build_coverage(_cov_inputs(draft_notes_md))
+            notes_md = render_notes_md(si, cov)
+            cov = build_coverage(_cov_inputs(notes_md))
+            write_text(notes_md, notes_path)
             write_coverage(cov, os.path.join(out_dir, "coverage.json"))
             return cov
 
@@ -286,7 +289,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
             status="complete",
             output_dir=out_dir,
             coverage_json=os.path.join(out_dir, "coverage.json"),
-            summary_md=summary_path,
+            notes_md=notes_path,
         )
 
         def _hook():

@@ -49,29 +49,29 @@ def test_scene_coverage_fails_when_slide_lacks_text():
 
 def test_artifact_check(tmp_path):
     t = tmp_path / "transcript.md"
-    s = tmp_path / "summary.md"
+    n = tmp_path / "notes.md"
     t.write_text("content", encoding="utf-8")
-    res_missing = artifact_check(str(t), str(s))
-    assert res_missing["pass"] is False  # summary missing
-    s.write_text("content", encoding="utf-8")
-    res_ok = artifact_check(str(t), str(s))
+    res_missing = artifact_check(str(t), str(n))
+    assert res_missing["pass"] is False  # notes missing
+    n.write_text("content", encoding="utf-8")
+    res_ok = artifact_check(str(t), str(n))
     assert res_ok["pass"] is True
 
 def test_artifact_check_judges_nonempty_from_rendered_text(tmp_path):
     # Decouples the gate from file write ordering: rendered content passes even
-    # when the summary file has not been written yet (the real-run regression).
+    # when the notes file has not been written yet (the real-run regression).
     t = tmp_path / "transcript.md"
-    s = tmp_path / "summary.md"  # intentionally never written
+    n = tmp_path / "notes.md"  # intentionally never written
     res = artifact_check(
-        str(t), str(s),
-        transcript_text="[00:00:00] hi", summary_text="# notes\nbody",
+        str(t), str(n),
+        transcript_text="[00:00:00] hi", notes_text="# notes\nbody",
     )
     assert res["transcript_nonempty"] is True
-    assert res["summary_nonempty"] is True
+    assert res["notes_nonempty"] is True
     assert res["pass"] is True
     # Empty rendered text is still caught.
-    empty = artifact_check(str(t), str(s), transcript_text="x", summary_text="   ")
-    assert empty["summary_nonempty"] is False
+    empty = artifact_check(str(t), str(n), transcript_text="x", notes_text="   ")
+    assert empty["notes_nonempty"] is False
     assert empty["pass"] is False
 
 
@@ -81,20 +81,20 @@ def test_build_coverage_passes_with_rendered_text_before_files_exist(tmp_path):
         segment_times=[30 * i for i in range(10)],
         frame_times=[float(i) for i in range(0, 300)],
         transcript_path=str(tmp_path / "transcript.md"),
-        summary_path=str(tmp_path / "summary.md"),  # not written
+        notes_path=str(tmp_path / "notes.md"),  # not written
         ocr_engine="paddleocr", slide_frames_total=1, slide_frames_with_text=1,
-        transcript_text="[00:00:00] hi", summary_text="# notes",
+        transcript_text="[00:00:00] hi", notes_text="# notes",
     )
     cov = build_coverage(inp)
-    assert cov["artifacts"]["summary_nonempty"] is True
+    assert cov["artifacts"]["notes_nonempty"] is True
     assert cov["overall_pass"] is True
 
 
 def test_build_and_write_coverage(tmp_path):
     t = tmp_path / "transcript.md"
-    s = tmp_path / "summary.md"
+    n = tmp_path / "notes.md"
     t.write_text("x", encoding="utf-8")
-    s.write_text("y", encoding="utf-8")
+    n.write_text("y", encoding="utf-8")
     inp = CoverageInputs(
         video_title="Lecture 1",
         duration_sec=100.0,
@@ -102,7 +102,7 @@ def test_build_and_write_coverage(tmp_path):
         segment_times=[5 * i for i in range(20)],
         frame_times=[5 * i + 2 for i in range(20)],
         transcript_path=str(t),
-        summary_path=str(s),
+        notes_path=str(n),
         ocr_engine="paddleocr",
         slide_frames_total=2,
         slide_frames_with_text=2,
@@ -139,7 +139,7 @@ def test_scene_coverage_static_slide_passes_with_dense_raw_samples():
 def test_coverage_inputs_from_extraction_routes_raw_times_and_counts(tmp_path):
     from lectural.coverage import coverage_inputs_from_extraction, build_coverage
     tp = tmp_path / "transcript.md"; tp.write_text("x", encoding="utf-8")
-    sp = tmp_path / "summary.md"; sp.write_text("y", encoding="utf-8")
+    np = tmp_path / "notes.md"; np.write_text("y", encoding="utf-8")
     raw = [float(i) for i in range(0, 600)]  # dense raw samples
     slides = [
         {"t": 0.0, "frame": "frames/0.png", "ocr_text": "Slide A"},
@@ -148,7 +148,7 @@ def test_coverage_inputs_from_extraction_routes_raw_times_and_counts(tmp_path):
     inp = coverage_inputs_from_extraction(
         video_title="L", duration_sec=600.0, speech_spans=[(0, 600)],
         segment_times=[10 * i for i in range(60)], raw_sample_times=raw,
-        slides=slides, transcript_path=str(tp), summary_path=str(sp),
+        slides=slides, transcript_path=str(tp), notes_path=str(np),
         ocr_engine="paddleocr",
     )
     # raw sample times are routed to frame_times (not the 2 slides)

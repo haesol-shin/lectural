@@ -4,28 +4,19 @@ from __future__ import annotations
 
 import json
 import random
-import re
-
-import pytest
 
 from lectural.config import MAX_GAP_SEC, SCHEMA_VERSION
 from lectural.coverage import CoverageInputs, build_coverage, gap_check, scene_coverage, write_coverage
 from lectural.synthesis import (
-    COVERAGE_ANCHOR,
-    ENRICH_MARKER,
-    SECTION_PREFIX,
-    TOC_ANCHOR,
+    NOTES_ENRICH_MARKER,
     build_section_hints,
     build_synthesis_input,
     format_timestamp,
-    render_summary_md,
-    render_outline_md,
+    render_notes_md,
     render_transcript_md,
     write_synthesis_input,
     write_text,
 )
-
-_BRACKETED_TIMESTAMP = re.compile(r"\[\d{2}:\d{2}:\d{2}\]")
 
 def _video(duration: float = 120.0, title: str = "Redteam # [Lecture] | Δ") -> dict:
     return {
@@ -54,24 +45,16 @@ def _coverage(duration: float = 120.0, slide_total: int = 0, slide_text: int = 0
             "slide_frames_with_text": slide_text,
             "pass": slide_text >= slide_total,
         },
-        "artifacts": {"transcript_nonempty": True, "summary_nonempty": True, "pass": True},
+        "artifacts": {"transcript_nonempty": True, "notes_nonempty": True, "pass": True},
     }
 
 
-def _summary_for(video: dict, segments: list[dict], slides: list[dict]) -> str:
-    synthesis_input = build_synthesis_input(video, segments, slides)
-    return render_summary_md(
-        synthesis_input,
-        _coverage(video["duration_sec"], len(slides), len([s for s in slides if s.get("ocr_text", "").strip()])),
-    )
 
 
 def _synthesis_for(video: dict, segments: list[dict], slides: list[dict]) -> dict:
     return build_synthesis_input(video, segments, slides)
 
 
-def _outline_for(video: dict, segments: list[dict], slides: list[dict]) -> str:
-    return render_outline_md(_synthesis_for(video, segments, slides))
 
 
 def test_render_transcript_md_property_captures_all_speech_fixed_seed():
@@ -100,113 +83,6 @@ def test_render_transcript_md_property_captures_all_speech_fixed_seed():
         rendered_line = f"{timestamp} {text}" if text else timestamp
         assert rendered_line in md
     assert md.count("[00:00:12] duplicate-text") == 2
-
-
-def test_render_outline_md_assigns_each_in_duration_segment_once_and_boundary_to_one_section():
-    video = _video(duration=100.0)
-    slides = [
-        {"t": 0.0, "frame": "frames/0001.png", "ocr_text": "Intro", "is_slide": True},
-        {"t": 50.0, "frame": "frames/0002.png", "ocr_text": "Boundary # [x] | y", "is_slide": True},
-    ]
-    segments = [
-        {"t": 0.0, "text": "summary-seg-zero"},
-        {"t": 49.999, "text": "summary-seg-before-boundary"},
-        {"t": 50.0, "text": "summary-seg-on-boundary"},
-        {"t": 99.999, "text": "summary-seg-before-end"},
-    ]
-
-    md = _outline_for(video, segments, slides)
-
-    for segment in segments:
-        assert md.count(segment["text"]) == 1
-    sec1 = md[md.index('<a id="sec-0"></a>') : md.index('<a id="sec-1"></a>')]
-    sec2 = md[md.index('<a id="sec-1"></a>') :]
-    assert "summary-seg-on-boundary" not in sec1
-    assert "summary-seg-on-boundary" in sec2
-
-
-def test_render_outline_md_does_not_drop_in_duration_segments_before_first_slide_or_at_duration():
-    video = _video(duration=100.0)
-    slides = [
-        {"t": 25.0, "frame": "frames/0025.png", "ocr_text": "Starts late", "is_slide": True},
-        {"t": 80.0, "frame": "frames/0080.png", "ocr_text": "Last section", "is_slide": True},
-    ]
-    segments = [
-        {"t": 0.0, "text": "dropped-before-first-slide-at-zero"},
-        {"t": 24.999, "text": "dropped-before-first-slide-nearby"},
-        {"t": 100.0, "text": "dropped-at-duration-boundary"},
-    ]
-
-    md = _outline_for(video, segments, slides)
-
-    for segment in segments:
-        assert md.count(segment["text"]) == 1
-
-
-def test_render_summary_and_outline_md_no_slides_keep_pair_contract_and_single_outline_section():
-    video = _video(duration=75.0, title="No slides # [empty] | unicode 한글")
-    segments = [{"t": 0.0, "text": "no-slides-segment"}, {"t": 74.999, "text": "no-slides-tail"}]
-
-    synthesis_input = _synthesis_for(video, segments, [])
-    summary_md = render_summary_md(
-        synthesis_input,
-        _coverage(video["duration_sec"], slide_total=0, slide_text=0),
-    )
-    outline_md = render_outline_md(synthesis_input)
-
-    assert summary_md.splitlines()[0] == ENRICH_MARKER
-    assert COVERAGE_ANCHOR in summary_md
-    assert "TO-ENRICH" in summary_md
-    assert TOC_ANCHOR not in summary_md
-    assert _BRACKETED_TIMESTAMP.search(summary_md) is None
-
-
-    assert TOC_ANCHOR in outline_md
-    assert outline_md.count(SECTION_PREFIX) == 1
-    assert outline_md.count('<a id="sec-') == 1
-    assert "- [00:00:00 · 전체](#sec-0)" in outline_md
-    assert f"{SECTION_PREFIX} 1. [00:00:00] 전체" in outline_md
-
-    for segment in segments:
-        assert outline_md.count(segment["text"]) == 1
-
-
-@pytest.mark.parametrize(
-    "slides",
-    [
-        [],
-        [{"t": 0.0, "frame": "frames/empty.png", "ocr_text": "", "is_slide": True}],
-        [{"t": 0.0, "frame": "frames/special.png", "ocr_text": "# Title [brackets] | pipe\n본문", "is_slide": True}],
-    ],
-)
-def test_anchor_stability_across_no_empty_and_markdown_special_slides(slides):
-    video = _video(duration=60.0, title="Anchor # [stability] | Δ")
-    segments = [{"t": 0.0, "text": "anchor-stability-segment"}]
-
-    synthesis_input = _synthesis_for(video, segments, slides)
-    summary_md = render_summary_md(
-        synthesis_input,
-        _coverage(video["duration_sec"], len(slides), len([s for s in slides if s.get("ocr_text", "").strip()])),
-    )
-    outline_md = render_outline_md(synthesis_input)
-
-    assert summary_md.startswith(ENRICH_MARKER + "\n")
-    assert COVERAGE_ANCHOR in summary_md
-    assert "TO-ENRICH" in summary_md
-    assert TOC_ANCHOR not in summary_md
-    assert _BRACKETED_TIMESTAMP.search(summary_md) is None
-
-
-    assert TOC_ANCHOR in outline_md
-    assert SECTION_PREFIX in outline_md
-    assert '<a id="sec-0"></a>' in outline_md
-    assert _BRACKETED_TIMESTAMP.search(outline_md) is not None
-    assert outline_md.count("anchor-stability-segment") == 1
-    if slides and slides[0].get("frame"):
-        assert slides[0]["frame"] in outline_md
-    if slides and slides[0].get("ocr_text"):
-        assert "# Title (brackets) / pipe" in outline_md
-
 
 def test_build_section_hints_adversarial_order_single_duplicate_and_past_duration():
     unsorted = [
@@ -323,10 +199,10 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
     write_text(transcript, str(transcript_path))
     assert transcript_path.read_text(encoding="utf-8") == transcript
 
-    summary_path = tmp_path / "summary.md"
-    summary = render_summary_md(synthesis_input, _coverage(40.0, slide_total=1, slide_text=1))
-    write_text(summary, str(summary_path))
-    assert summary_path.read_text(encoding="utf-8").startswith(ENRICH_MARKER)
+    notes_path = tmp_path / "notes.md"
+    notes = render_notes_md(synthesis_input, _coverage(40.0, slide_total=1, slide_text=1))
+    write_text(notes, str(notes_path))
+    assert notes_path.read_text(encoding="utf-8").splitlines()[0] == NOTES_ENRICH_MARKER
 
     coverage = build_coverage(
         CoverageInputs(
@@ -336,7 +212,7 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
             segment_times=[segment["t"] for segment in segments],
             frame_times=[i * 2.0 + 1.0 for i in range(20)],
             transcript_path=str(transcript_path),
-            summary_path=str(summary_path),
+            notes_path=str(notes_path),
             ocr_engine="none",
             slide_frames_total=1,
             slide_frames_with_text=1,

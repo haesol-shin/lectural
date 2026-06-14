@@ -1,4 +1,4 @@
-# Synthesis Contract (`synthesis_input.json` + `summary.md`/`outline.md` pair)
+# Synthesis Contract (synthesis_input.json + notes.md)
 
 `schema_version` is `1` (`lectural.config.SCHEMA_VERSION`). Bump it on any
 incompatible change to the shapes below; readers MUST check it.
@@ -6,9 +6,9 @@ incompatible change to the shapes below; readers MUST check it.
 ## `synthesis_input.json`
 
 The deterministic core writes this compact, **text-only** handoff. It is the
-ONLY input a skill-driven host-agent enrichment step reads — no raw images are
-ever sent to the model (token minimization). Bare CLI runs stop at deterministic
-low-level artifacts and do not call an external LLM.
+ONLY input a skill-driven host-agent enrichment step reads to enrich `notes.md`
+— no raw images are ever sent to the model (token minimization). Bare CLI runs
+stop at deterministic low-level artifacts and do not call an external LLM.
 
 ```jsonc
 {
@@ -23,49 +23,43 @@ low-level artifacts and do not call an external LLM.
 }
 ```
 
-## Markdown outputs (`transcript.md` + `summary.md`/`outline.md` pair)
+## Markdown outputs (`transcript.md` + `notes.md`)
 
-The deterministic core writes three markdown outputs with separate ownership:
+The deterministic core writes two markdown outputs with separate ownership:
 
 | File | Ownership |
 |------|-----------|
-| `transcript.md` | verbatim, timestamped transcript; no summarization or enrichment |
-| `summary.md` | prose-first deterministic baseline; owns `ENRICH_MARKER`, `COVERAGE_ANCHOR`, deterministic summary prose, and the `TO-ENRICH` host-agent cue |
-| `outline.md` | structural navigation/detail file; owns `TOC_ANCHOR`, section anchors/headings, `[HH:MM:SS]` timestamps, slide image links, and transcript bullets |
+| `transcript.md` | verbatim, timestamped transcript with per-cue `<a id="tHHMMSS[-n]">` anchors; no summarization or enrichment |
+| `notes.md` | deterministic 7-section study-note skeleton; owns `NOTES_ENRICH_MARKER`, the seven section anchors, `<!-- 미보강 -->` placeholders, citation deeplinks, and the coverage footer |
 
 For skill-driven runs, after the CLI succeeds, the host agent MUST enrich only
-the prose in `summary.md`. It MUST preserve `summary.md` anchors
-(`ENRICH_MARKER`, `COVERAGE_ANCHOR`, `TO-ENRICH`) and MUST leave `outline.md`
-structural anchors and transcript bullets intact. Bare CLI runs do not perform
-this enrichment. Do not move the TOC, timestamps, slide links, or transcript
-bullets into `summary.md`; those belong to `outline.md`.
+the prose in `notes.md` 미보강 sections. It MUST preserve
+`NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript
+anchors, and the 정리 커버리지 footer. Bare CLI runs do not perform this
+enrichment.
 
-## `summary.md` required anchors (validated by the completeness hook)
-
-| Anchor | Constant | Meaning |
-|--------|----------|---------|
-| `<!-- lectural:baseline -->` | `ENRICH_MARKER` | first line; marks a LecturAL summary |
-| `## 커버리지 요약` | `COVERAGE_ANCHOR` | coverage header (gap / scene / OCR engine / artifact status) |
-| `## TO-ENRICH` + `TO-ENRICH:` | — | host-agent cue for mandatory skill-driven prose enrichment |
-
-The hook checks `summary.md` for `ENRICH_MARKER` and `COVERAGE_ANCHOR`. The
-`TO-ENRICH` cue is part of the summary contract: skill-driven enrichment may
-rewrite prose but must not remove the cue or the required summary anchors.
-
-## `outline.md` required structure (validated by the completeness hook)
+## `notes.md` required structure (validated by the completeness hook)
 
 | Anchor/shape | Constant | Meaning |
 |--------------|----------|---------|
-| `## 목차` | `TOC_ANCHOR` | table of contents with `(#sec-N)` links |
-| `<a id="sec-N"></a>` + `## 섹션 N. [HH:MM:SS] ...` | `SECTION_PREFIX` | per-section structural anchor and timestamped heading |
+| `<!-- lectural:notes -->` | `NOTES_ENRICH_MARKER` | first line; marks a LecturAL notes file |
+| `## 한눈에 요약` | `NOTES_TAKEAWAY_ANCHOR` | takeaway section |
+| `## 목차` | `NOTES_TOC_ANCHOR` | table of contents section |
+| `## 강의 흐름` | `NOTES_FLOW_ANCHOR` | lecture-flow prose section |
+| `## 핵심 개념·이론` | `NOTES_CONCEPTS_ANCHOR` | concept and theory section |
+| `## 상세 노트` | `NOTES_DETAIL_ANCHOR` | per-slide image and utterance details |
+| `## 복습 질문` | `NOTES_QUESTIONS_ANCHOR` | review-question section |
+| `## 정리 커버리지` | `NOTES_COVERAGE_ANCHOR` | coverage footer section |
+| `<!-- 미보강 -->` | `NOTES_UNENRICHED_MARKER` | deterministic placeholder marker for host-agent prose enrichment |
 | `![...](frames/...)` | — | slide image link (present when slide frames exist) |
-| `- [HH:MM:SS] transcript text` | — | transcript bullet assigned to a section |
+| `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | — | citation deeplink back to transcript anchors and YouTube seconds |
 
-The hook checks `outline.md` for `TOC_ANCHOR`, `[HH:MM:SS]` timestamps,
-transcript bullets, and — when `frames/` images exist for the run — at least one
-`frames/` image link.
+The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven
+section anchors, and — when `frames/` images exist for the run — at least one
+`frames/` slide image link.
 
 ## `coverage.json`
 
 See `lectural.coverage.build_coverage`. Top-level `overall_pass` is the AND of
-`gap_check.pass`, `scene_coverage.pass`, and `artifacts.pass`.
+`gap_check.pass`, `scene_coverage.pass`, and `artifacts.pass`; `artifacts.pass`
+reflects `transcript.md` and `notes.md` non-emptiness.

@@ -10,8 +10,8 @@
 
 ## 왜 LecturAL인가
 
-- 🧾 **완전 전사본 + 요약/개요 한 쌍** — 원본 한 줄도 잃지 않는 raw `transcript.md`, 산문 중심 `summary.md`, 목차·타임스탬프·슬라이드 링크가 있는 `outline.md`.
-- 💸 **외부 LLM 토큰 0** — 전사·OCR·기본 요약 전부 결정론적으로 생성. 요약 보강은 이미 켜져 있는 호스트 에이전트(Claude)가 직접 하므로 별도 API 비용이 없습니다.
+- 🧾 **완전 전사본 + 학습 노트** — 모든 발화를 담은 raw `transcript.md`와 한눈에 요약·목차·강의 흐름·핵심 개념·상세 노트·복습 질문·정리 커버리지 7개 섹션, 인용 딥링크를 포함한 `notes.md`를 생성합니다.
+- 💸 **외부 LLM 토큰 0** — 전사·OCR·기본 학습 노트 전부 결정론적으로 생성. 노트 산문 보강은 이미 켜져 있는 호스트 에이전트(Claude)가 직접 하므로 별도 API 비용이 없습니다.
 - 💻 **노트북(CPU)에서 동작** — GPU 불필요. `faster-whisper medium int8`을 CPU로 구동.
 - 🇰🇷 **한국어·영어 자동** — 자막이 있으면 쓰고, 없으면 STT로 전사.
 - 🚧 **누락 차단 게이트** — 대사 공백·장면 커버리지·산출물 존재를 검사해 통과 못 하면 "완료"를 막습니다.
@@ -27,14 +27,14 @@ flowchart TD
     D --> E
     E --> F[중복 제거: 히스토그램 / SSIM]
     F --> G[OCR: PaddleOCR → Tesseract 폴백]
-    G --> H[합성: transcript.md · summary.md · outline.md · frames/ · coverage.json]
+    G --> H[합성: transcript.md · notes.md · frames/ · coverage.json]
     H --> I{완전성 게이트}
     I -->|통과| J[완료]
     I -->|실패 · exit 2| K[누락 원인 해결 후 재시도]
     K --> H
 ```
 
-`transcript.md`·OCR·기본 `summary.md`/`outline.md`는 **LLM 없이** 만들어집니다. 순수 CLI 실행은 외부 LLM을 호출하지 않는 결정론적 저수준 산출물(`summary.md`, `outline.md`, `transcript.md`, `coverage.json`, `synthesis_input.json`)만 남깁니다. 스킬로 실행할 때는 CLI 성공 뒤 호스트 에이전트가 `synthesis_input.json`(텍스트만, 이미지 미포함)을 읽어 `summary.md` 산문을 반드시 보강하되, `ENRICH_MARKER`와 `COVERAGE_ANCHOR`는 보존하고 `outline.md` 구조 앵커·목차·타임스탬프·슬라이드 링크는 그대로 둡니다.
+`transcript.md`·OCR·기본 `notes.md`는 **LLM 없이** 만들어집니다. 순수 CLI 실행은 외부 LLM을 호출하지 않는 결정론적 저수준 산출물(`notes.md`, `transcript.md`, `coverage.json`, `synthesis_input.json`)만 남깁니다. 스킬로 실행할 때는 CLI 성공 뒤 호스트 에이전트가 `synthesis_input.json`(텍스트만, 이미지 미포함)을 읽어 `notes.md`의 미보강 산문 섹션을 보강하되, `NOTES_ENRICH_MARKER`(`<!-- lectural:notes -->`), 7개 섹션 앵커, 인용 딥링크, 전사 앵커, 정리 커버리지 푸터는 보존합니다. 순수 CLI는 결정론적 스켈레톤에서 멈추며 외부 LLM을 호출하지 않습니다.
 
 ## 요구 사항
 
@@ -123,9 +123,8 @@ lectural "<url>" --force-stt --model medium
 ```text
 output/<video-title>/
 ├── transcript.md          # 원본 전사본(raw, 타임스탬프 포함) — 모든 발화
-├── summary.md             # 학습 요약: 커버리지 요약 + 결정론적 산문 + TO-ENRICH 보강 cue
-├── outline.md             # 개요: 목차 + 섹션별 타임스탬프/슬라이드 링크 + 전사 bullet
-├── synthesis_input.json   # 호스트 에이전트 summary.md 보강 입력(텍스트만)
+├── notes.md               # 학습 노트: 7개 섹션 스켈레톤 + 인용 딥링크 (호스트 에이전트가 산문 보강)
+├── synthesis_input.json   # 호스트 에이전트 notes.md 보강 입력(텍스트만)
 ├── coverage.json          # 완전성 게이트 입력(대사 공백/장면 커버리지/산출물)
 └── frames/                # 중복 제거된 슬라이드 이미지
 ```
@@ -148,18 +147,18 @@ lectural --help
 LecturAL의 완료 판정은 두 계층입니다.
 
 1. **1계층(주, 에이전트 무관): `lectural` CLI 종료 코드** — CLI는 모든 run의 `overall_pass`를 AND하여 하나라도 실패하면 non-zero(`2`)로 종료합니다. CLI를 감싸는 에이전트는 이 비정상 종료를 하드 실패로 취급해야 합니다.
-2. **2계층(추가, Claude Code 전용): Stop 훅** — `scripts/completeness_hook.py`는 CLI를 호출하지 않고 run 상태(실패/미처리 거부), `coverage.json`, `summary.md`의 요약 앵커, `outline.md`의 목차·타임스탬프·전사 bullet·슬라이드 프레임 링크를 독립 검증합니다. 하나라도 걸리면 exit 2로 "완료"를 차단합니다.
+2. **2계층(추가, Claude Code 전용): Stop 훅** — `scripts/completeness_hook.py`는 CLI를 호출하지 않고 run 상태(실패/미처리 거부), `coverage.json`, `notes.md`(`NOTES_ENRICH_MARKER` 1행 + 7개 섹션 앵커 + 프레임 이미지가 있을 때 슬라이드 이미지 링크)를 독립 검증합니다. 하나라도 걸리면 exit 2로 "완료"를 차단합니다.
 
 Codex는 `AGENTS.md` 안내에 따라 CLI 종료 코드만 따릅니다. Claude Code Stop 훅은 Claude Code 세션에서 추가로 fail-closed를 보강하는 계층이며, CLI를 감싸는 래퍼가 아닙니다.
 
 ## 플러그인 / 스킬로 쓰기
 
 `skills/lectural/SKILL.md`가 플러그인에 포함되어 있어, 에이전트 세션에서 강의 URL을 던지면 자동으로 이 파이프라인을 호출합니다. 상세 동작은 `skills/lectural/references/pipeline.md`와 `docs/synthesis_contract.md` 참고.
-스킬 기반 실행에서는 CLI가 성공한 뒤 호스트 에이전트가 `summary.md` 산문을 반드시 보강합니다. 보강은 `ENRICH_MARKER`·`COVERAGE_ANCHOR`·`TO-ENRICH` cue를 보존해야 하며, `outline.md`의 목차/섹션 앵커/타임스탬프/슬라이드 링크/전사 bullet은 구조 파일로 유지해야 합니다. 순수 CLI만 직접 호출하면 외부 LLM 없이 결정론적 기본 산출물만 생성됩니다.
+스킬 기반 실행에서는 CLI가 성공한 뒤 호스트 에이전트가 `notes.md`의 미보강 산문 섹션을 반드시 보강합니다. 보강은 `NOTES_ENRICH_MARKER`와 섹션 앵커, 인용 딥링크, 정리 커버리지 푸터를 보존해야 합니다. 순수 CLI만 직접 호출하면 외부 LLM 없이 결정론적 기본 스켈레톤만 생성됩니다.
 
 ## 개발·테스트
 
-결정론적 로직(중복 제거·대사 공백·OCR 분리·summary/outline 앵커·커버리지·훅·CLI)은 외부 바이너리/모델 없이 **오프라인 단위 테스트**로 검증됩니다.
+결정론적 로직(중복 제거·대사 공백·OCR 분리·notes.md 구조·커버리지·훅·CLI)은 외부 바이너리/모델 없이 **오프라인 단위 테스트**로 검증됩니다.
 
 ```bash
 uv run --with pytest --with numpy pytest -q     # 112 passed
