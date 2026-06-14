@@ -51,16 +51,29 @@ def extract_notes(changelog_text: str, version: str) -> str:
     return "\n".join(collected)
 
 
+def extract_link(changelog_text: str, version: str) -> str:
+    """Return the `[version]: <url>` link-reference URL, or "" if absent."""
+    match = re.search(r"(?m)^\[" + re.escape(version) + r"\]: (\S+)$", changelog_text)
+    return match.group(1) if match else ""
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) < 2 or not argv[1].strip():
-        print("usage: changelog_notes.py <version> [changelog_path]", file=sys.stderr)
+    want_link = "--link" in argv[1:]
+    args = [a for a in argv[1:] if a != "--link"]
+    if not args or not args[0].strip():
+        print("usage: changelog_notes.py <version> [changelog_path] [--link]", file=sys.stderr)
         return 2
-    version = argv[1].strip()
-    if len(argv) >= 3:
-        changelog_path = Path(argv[2])
+    version = args[0].strip()
+    if len(args) >= 2:
+        changelog_path = Path(args[1])
     else:
         changelog_path = Path(__file__).resolve().parents[1] / "CHANGELOG.md"
     text = changelog_path.read_text(encoding="utf-8")
+    if want_link:
+        link = extract_link(text, version)
+        if link:
+            sys.stdout.write(link + "\n")
+        return 0
     notes = extract_notes(text, version)
     if notes:
         sys.stdout.write(notes + "\n")

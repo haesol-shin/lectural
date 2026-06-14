@@ -33,6 +33,19 @@ SAMPLE = """\
 """
 
 
+def test_extract_link_returns_compare_url_for_version():
+    assert changelog_notes.extract_link(SAMPLE, "0.2.0") == (
+        "https://github.com/haesol-shin/lectural/compare/v0.1.0...v0.2.0"
+    )
+    assert changelog_notes.extract_link(SAMPLE, "0.1.0") == (
+        "https://github.com/haesol-shin/lectural/releases/tag/v0.1.0"
+    )
+
+
+def test_extract_link_empty_for_missing_version():
+    assert changelog_notes.extract_link(SAMPLE, "9.9.9") == ""
+
+
 def test_existing_middle_version_excludes_next_header_and_links():
     notes = changelog_notes.extract_notes(SAMPLE, "0.2.0")
     assert notes == "### Added\n- Second release feature."
