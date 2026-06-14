@@ -1,9 +1,8 @@
 """Red-team contract tests for README.md (ultragoal story G002).
 
-Black-box checks over the user-facing README documentation surface. These try to
-catch regressions of the approved acceptance criteria, not just confirm presence.
-README prose is Korean by design; these tests assert the Korean contract while
-forbidding the framing the plan removed.
+Black-box checks over the user-facing README documentation surface. README prose
+is now English, while the Korean forbidden-framing detector words remain as
+guards against regressions in removed claims.
 """
 from __future__ import annotations
 
@@ -36,15 +35,15 @@ def test_mermaid_flowchart_present() -> None:
 
 
 def test_plugin_install_first_commands() -> None:
-    assert "/plugin marketplace add <GITHUB_REPO_URL>" in TEXT
+    assert "/plugin marketplace add" in TEXT
     assert "/plugin install lectural@lectural" in TEXT
 
 
 def test_two_part_install_is_honest() -> None:
-    # plugin install does not auto-provide deps; uv + ffmpeg are separate steps
+    # plugin install does not auto-provide deps; runtime is a separate step
+    assert "/lectural:setup" in TEXT
     assert 'uv pip install -e ".[run]"' in TEXT
     assert "ffmpeg" in TEXT
-    assert "preflight" in TEXT
 
 
 def test_adversarial_forbidden_detector_actually_fires() -> None:
