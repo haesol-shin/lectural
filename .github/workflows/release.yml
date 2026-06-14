@@ -24,7 +24,7 @@ jobs:
             exit 1
           fi
 
-      - name: Extract release notes from CHANGELOG
+      - name: Build release notes
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -33,7 +33,18 @@ jobs:
             echo "No CHANGELOG.md section found for [$version]; add one before tagging." >&2
             exit 1
           fi
-          echo "Release notes for $version:" && cat release-notes.md
+          # The CHANGELOG link reference is the authoritative compare/tag URL.
+          link="$(python3 scripts/changelog_notes.py "$version" --link)"
+          {
+            echo ""
+            if [ -n "$link" ]; then
+              echo "**Full changelog**: $link"
+            else
+              echo "**Full changelog**: https://github.com/${GITHUB_REPOSITORY}/commits/${GITHUB_REF_NAME}"
+            fi
+          } >> release-notes.md
+          echo "--- release-notes.md ---"
+          cat release-notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
