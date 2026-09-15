@@ -34,9 +34,14 @@ def _load_hook(name="completeness_hook"):
 def _fixture_texts() -> tuple[str, str]:
     video = {
         "title": "T",
-        "source": "https://youtu.be/abc12345678",
-        "video_id": "abc12345678",
         "duration_sec": 600.0,
+        "speech_source": "caption",
+        "input_source": {
+            "kind": "youtube",
+            "argument": "https://youtu.be/abc12345678",
+            "has_video": True,
+            "citation": {"kind": "youtube", "video_id": "abc12345678"},
+        },
     }
     segments = [{"t": 5.0, "text": "핵심 설명"}]
     slides = [{"t": 0.0, "frame": "frames/slide-001.png", "ocr_text": "도입 슬라이드"}]
@@ -54,9 +59,14 @@ def _fixture_texts() -> tuple[str, str]:
 def _multi_slide_fixture_texts(*, intro: bool = False) -> tuple[str, str]:
     video = {
         "title": "T",
-        "source": "https://youtu.be/abc12345678",
-        "video_id": "abc12345678",
         "duration_sec": 120.0,
+        "speech_source": "caption",
+        "input_source": {
+            "kind": "youtube",
+            "argument": "https://youtu.be/abc12345678",
+            "has_video": True,
+            "citation": {"kind": "youtube", "video_id": "abc12345678"},
+        },
     }
     segments = [
         {"t": 5.0, "text": "도입 설명" if intro else "첫 번째 슬라이드 설명"},
@@ -225,7 +235,7 @@ def _remove_image_from_detail_heading(notes: str, heading_text: str) -> str:
 
 def _coverage(path, overall_pass=True):
     cov = {
-        "schema_version": 1, "overall_pass": overall_pass,
+        "schema_version": 2, "overall_pass": overall_pass,
         "gap_check": {"max_untranscribed_speech_gap_sec": 10, "threshold_sec": 60, "pass": overall_pass},
         "scene_coverage": {"uncovered_speech_bins": [] if overall_pass else [3, 4],
                            "slide_frames_with_text": 2, "slide_frames_total": 2, "pass": overall_pass},
@@ -249,6 +259,10 @@ def _make_complete_run(tmp_path, monkeypatch, *, notes_text: str | None = None,
         frames_dir = out / "frames"
         frames_dir.mkdir()
         (frames_dir / "slide-001.png").write_bytes(b"png")
+    (out / "synthesis_input.json").write_text(json.dumps({
+        "schema_version": 2,
+        "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+    }), encoding="utf-8")
     _coverage(out / "coverage.json", overall_pass=overall_pass)
     runstate.start_session(["u"], str(rs))
     runstate.update_run(0, status="complete", output_dir=str(out),
@@ -341,6 +355,10 @@ def test_hook_blocks_when_required_notes_section_missing(tmp_path, monkeypatch):
         _, transcript = _fixture_texts()
         (run_dir / "notes.md").write_text(notes, encoding="utf-8")
         (run_dir / "transcript.md").write_text(transcript, encoding="utf-8")
+        (run_dir / "synthesis_input.json").write_text(json.dumps({
+            "schema_version": 2,
+            "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+        }), encoding="utf-8")
         frames = run_dir / "frames"
         frames.mkdir()
         (frames / "slide-001.png").write_bytes(b"png")
@@ -382,6 +400,10 @@ def test_hook_blocks_when_takeaway_has_too_few_or_too_many_lines(tmp_path, monke
         notes, transcript = _enriched_notes(takeaway_lines=count), _fixture_texts()[1]
         (run_dir / "notes.md").write_text(notes, encoding="utf-8")
         (run_dir / "transcript.md").write_text(transcript, encoding="utf-8")
+        (run_dir / "synthesis_input.json").write_text(json.dumps({
+            "schema_version": 2,
+            "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+        }), encoding="utf-8")
         frames = run_dir / "frames"; frames.mkdir(); (frames / "slide-001.png").write_bytes(b"png")
         _coverage(run_dir / "coverage.json", overall_pass=True)
         runstate.start_session(["u"], str(rs))
@@ -416,6 +438,10 @@ def test_hook_blocks_when_one_of_batch_fails(tmp_path, monkeypatch):
         out.mkdir()
         (out / "notes.md").write_text(_enriched_notes(), encoding="utf-8")
         (out / "transcript.md").write_text(transcript, encoding="utf-8")
+        (out / "synthesis_input.json").write_text(json.dumps({
+            "schema_version": 2,
+            "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+        }), encoding="utf-8")
         frames = out / "frames"; frames.mkdir(); (frames / "slide-001.png").write_bytes(b"png")
         _coverage(out / "coverage.json", overall_pass=ok)
         runstate.update_run(i, status="complete", output_dir=str(out),
@@ -438,11 +464,96 @@ def test_hook_contract_import_failure_fails_closed(tmp_path, monkeypatch):
         if name == "lectural.notes_contract":
             raise ImportError("blocked contract")
         return original_import(name, *args, **kwargs)
-
     monkeypatch.setattr(builtins, "__import__", blocked_import)
     hook = _load_hook("completeness_hook_import_failed")
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert hook.main() == 2
+
+
+
+def _write_local_hook_run(tmp_path, monkeypatch, *, has_frames: bool, citation: dict | None = None):
+    rs = tmp_path / "local-runstate.json"
+    monkeypatch.setenv("LECTURAL_RUNSTATE", str(rs))
+    out = tmp_path / "local-run"
+    out.mkdir()
+    notes = _enriched_notes().replace(
+        "([영상 0:05](https://youtu.be/abc12345678?t=5))",
+        "([전사 0:05](transcript.md#t000005))",
+    )
+    notes = notes.replace(
+        "([영상 1:05](https://youtu.be/abc12345678?t=65))",
+        "([전사 0:05](transcript.md#t000005))",
+    )
+    transcript = _fixture_texts()[1]
+    (out / "notes.md").write_text(notes, encoding="utf-8")
+    (out / "transcript.md").write_text(transcript, encoding="utf-8")
+    (out / "coverage.json").write_text(json.dumps({
+        "schema_version": 2, "overall_pass": True,
+        "gap_check": {"pass": True}, "scene_coverage": {"pass": True},
+        "artifacts": {"pass": True},
+    }), encoding="utf-8")
+    if has_frames:
+        frames = out / "frames"; frames.mkdir(); (frames / "slide.png").write_bytes(b"png")
+    (out / "synthesis_input.json").write_text(json.dumps({
+        "schema_version": 2,
+        "video": {"input_source": {"citation": citation or {"kind": "transcript"}}},
+    }), encoding="utf-8")
+    runstate.start_session(["local.wav"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        notes_md=str(out / "notes.md"), path=str(rs))
+    return _run_hook(monkeypatch, "completeness_hook_local")
+
+
+def test_hook_reads_local_citation_policy_and_image_exemption(tmp_path, monkeypatch):
+    assert _write_local_hook_run(tmp_path, monkeypatch, has_frames=False) == 0
+
+
+def test_hook_requires_images_for_local_video_when_frames_exist(tmp_path, monkeypatch):
+    out = tmp_path / "video-run"; out.mkdir()
+    notes, transcript = _fixture_texts()
+    notes = _enriched_notes(frame_link=False).replace(
+        "https://youtu.be/abc12345678?t=5", "transcript.md#t000005"
+    ).replace(
+        "https://youtu.be/abc12345678?t=65", "transcript.md#t000005"
+    )
+    (out / "notes.md").write_text(notes, encoding="utf-8")
+    (out / "transcript.md").write_text(transcript, encoding="utf-8")
+    (out / "frames").mkdir()
+    (out / "frames" / "slide.png").write_bytes(b"png")
+    (out / "coverage.json").write_text(json.dumps({
+        "schema_version": 2, "overall_pass": True,
+        "gap_check": {"pass": True}, "scene_coverage": {"pass": True},
+        "artifacts": {"pass": True},
+    }), encoding="utf-8")
+    (out / "synthesis_input.json").write_text(json.dumps({
+        "schema_version": 2,
+        "video": {"input_source": {"citation": {"kind": "transcript"}}},
+    }), encoding="utf-8")
+    rs = tmp_path / "video-runstate.json"; monkeypatch.setenv("LECTURAL_RUNSTATE", str(rs))
+    runstate.start_session(["video.mp4"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        notes_md=str(out / "notes.md"), path=str(rs))
+    assert _run_hook(monkeypatch, "completeness_hook_local_video") == 2
+
+
+def test_hook_fails_closed_when_synthesis_policy_missing(tmp_path, monkeypatch):
+    rs = tmp_path / "missing-policy.json"; monkeypatch.setenv("LECTURAL_RUNSTATE", str(rs))
+    out = tmp_path / "run"; out.mkdir()
+    (out / "notes.md").write_text(_enriched_notes(), encoding="utf-8")
+    (out / "transcript.md").write_text(_fixture_texts()[1], encoding="utf-8")
+    (out / "coverage.json").write_text(json.dumps({
+        "schema_version": 2, "overall_pass": True,
+        "gap_check": {"pass": True}, "scene_coverage": {"pass": True},
+        "artifacts": {"pass": True},
+    }), encoding="utf-8")
+    (out / "synthesis_input.json").write_text(json.dumps({"schema_version": 2, "video": {}}), encoding="utf-8")
+    runstate.start_session(["x.wav"], str(rs))
+    runstate.update_run(0, status="complete", output_dir=str(out),
+                        coverage_json=str(out / "coverage.json"),
+                        notes_md=str(out / "notes.md"), path=str(rs))
+    assert _run_hook(monkeypatch, "completeness_hook_missing_policy") == 2
 
 
 def test_hook_source_has_no_literal_anchor_fallback():

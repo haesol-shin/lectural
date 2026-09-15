@@ -198,10 +198,10 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
             stage_times[label] = round(time.perf_counter() - t0, 3)
 
     # Lazy product imports (mirror cli._default_processor sequence, no edits to product).
-    from lectural.acquisition import acquire_speech, extract_video_id
-    from lectural.cli import _download_video, _frame_link, output_dir_for
+    from lectural.acquisition import acquire_speech
+    from lectural.cli import _frame_link, output_dir_for
     from lectural.coverage import build_coverage, coverage_inputs_from_extraction, write_coverage
-    from lectural.deps import assert_acquisition_ready
+    from lectural.media import probe_source, resolve_video
     from lectural.ocr import ocr_frames
     from lectural.runstate import start_session, update_run
     from lectural.synthesis import (
@@ -213,38 +213,41 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     )
     from lectural.vad import detect_speech_spans
     from lectural.visual import dedupe_frames, extract_candidate_frames
+    from lectural.source import classify_source
 
-    assert_acquisition_ready()
     os.makedirs(out_root, exist_ok=True)
     work_hint = os.path.join(out_root, "_work")
     os.makedirs(work_hint, exist_ok=True)
 
+    input_source = classify_source(url)
     start_session([url])
     sampler.start()
     hook_exit: int | None = None
     overall_pass: bool | None = None
     out_dir = None
     try:
-        track, _ = timed("acquisition", lambda: acquire_speech(url, work_hint, force_stt=force_stt))
-        title = track.meta.get("title") or extract_video_id(url) or "video"
+        track, _ = timed("acquisition", lambda: acquire_speech(input_source, work_hint, force_stt=force_stt, model=model))
+        metadata, _ = timed("metadata", lambda: probe_source(input_source))
+        title = metadata.title or input_source.title_hint or input_source.video_id or "video"
         out_dir = output_dir_for(out_root, title)
         frames_dir = os.path.join(out_dir, "frames")
         os.makedirs(frames_dir, exist_ok=True)
 
-        video_path, _ = timed("video_download", lambda: _download_video(url, out_dir))
+        video_path, _ = timed("video_download", lambda: resolve_video(input_source, out_dir))
         raw_frames, _ = timed("visual_extract", lambda: extract_candidate_frames(video_path, frames_dir))
         slides, _ = timed("visual_dedupe", lambda: dedupe_frames(raw_frames))
         (slide_frames, ocr_engine), _ = timed("ocr", lambda: ocr_frames(slides))
 
-        duration = float(track.meta.get("duration", 0.0))
+        duration = float(metadata.duration or track.meta.get("duration", 0.0))
         audio_path = track.meta.get("audio_path", os.path.join(work_hint, "audio.wav"))
         speech_spans, _ = timed(
             "vad",
             lambda: detect_speech_spans(audio_path, duration) if os.path.isfile(audio_path) else [(0.0, duration)],
         )
 
-        video = {"title": title, "url": url, "duration_sec": duration,
-                 "language": track.language, "source": track.source}
+        video = {"title": title, "duration_sec": duration,
+                 "language": track.language, "speech_source": track.source,
+                 "input_source": input_source.as_dict()}
         segments = [s.as_dict() for s in track.segments]
         slide_dicts = [{"t": f.timestamp,
                         "frame": _frame_link(f.image_path, out_dir),

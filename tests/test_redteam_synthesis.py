@@ -192,7 +192,7 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
     synthesis_path = tmp_path / "synthesis_input.json"
     write_synthesis_input(synthesis_input, str(synthesis_path))
     reloaded_synthesis = json.loads(synthesis_path.read_text(encoding="utf-8"))
-    assert reloaded_synthesis["schema_version"] == 1
+    assert reloaded_synthesis["schema_version"] == SCHEMA_VERSION
 
     transcript_path = tmp_path / "transcript.md"
     transcript = render_transcript_md(video, segments)
@@ -221,5 +221,5 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
     coverage_path = tmp_path / "coverage.json"
     write_coverage(coverage, str(coverage_path))
     reloaded_coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
-    assert reloaded_coverage["schema_version"] == 1
+    assert reloaded_coverage["schema_version"] == SCHEMA_VERSION
     assert reloaded_coverage["overall_pass"] is True

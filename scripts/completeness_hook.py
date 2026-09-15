@@ -108,8 +108,30 @@ def _validate_notes(run: dict, cov_path: str) -> list[str]:
     if not os.path.isfile(notes_path):
         return [f"notes.md 없음: {notes_path or 'notes_md/output_dir/coverage sibling 없음'}"]
 
+    output_dir = run.get("output_dir") or (os.path.dirname(cov_path) if cov_path else "")
+    synthesis_path = os.path.join(output_dir, "synthesis_input.json") if output_dir else ""
+    if not synthesis_path or not os.path.isfile(synthesis_path):
+        return [f"synthesis_input.json 없음: {synthesis_path or 'output_dir 없음'}"]
     try:
-        notes_text = open(notes_path, encoding="utf-8").read()
+        with open(synthesis_path, encoding="utf-8") as fh:
+            synthesis_input = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"synthesis_input.json 읽기 실패: {exc}"]
+    if not isinstance(synthesis_input, dict) or synthesis_input.get("schema_version") != 2:
+        return ["synthesis_input.json schema_version이 2가 아닙니다"]
+    video = synthesis_input.get("video")
+    input_source = video.get("input_source") if isinstance(video, dict) else None
+    citation = input_source.get("citation") if isinstance(input_source, dict) else None
+    if not isinstance(citation, dict) or citation.get("kind") not in {"youtube", "transcript"}:
+        return ["synthesis_input.json의 video.input_source.citation 정책이 없거나 올바르지 않습니다"]
+    if citation.get("kind") == "youtube":
+        video_id = citation.get("video_id")
+        if not isinstance(video_id, str) or len(video_id) != 11:
+            return ["synthesis_input.json의 YouTube citation video_id가 올바르지 않습니다"]
+
+    try:
+        with open(notes_path, encoding="utf-8") as fh:
+            notes_text = fh.read()
     except OSError as exc:
         return [f"notes.md 읽기 실패: {exc}"]
 
@@ -117,12 +139,18 @@ def _validate_notes(run: dict, cov_path: str) -> list[str]:
     if not os.path.isfile(transcript_path):
         return [f"transcript.md 없음: {transcript_path}"]
     try:
-        transcript_text = open(transcript_path, encoding="utf-8").read()
+        with open(transcript_path, encoding="utf-8") as fh:
+            transcript_text = fh.read()
     except OSError as exc:
         return [f"transcript.md 읽기 실패: {exc}"]
 
     has_frames = _has_frame_png(run, notes_path)
-    return hook_contract_problems(notes_text, transcript_text, has_frames=has_frames)
+    return hook_contract_problems(
+        notes_text,
+        transcript_text,
+        citation,
+        has_frames=has_frames,
+    )
 
 
 
@@ -130,9 +158,9 @@ def _validate_run(run: dict) -> list[str]:
     problems: list[str] = []
     status = run.get("status")
     if status == "failed":
-        return [f"처리 실패한 영상: {run.get('error') or run.get('url') or run.get('output_dir')}"]
+        return [f"처리 실패한 소스: {run.get('error') or run.get('source') or run.get('output_dir')}"]
     if status == "pending":
-        return [f"처리되지 않은 영상(pending): {run.get('url') or run.get('output_dir')}"]
+        return [f"처리되지 않은 소스(pending): {run.get('source') or run.get('output_dir')}"]
     cov_path = run.get("coverage_json") or ""
     if not os.path.isfile(cov_path):
         return [f"coverage.json 없음: {cov_path}"]
@@ -182,7 +210,7 @@ def main() -> int:
     for run in state["runs"]:
         probs = _validate_run(run)
         if probs:
-            label = run.get("output_dir") or run.get("url") or f"run #{run.get('index')}"
+            label = run.get("output_dir") or run.get("source") or f"run #{run.get('index')}"
             all_problems.append(f"[{label}]")
             all_problems.extend(f"  - {p}" for p in probs)
 

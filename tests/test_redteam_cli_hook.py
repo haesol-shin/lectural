@@ -27,7 +27,7 @@ def _load_hook():
 
 def _coverage_payload(overall_pass: bool = True) -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "overall_pass": overall_pass,
         "gap_check": {
             "max_untranscribed_speech_gap_sec": 3 if overall_pass else 90,
@@ -124,6 +124,10 @@ def _make_run(
         notes.write_text(notes_text if notes_text is not None else _notes_text(hook, frame_link=frames_png), encoding="utf-8")
 
     (out / "transcript.md").write_text(_transcript_text(), encoding="utf-8")
+    (out / "synthesis_input.json").write_text(json.dumps({
+        "schema_version": 2,
+        "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+    }), encoding="utf-8")
     coverage_path = out / "coverage.json"
     if malformed_coverage:
         coverage_path.write_text("{not json", encoding="utf-8")
