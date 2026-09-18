@@ -1,0 +1,1 @@
+이번 세션에서는 PyTorch 프레임워크의 Tensor 연산을 살펴봅니다. Yann LeCun 교수가 제안한 Convolutional Neural Network 구조입니다. 배치 크기 64에서 AdamW optimizer의 weight decay는 0.01로 설정합니다.

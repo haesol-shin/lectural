@@ -25,6 +25,15 @@ run = [
     "setuptools>=68,<81",
 ]
 test = ["pytest>=7.0", "numpy>=1.24"]
+# Dev/maintainer-only: Issue #21 evidence-quality/resource benchmark
+# (scripts/benchmark.py). Never required by `[run]` or the offline gate;
+# scripts/benchmark.py imports all of these lazily inside functions so it
+# stays parseable/testable with zero of them installed.
+bench = [
+    "jiwer>=3.0",
+    "whisper-normalizer>=0.1",
+    "Levenshtein>=0.20",
+]
 # Keep transitive runtime providers inside the approved WU-1 matrix without
 # making alternate cv2 providers part of LecturAL's direct runtime contract.
 [tool.uv]

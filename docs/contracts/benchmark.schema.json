@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/benchmark.schema.json",
+  "title": "LecturAL evidence quality and resource benchmark report",
+  "description": "Dev/maintainer-only report shape produced by scripts/benchmark.py. Not part of the public lectural CLI/evidence.json contract (docs/contracts/evidence.schema.json); never consumed by the completeness gate (Issue #19 pass/warn/fail semantics are separate and unaffected by this file).",
+  "type": "object",
+  "required": ["schema_version", "harness", "started_at", "platform_label", "machine", "dependency_versions", "config", "fixtures_found", "results", "observational_results"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "harness": {"const": "scripts/benchmark.py"},
+    "started_at": {"type": "string"},
+    "platform_label": {"type": "string", "minLength": 1, "description": "e.g. x86_64, arm64, pi-server. Never a default profile; always recorded per report."},
+    "machine": {"type": "object", "description": "Host platform/CPU/Python spec, from scripts/perf_smoke.py's _machine_spec()."},
+    "dependency_versions": {"type": "object", "description": "Resolved dependency versions at run time, from scripts/perf_smoke.py's _dep_versions()."},
+    "config": {
+      "type": "object",
+      "required": ["fixtures_dir", "out", "platform_label", "cache_mode", "reps", "skip_ocr", "sample_interval", "model"],
+      "properties": {
+        "fixtures_dir": {"type": "string"},
+        "out": {"type": "string"},
+        "platform_label": {"type": "string"},
+        "cache_mode": {"enum": ["cold", "warm"]},
+        "reps": {"type": "integer", "minimum": 1},
+        "skip_ocr": {"type": "boolean"},
+        "media_variant": {"enum": ["clean", "degraded"]},
+        "sample_interval": {"type": "number", "exclusiveMinimum": 0},
+        "model": {"type": "string"}
+      }
+    },
+    "fixtures_found": {"type": "integer", "minimum": 0},
+    "results": {
+      "type": "array",
+      "description": "One entry per controlled local fixture: N repetitions (default 3) under one cache_mode, with median/variance aggregates. Never includes the live-YouTube observational case.",
+      "items": {"$ref": "#/$defs/fixtureResult"}
+    },
+    "observational_results": {
+      "type": "array",
+      "description": "Uncontrolled, non-repeated, non-cold/warm real-world data points (e.g. the 555-second live YouTube run). Never merged into `results`' medians/variances and never treated as ground truth.",
+      "items": {"$ref": "#/$defs/observationalResult"}
+    }
+  },
+  "$defs": {
+    "fixtureResult": {
+      "type": "object",
+      "required": ["fixture_id", "language", "caption_variant", "speech_source", "skip_ocr", "cache_mode", "reps", "fixture_duration_sec", "aggregate", "quality_metrics", "runs"],
+      "properties": {
+        "fixture_id": {"type": "string"},
+        "language": {"enum": ["en", "ko", "mixed", "unknown"]},
+        "caption_variant": {"enum": ["usable", "unusable", "fetch_failure", "force_stt", "unknown"]},
+        "speech_source": {"type": "string", "enum": ["caption", "stt", "unknown"], "description": "Source of speech track: caption (parsed from VTT), stt (transcribed via Whisper), or unknown."},
+        "skip_ocr": {"type": "boolean"},
+        "cache_mode": {"enum": ["cold", "warm"]},
+        "reps": {"type": "integer", "minimum": 1},
+        "fixture_duration_sec": {"type": "number", "minimum": 0},
+        "aggregate": {
+          "type": "object",
+          "required": ["wall_time_sec", "rtf", "total_storage_delta_bytes", "stages"],
+          "properties": {
+            "wall_time_sec": {"$ref": "#/$defs/medianVariance"},
+            "rtf": {"$ref": "#/$defs/medianVariance"},
+            "total_storage_delta_bytes": {"$ref": "#/$defs/medianVariance"},
+            "stages": {
+              "type": "object",
+              "description": "Per-stage (acquisition, vad, visual_extract, visual_dedupe, ocr, metrics) median/variance for wall_time_sec, rtf, cpu_pct_avg, rss_mb_peak.",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "wall_time_sec": {"$ref": "#/$defs/medianVariance"},
+                  "rtf": {"$ref": "#/$defs/medianVariance"},
+                  "cpu_pct_avg": {"$ref": "#/$defs/medianVariance"},
+                  "rss_mb_peak": {"$ref": "#/$defs/medianVariance"}
+                }
+              }
+            }
+          }
+        },
+        "quality_metrics": {
+          "type": "object",
+          "description": "wer_cer, terminology_recall, timestamp_error, voiced_recall_and_gap, frame_recall_and_duplicate_rate, ocr_quality from lectural_bench.metrics, scored against the fixture's committed ground truth (never against the tool's own output)."
+        },
+        "runs": {
+          "type": "array",
+          "description": "Raw per-repetition measurements underlying the aggregate median/variance.",
+          "items": {"type": "object"}
+        }
+      }
+    },
+    "observationalResult": {
+      "type": "object",
+      "required": ["observational", "source_harness", "raw_source_path"],
+      "properties": {
+        "observational": {"const": true},
+        "source_harness": {"type": "string"},
+        "source_url": {"type": ["string", "null"]},
+        "started_at": {"type": ["string", "null"]},
+        "finished_at": {"type": ["string", "null"]},
+        "machine": {"type": "object"},
+        "dependency_versions": {"type": "object"},
+        "status": {"type": ["string", "null"]},
+        "overall_pass": {"type": ["boolean", "null"]},
+        "stage_wall_seconds": {"type": "object"},
+        "stage_resource_usage": {"type": "object"},
+        "raw_source_path": {"type": "string"}
+      }
+    },
+    "medianVariance": {
+      "type": "object",
+      "required": ["median", "variance"],
+      "properties": {
+        "median": {"type": "number"},
+        "variance": {"type": "number", "minimum": 0}
+      }
+    }
+  },
+  "additionalProperties": true
+}

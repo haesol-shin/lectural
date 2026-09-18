@@ -1,0 +1,10 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:04.089
+Welcome to lecture four on optimization.
+
+00:00:05.089 --> 00:00:12.052
+In 1986, Geoffrey Hinton popularized backpropagation for multi-layer perceptrons.
+
+00:00:13.052 --> 00:00:19.305
+The learning rate was set to 0.05 across 128 batch iterations.

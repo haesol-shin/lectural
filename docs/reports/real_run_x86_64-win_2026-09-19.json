@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "harness": "scripts/benchmark.py",
+  "started_at": "2026-09-19T01:42:26",
+  "platform_label": "x86_64-win",
+  "machine": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+    "python": "3.11.15",
+    "cpu_count": 8
+  },
+  "dependency_versions": {
+    "yt_dlp": "unknown",
+    "faster_whisper": "1.2.1",
+    "cv2": "4.6.0",
+    "paddleocr": "2.10.0",
+    "webrtcvad": "2.0.10",
+    "numpy": "1.26.4",
+    "psutil": "7.2.2",
+    "ffmpeg (binary)": "ffmpeg version 8.1.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "yt-dlp (binary)": "MISSING"
+  },
+  "config": {
+    "fixtures_dir": "tests/fixtures/benchmark/en_terms_01",
+    "out": "output/benchmark-x86-final",
+    "platform_label": "x86_64-win",
+    "cache_mode": "warm",
+    "reps": 1,
+    "skip_ocr": false,
+    "media_variant": "clean",
+    "sample_interval": 0.2,
+    "model": "small"
+  },
+  "fixtures_found": 1,
+  "results": [
+    {
+      "fixture_id": "en_terms_01",
+      "language": "en",
+      "caption_variant": "usable",
+      "speech_source": "caption",
+      "skip_ocr": false,
+      "media_variant": "clean",
+      "cache_mode": "warm",
+      "reps": 1,
+      "fixture_duration_sec": 19.305,
+      "aggregate": {
+        "wall_time_sec": {
+          "median": 9.6314,
+          "variance": 0.0
+        },
+        "rtf": {
+          "median": 0.4989,
+          "variance": 0.0
+        },
+        "total_storage_delta_bytes": {
+          "median": 2556854.0,
+          "variance": 0.0
+        },
+        "stages": {
+          "acquisition": {
+            "wall_time_sec": {
+              "median": 0.0065,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.0003,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 0.0,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 0.0,
+              "variance": 0.0
+            }
+          },
+          "degraded_slide_ocr": {
+            "wall_time_sec": {
+              "median": 2.6535,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.1375,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 151.8,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 706.4,
+              "variance": 0.0
+            }
+          },
+          "metrics": {
+            "wall_time_sec": {
+              "median": 0.037,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.0019,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 0.0,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 0.0,
+              "variance": 0.0
+            }
+          },
+          "ocr": {
+            "wall_time_sec": {
+              "median": 6.3881,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.3309,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 250.0,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 723.6,
+              "variance": 0.0
+            }
+          },
+          "vad": {
+            "wall_time_sec": {
+              "median": 0.0412,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.0021,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 0.0,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 0.0,
+              "variance": 0.0
+            }
+          },
+          "visual_dedupe": {
+            "wall_time_sec": {
+              "median": 0.341,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.0177,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 85.6,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 297.7,
+              "variance": 0.0
+            }
+          },
+          "visual_extract": {
+            "wall_time_sec": {
+              "median": 0.1641,
+              "variance": 0.0
+            },
+            "rtf": {
+              "median": 0.0085,
+              "variance": 0.0
+            },
+            "cpu_pct_avg": {
+              "median": 7.1,
+              "variance": 0.0
+            },
+            "rss_mb_peak": {
+              "median": 295.0,
+              "variance": 0.0
+            }
+          }
+        }
+      },
+      "quality_metrics": {
+        "status": "computed",
+        "wer_cer": {
+          "wer": 0.0,
+          "cer": 0.0
+        },
+        "terminology_recall": 1.0,
+        "timestamp_error": {
+          "median_sec": 0.0,
+          "p95_sec": 0.0
+        },
+        "voiced_recall_and_gap": {
+          "recall": 0.8368866605335786,
+          "max_untranscribed_gap_sec": 0.7718120000000006
+        },
+        "frame_recall_and_duplicate_rate": {
+          "recall": 0.5,
+          "duplicate_rate": 0.95
+        },
+        "ocr_quality": {
+          "cer": 1.5612244897959184,
+          "key_field_recall_exact": 0.5,
+          "key_field_recall_fuzzy": 0.5,
+          "usable": true
+        },
+        "degraded_slide_ocr": {
+          "slide_degraded_l1": {
+            "engine_used": "paddleocr",
+            "cer": 0.7040816326530612,
+            "key_field_recall_exact": 0.3333333333333333,
+            "key_field_recall_fuzzy": 0.3333333333333333,
+            "usable": true
+          },
+          "slide_degraded_l2": {
+            "engine_used": "paddleocr",
+            "cer": 0.8571428571428571,
+            "key_field_recall_exact": 0.0,
+            "key_field_recall_fuzzy": 0.0,
+            "usable": true
+          }
+        }
+      },
+      "runs": [
+        {
+          "fixture_id": "en_terms_01",
+          "language": "en",
+          "caption_variant": "usable",
+          "skip_ocr": false,
+          "fixture_duration_sec": 19.305,
+          "wall_time_sec": 9.6314,
+          "rtf": 0.4989,
+          "storage": {
+            "initial_target_bytes": 0,
+            "final_target_bytes": 2556854,
+            "target_storage_delta_bytes": 2556854,
+            "temp_storage_delta_bytes": 0,
+            "total_storage_delta_bytes": 2556854
+          },
+          "stages": {
+            "acquisition": {
+              "wall_time_sec": 0.0065,
+              "rtf": 0.0003,
+              "cpu_pct_avg": 0.0,
+              "cpu_pct_peak": 0.0,
+              "rss_mb_avg": 0.0,
+              "rss_mb_peak": 0.0,
+              "n_samples": 0
+            },
+            "vad": {
+              "wall_time_sec": 0.0412,
+              "rtf": 0.0021,
+              "cpu_pct_avg": 0.0,
+              "cpu_pct_peak": 0.0,
+              "rss_mb_avg": 0.0,
+              "rss_mb_peak": 0.0,
+              "n_samples": 0
+            },
+            "visual_extract": {
+              "wall_time_sec": 0.1641,
+              "rtf": 0.0085,
+              "cpu_pct_avg": 7.1,
+              "cpu_pct_peak": 7.1,
+              "rss_mb_avg": 295.0,
+              "rss_mb_peak": 295.0,
+              "n_samples": 1
+            },
+            "visual_dedupe": {
+              "wall_time_sec": 0.341,
+              "rtf": 0.0177,
+              "cpu_pct_avg": 85.6,
+              "cpu_pct_peak": 85.6,
+              "rss_mb_avg": 297.7,
+              "rss_mb_peak": 297.7,
+              "n_samples": 1
+            },
+            "ocr": {
+              "wall_time_sec": 6.3881,
+              "rtf": 0.3309,
+              "cpu_pct_avg": 250.0,
+              "cpu_pct_peak": 436.0,
+              "rss_mb_avg": 571.8,
+              "rss_mb_peak": 723.6,
+              "n_samples": 13
+            },
+            "metrics": {
+              "wall_time_sec": 0.037,
+              "rtf": 0.0019,
+              "cpu_pct_avg": 0.0,
+              "cpu_pct_peak": 0.0,
+              "rss_mb_avg": 0.0,
+              "rss_mb_peak": 0.0,
+              "n_samples": 0
+            },
+            "degraded_slide_ocr": {
+              "wall_time_sec": 2.6535,
+              "rtf": 0.1375,
+              "cpu_pct_avg": 151.8,
+              "cpu_pct_peak": 312.5,
+              "rss_mb_avg": 561.4,
+              "rss_mb_peak": 706.4,
+              "n_samples": 8
+            }
+          },
+          "quality_metrics": {
+            "status": "computed",
+            "wer_cer": {
+              "wer": 0.0,
+              "cer": 0.0
+            },
+            "terminology_recall": 1.0,
+            "timestamp_error": {
+              "median_sec": 0.0,
+              "p95_sec": 0.0
+            },
+            "voiced_recall_and_gap": {
+              "recall": 0.8368866605335786,
+              "max_untranscribed_gap_sec": 0.7718120000000006
+            },
+            "frame_recall_and_duplicate_rate": {
+              "recall": 0.5,
+              "duplicate_rate": 0.95
+            },
+            "ocr_quality": {
+              "cer": 1.5612244897959184,
+              "key_field_recall_exact": 0.5,
+              "key_field_recall_fuzzy": 0.5,
+              "usable": true
+            },
+            "degraded_slide_ocr": {
+              "slide_degraded_l1": {
+                "engine_used": "paddleocr",
+                "cer": 0.7040816326530612,
+                "key_field_recall_exact": 0.3333333333333333,
+                "key_field_recall_fuzzy": 0.3333333333333333,
+                "usable": true
+              },
+              "slide_degraded_l2": {
+                "engine_used": "paddleocr",
+                "cer": 0.8571428571428571,
+                "key_field_recall_exact": 0.0,
+                "key_field_recall_fuzzy": 0.0,
+                "usable": true
+              }
+            }
+          },
+          "stage_errors": {},
+          "speech_source": "caption",
+          "rep": 1
+        }
+      ]
+    }
+  ],
+  "observational_results": []
+}
