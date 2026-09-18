@@ -1,6 +1,6 @@
 {
   "name": "lectural",
-  "description": "LecturAL marketplace: turns video into deterministic evidence for video-based work — markdown notes or a versioned JSON contract.",
+  "description": "LecturAL marketplace: turns video/audio into deterministic evidence for video-based work — markdown notes or a versioned JSON contract.",
   "owner": {
     "name": "Haesol Shin",
     "url": "https://github.com/haesol-shin/lectural"
@@ -9,7 +9,7 @@
     {
       "name": "lectural",
       "source": "./",
-      "description": "Turn a video (YouTube or local) into deterministic evidence for video-based work: every utterance, every on-screen text, every scene, with a completeness gate that blocks premature done."
+      "description": "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene, with a completeness gate that blocks premature done."
     }
   ]
 }

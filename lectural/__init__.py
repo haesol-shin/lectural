@@ -1,4 +1,4 @@
-"""LecturAL: complete study-note extraction from YouTube lectures.
+"""LecturAL: deterministic evidence extraction for video-based work.
 
 The package is import-safe without heavy runtime dependencies (faster-whisper,
 opencv, paddleocr, yt-dlp). Those are imported lazily inside the functions that
