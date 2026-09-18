@@ -600,7 +600,9 @@ def measure_fixture_run(
         # the accepted plan's "OCR CER/key-field recall against degraded
         # frames" requirement.
         if fixture_dir is not None:
-            degraded_slide_paths = sorted(fixture_dir.glob("slide_degraded_l*.png"))
+            degraded_slide_paths = sorted(fixture_dir.glob("slide_degraded_l*.png")) or sorted(
+                fixture_dir.glob("slides/slide_degraded_l*.png")
+            )
             if degraded_slide_paths:
                 quality_metrics["degraded_slide_ocr"] = timed_stage(
                     "degraded_slide_ocr",

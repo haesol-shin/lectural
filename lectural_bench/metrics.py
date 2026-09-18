@@ -205,15 +205,20 @@ def wer_cer(ground_truth_text: str, hypothesis_text: str, language: str) -> dict
         gt_cer_norm = normalize_korean(ground_truth_text)
         hyp_cer_norm = normalize_korean(hypothesis_text)
 
-        # CER computation (space-insensitive Hangul syllables)
-        try:
-            import jiwer
+        # CER computation (space-insensitive Hangul syllables). Guard the
+        # empty-reference case before calling jiwer: an empty reference
+        # against a non-empty hypothesis is conventionally 100% error, not
+        # jiwer's raw insertions-over-empty-reference ratio (which is
+        # unbounded and was only ever exercised by the pure-Python fallback
+        # in offline testing, since jiwer is not installed there).
+        if not gt_cer_norm:
+            cer = 0.0 if not hyp_cer_norm else 1.0
+        else:
+            try:
+                import jiwer
 
-            cer = float(jiwer.cer(gt_cer_norm, hyp_cer_norm))
-        except ImportError:
-            if not gt_cer_norm:
-                cer = 0.0 if not hyp_cer_norm else 1.0
-            else:
+                cer = float(jiwer.cer(gt_cer_norm, hyp_cer_norm))
+            except ImportError:
                 cer = float(levenshtein_distance(gt_cer_norm, hyp_cer_norm) / len(gt_cer_norm))
 
         # WER computation on space-separated tokens
@@ -247,22 +252,19 @@ def wer_cer(ground_truth_text: str, hypothesis_text: str, language: str) -> dict
         gt_norm = normalize_basic(ground_truth_text or "")
         hyp_norm = normalize_basic(hypothesis_text or "")
 
-    try:
-        import jiwer
+    if not gt_norm:
+        wer = 0.0 if not (hyp_norm or "").strip() else 1.0
+        cer = 0.0 if not hyp_norm else 1.0
+    else:
+        try:
+            import jiwer
 
-        wer = float(jiwer.wer(gt_norm, hyp_norm))
-        cer = float(jiwer.cer(gt_norm, hyp_norm))
-    except ImportError:
-        gt_tokens = gt_norm.split()
-        hyp_tokens = hyp_norm.split()
-        if not gt_tokens:
-            wer = 0.0 if not hyp_tokens else 1.0
-        else:
+            wer = float(jiwer.wer(gt_norm, hyp_norm))
+            cer = float(jiwer.cer(gt_norm, hyp_norm))
+        except ImportError:
+            gt_tokens = gt_norm.split()
+            hyp_tokens = hyp_norm.split()
             wer = float(levenshtein_distance(gt_tokens, hyp_tokens) / len(gt_tokens))
-
-        if not gt_norm:
-            cer = 0.0 if not hyp_norm else 1.0
-        else:
             cer = float(levenshtein_distance(gt_norm, hyp_norm) / len(gt_norm))
 
     return {"wer": wer, "cer": cer}
