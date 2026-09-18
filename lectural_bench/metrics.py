@@ -60,12 +60,12 @@ def levenshtein_distance(s1: Sequence, s2: Sequence) -> int:
 
 
 def normalize_korean(text: str) -> str:
-    """Pure: normalize Korean text: strip punctuation/whitespace, keep Hangul syllables."""
+    """Pure: normalize Korean text: strip punctuation/whitespace, keep Hangul syllables, digits, and ASCII letters."""
     if not text:
         return ""
     # Modern Hangul syllables reside in Unicode range U+AC00..U+D7A3.
-    return re.sub(r"[^\uac00-\ud7a3]", "", text)
-
+    # Preserves digits and ASCII letters for technical terms (e.g. 1956, 256, AI).
+    return re.sub(r"[^\uac00-\ud7a30-9a-zA-Z]", "", text)
 
 def normalize_basic(text: str) -> str:
     """Pure: basic text normalization: lowercase, strip punctuation, collapse whitespace."""
@@ -368,12 +368,14 @@ def frame_recall_and_duplicate_rate(
     kept_frame_timestamps: list[float],
     all_candidate_timestamps: list[float],
     tolerance_sec: float = 1.0,
+    near_duplicate_timestamps: list[float] | None = None,
+    incremental_timestamps: list[float] | None = None,
 ) -> dict:
-    """Pure: compute slide-change recall and candidate duplicate rate.
+    """Pure: compute slide-change recall, candidate drop rate, and near-dup/incremental retention.
 
-    Returns {"recall": float, "duplicate_rate": float}.
+    Returns {"recall": float, "duplicate_rate": float, "drop_rate": float, "near_duplicate_dropped": bool, "incremental_retained": bool}.
     For each ground-truth slide change, checks if any kept frame is within
-    tolerance_sec. duplicate_rate is 1 - (len(kept) / len(all_candidates)).
+    tolerance_sec. duplicate_rate is candidate drop rate: 1 - (len(kept) / len(all_candidates)).
     """
     if not ground_truth_slide_change_timestamps:
         recall = 1.0
@@ -386,14 +388,36 @@ def frame_recall_and_duplicate_rate(
         recall = matched / len(ground_truth_slide_change_timestamps)
 
     if not all_candidate_timestamps:
-        dup_rate = 0.0
+        drop_rate = 0.0
     else:
-        dup_rate = max(
+        drop_rate = max(
             0.0,
             1.0 - (len(kept_frame_timestamps) / len(all_candidate_timestamps)),
         )
 
-    return {"recall": float(recall), "duplicate_rate": float(dup_rate)}
+    if near_duplicate_timestamps:
+        near_duplicate_dropped = not any(
+            any(abs(kf_t - nd_t) <= tolerance_sec for kf_t in kept_frame_timestamps)
+            for nd_t in near_duplicate_timestamps
+        )
+    else:
+        near_duplicate_dropped = True
+
+    if incremental_timestamps:
+        incremental_retained = all(
+            any(abs(kf_t - inc_t) <= tolerance_sec for kf_t in kept_frame_timestamps)
+            for inc_t in incremental_timestamps
+        )
+    else:
+        incremental_retained = True
+
+    return {
+        "recall": float(recall),
+        "duplicate_rate": float(drop_rate),
+        "drop_rate": float(drop_rate),
+        "near_duplicate_dropped": bool(near_duplicate_dropped),
+        "incremental_retained": bool(incremental_retained),
+    }
 
 
 def ocr_quality(
@@ -401,12 +425,13 @@ def ocr_quality(
     ocr_text: str,
     usable_threshold_chars: int,
     fuzzy_threshold: float = 0.8,
+    slide_reference_text: str | None = None,
 ) -> dict:
-    """Pure: evaluate OCR quality metrics against ground truth key fields.
+    """Pure: evaluate OCR quality metrics against ground truth slide text and key fields.
 
     Returns {"cer": float, "key_field_recall_exact": float, "key_field_recall_fuzzy": float, "usable": bool}.
     - usable: whether non-whitespace OCR character count >= usable_threshold_chars.
-    - cer: Character Error Rate between concatenated key field values and OCR text.
+    - cer: Character Error Rate between reference slide text (or concatenated key fields) and OCR text.
     - key_field_recall_exact: fraction of key fields found verbatim (case-insensitive) in OCR text.
     - key_field_recall_fuzzy: fraction of key fields matching OCR text with similarity ratio >= fuzzy_threshold.
     Lazy-imports Levenshtein; falls back cleanly to difflib.SequenceMatcher.ratio() and pure-Python edit distance.
@@ -414,7 +439,10 @@ def ocr_quality(
     clean_chars = len(re.sub(r"\s+", "", ocr_text or ""))
     usable = clean_chars >= usable_threshold_chars
 
-    ref_norm = re.sub(r"\s+", " ", " ".join(str(v) for v in ground_truth_key_fields.values())).strip()
+    if slide_reference_text is not None:
+        ref_norm = re.sub(r"\s+", " ", slide_reference_text).strip()
+    else:
+        ref_norm = re.sub(r"\s+", " ", " ".join(str(v) for v in ground_truth_key_fields.values())).strip()
     hyp_norm = re.sub(r"\s+", " ", ocr_text or "").strip()
 
     if not ref_norm:
@@ -427,7 +455,6 @@ def ocr_quality(
         except ImportError:
             dist = levenshtein_distance(ref_norm, hyp_norm)
         cer = float(dist / len(ref_norm))
-
     if not ground_truth_key_fields:
         return {
             "cer": cer,

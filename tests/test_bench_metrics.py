@@ -210,8 +210,39 @@ def test_frame_recall_and_duplicate_rate_hand_computed():
 
 def test_frame_recall_and_duplicate_rate_no_candidates():
     res = frame_recall_and_duplicate_rate([1.0], [], [])
-    assert res == {"recall": 0.0, "duplicate_rate": 0.0}
+    assert res["recall"] == 0.0
+    assert res["duplicate_rate"] == 0.0
+    assert res["drop_rate"] == 0.0
+    assert res["near_duplicate_dropped"] is True
+    assert res["incremental_retained"] is True
 
+
+def test_frame_dedupe_evaluates_near_dup_gt():
+    gt = [0.0, 5.0, 13.0, 18.0]
+    near_dup = [9.0]
+    incremental = [18.0]
+
+    # Case A: near-dup dropped, incremental retained
+    kept = [0.1, 5.0, 13.1, 18.0]
+    candidates = [0.0, 5.0, 9.0, 13.0, 18.0]
+    res = frame_recall_and_duplicate_rate(
+        gt, kept, candidates, tolerance_sec=1.0,
+        near_duplicate_timestamps=near_dup,
+        incremental_timestamps=incremental,
+    )
+    assert res["near_duplicate_dropped"] is True
+    assert res["incremental_retained"] is True
+    assert res["recall"] == 1.0
+
+    # Case B: near-dup erroneously kept (leak), incremental dropped
+    kept_with_dup = [0.1, 5.0, 9.0, 13.1]
+    res_b = frame_recall_and_duplicate_rate(
+        gt, kept_with_dup, candidates, tolerance_sec=1.0,
+        near_duplicate_timestamps=near_dup,
+        incremental_timestamps=incremental,
+    )
+    assert res_b["near_duplicate_dropped"] is False
+    assert res_b["incremental_retained"] is False
 
 # --- 6. ocr_quality Tests ---------------------------------------------------
 
@@ -253,6 +284,20 @@ def test_ocr_quality_empty_key_fields():
     assert res["usable"] is True
 
 
+def test_ocr_quality_cer_uses_slide_text_reference():
+    key_fields = {"key_author": "Hinton"}
+    slide_text = "Optimization Lecture\nSpeaker: Hinton\nFoundations of Deep Learning"
+    ocr_text = "Optimization Lecture\nSpeaker: Hinton\nFoundations of Deep Learning"
+    res = ocr_quality(
+        key_fields,
+        ocr_text,
+        usable_threshold_chars=8,
+        slide_reference_text=slide_text,
+    )
+    assert math.isclose(res["cer"], 0.0, rel_tol=1e-5)
+    assert res["key_field_recall_exact"] == 1.0
+    assert res["key_field_recall_fuzzy"] == 1.0
+
 # --- 7. Pure Helper Unit Tests -----------------------------------------------
 
 
@@ -265,8 +310,11 @@ def test_levenshtein_distance():
 
 
 def test_normalize_korean():
-    assert normalize_korean("안녕하세요, 반갑습니다! 123") == "안녕하세요반갑습니다"
+    assert normalize_korean("안녕하세요, 반갑습니다! 123") == "안녕하세요반갑습니다123"
 
+
+def test_normalize_korean_preserves_digits():
+    assert normalize_korean("1956년 256개") == "1956년256개"
 
 def test_normalize_basic():
     assert normalize_basic("  Hello,  World!  ") == "hello world"
