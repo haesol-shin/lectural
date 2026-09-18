@@ -30,6 +30,13 @@
     "data_structure": "우선순위 큐",
     "complexity": "시간 복잡도"
   },
+  "terms": [
+    "에츠허르 데이크스트라",
+    "1956",
+    "최단 경로 알고리즘",
+    "256",
+    "우선순위 큐"
+  ],
   "usable_ocr_threshold_chars": 6,
   "degradation": {
     "visual": [

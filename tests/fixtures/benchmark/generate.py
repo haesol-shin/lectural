@@ -50,6 +50,7 @@ class FixtureGroundTruth:
     speech_spans: list[list[float]]
     slide_change_timestamps: list[float]
     key_fields: dict[str, str]
+    terms: list[str]
     usable_ocr_threshold_chars: int
     degradation: dict[str, list[str]]
     caption_variant: str
@@ -75,6 +76,7 @@ class FixtureSpec:
     slides: list[SlideDefinition]
     slide_durations: list[float]
     key_fields: dict[str, str]
+    terms: list[str]
     usable_ocr_threshold_chars: int
     review_notes: str
 
@@ -149,6 +151,7 @@ SPECS: dict[str, FixtureSpec] = {
             "learning_rate": "0.05",
             "model_architecture": "Multi-layer perceptrons",
         },
+        terms=["Geoffrey Hinton", "1986", "backpropagation", "0.05", "128", "Multi-layer perceptrons"],
         usable_ocr_threshold_chars=8,
         review_notes=(
             "Audio synthesized via Microsoft Zira Desktop (SAPI5). Utterance 1 clear. "
@@ -223,6 +226,7 @@ SPECS: dict[str, FixtureSpec] = {
             "data_structure": "우선순위 큐",
             "complexity": "시간 복잡도",
         },
+        terms=["에츠허르 데이크스트라", "1956", "최단 경로 알고리즘", "256", "우선순위 큐"],
         usable_ocr_threshold_chars=6,
         review_notes=(
             "Audio synthesized via Microsoft Heami Desktop (SAPI5 Korean). Utterance 1 natural. "
@@ -297,6 +301,7 @@ SPECS: dict[str, FixtureSpec] = {
             "optimizer": "AdamW",
             "weight_decay": "0.01",
         },
+        terms=["PyTorch", "Yann LeCun", "Convolutional Neural Network", "64", "AdamW", "0.01"],
         usable_ocr_threshold_chars=8,
         review_notes=(
             "Audio synthesized via Microsoft Heami Desktop (SAPI5). "
@@ -813,6 +818,7 @@ def generate_fixture_set(
         speech_spans=speech_spans,
         slide_change_timestamps=slide_change_timestamps,
         key_fields=spec.key_fields,
+        terms=spec.terms,
         usable_ocr_threshold_chars=spec.usable_ocr_threshold_chars,
         degradation={
             "visual": ["blur_l1", "near_duplicate"],
@@ -839,6 +845,7 @@ def generate_fixture_set(
         speech_spans=speech_spans,
         slide_change_timestamps=slide_change_timestamps,
         key_fields=spec.key_fields,
+        terms=spec.terms,
         usable_ocr_threshold_chars=spec.usable_ocr_threshold_chars,
         degradation={
             "visual": ["blur_l1", "near_duplicate"],

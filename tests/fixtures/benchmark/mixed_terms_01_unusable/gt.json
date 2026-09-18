@@ -30,6 +30,14 @@
     "optimizer": "AdamW",
     "weight_decay": "0.01"
   },
+  "terms": [
+    "PyTorch",
+    "Yann LeCun",
+    "Convolutional Neural Network",
+    "64",
+    "AdamW",
+    "0.01"
+  ],
   "usable_ocr_threshold_chars": 8,
   "degradation": {
     "visual": [

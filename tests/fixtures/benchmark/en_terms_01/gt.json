@@ -30,6 +30,14 @@
     "learning_rate": "0.05",
     "model_architecture": "Multi-layer perceptrons"
   },
+  "terms": [
+    "Geoffrey Hinton",
+    "1986",
+    "backpropagation",
+    "0.05",
+    "128",
+    "Multi-layer perceptrons"
+  ],
   "usable_ocr_threshold_chars": 8,
   "degradation": {
     "visual": [

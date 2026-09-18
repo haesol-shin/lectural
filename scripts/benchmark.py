@@ -278,9 +278,14 @@ def evaluate_quality_metrics(
 
     # 2. Terminology recall
     terms = gt.get("terms")
-    if not isinstance(terms, list):
+    if not isinstance(terms, list) or not terms:
+        # Fallback only fires for malformed/legacy GT missing an explicit
+        # "terms" list; key_fields VALUES are the actual spoken terms
+        # (e.g. "Geoffrey Hinton"), never the schema key names (e.g.
+        # "key_author"), which would silently score recall against text
+        # that was never in the script.
         key_fields = gt.get("key_fields", {})
-        terms = list(key_fields.keys()) if isinstance(key_fields, dict) else []
+        terms = [str(v) for v in key_fields.values()] if isinstance(key_fields, dict) else []
     try:
         results["terminology_recall"] = terminology_recall(terms, hyp_text, language)
     except Exception as exc:  # noqa: BLE001

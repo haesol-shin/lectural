@@ -75,6 +75,9 @@ def test_gt_json_schema(fixture_id: str):
     assert data["slide_change_timestamps"] == [0.0, 5.0, 13.0, 18.0]
     
     assert isinstance(data["key_fields"], dict)
+    assert isinstance(data["terms"], list) and len(data["terms"]) >= 3
+    assert all(isinstance(t, str) and t for t in data["terms"])
+
     assert len(data["key_fields"]) >= 5
     for k, v in data["key_fields"].items():
         assert isinstance(k, str) and isinstance(v, str) and len(v) > 0
