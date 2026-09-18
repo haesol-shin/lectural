@@ -203,6 +203,9 @@ def test_force_stt_companion_directory(fixture_id: str):
     assert data["caption_variant"] == "force_stt"
     assert data["fixture_id"] == f"{fixture_id}_force_stt"
     assert (force_stt_dir / "audio.wav").exists()
+    assert (force_stt_dir / "slides").is_dir()
+    assert (force_stt_dir / "video_360p.mp4").exists()
+    assert (force_stt_dir / "audio_degraded.wav").exists()
 
 
 def test_bench_extra_has_no_unused_augraphy_audiomentations():

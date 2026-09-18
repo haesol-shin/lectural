@@ -38,6 +38,7 @@ from scripts.benchmark import (
     measure_directory_bytes,
     measure_fixture_run,
     run_fixture_repetitions,
+    slide_cer_reference,
 )
 
 _MINIMAL_USABLE_VTT = """WEBVTT
@@ -462,6 +463,23 @@ def test_harness_records_explicit_speech_source(tmp_path: Path) -> None:
         audio_path=audio_file,
     )
     assert agg_res["speech_source"] == "caption"
+
+
+def test_slide_cer_reference_excludes_near_dup_and_png_keys() -> None:
+    ref = slide_cer_reference(
+        {
+            "slide_00_title.png": "Title A",
+            "slide_00_title": "Title A",
+            "slide_01_concept": "Concept",
+            "slide_02_near_dup": "Concept",
+            "slide_04_inc_ext": "More text",
+        }
+    )
+    assert ref == "Title A\nConcept\nMore text"
+    assert slide_cer_reference({}) is None
+    assert slide_cer_reference(None) is None
+
+
 def test_measure_fixture_run_offline_vad_falls_back_without_ffmpeg(tmp_path: Path) -> None:
     """Verify that when ffmpeg is absent and detect_speech_spans raises DependencyError,
     measure_fixture_run cleanly falls back to GT speech_spans without raising."""
@@ -489,3 +507,26 @@ def test_measure_fixture_run_offline_vad_falls_back_without_ffmpeg(tmp_path: Pat
     assert res["fixture_id"] == "test_offline_vad"
     assert "vad" in res["stages"]
     assert res["stages"]["vad"]["wall_time_sec"] >= 0
+
+
+def test_measure_fixture_run_vad_runtime_error_is_not_swallowed(tmp_path: Path) -> None:
+    audio_file = tmp_path / "audio.wav"
+    _write_minimal_wav(audio_file, duration_sec=5.0)
+    gt = {
+        "fixture_id": "test_vad_runtime",
+        "language": "en",
+        "caption_variant": "usable",
+        "speech_spans": [[0.5, 4.5]],
+        "vtt": _MINIMAL_USABLE_VTT,
+    }
+    with patch(
+        "lectural.vad.detect_speech_spans",
+        side_effect=RuntimeError("ffmpeg silencedetect failed (code 1)"),
+    ):
+        with pytest.raises(RuntimeError, match="silencedetect failed"):
+            measure_fixture_run(
+                fixture_data=gt,
+                out_dir=tmp_path / "vad_runtime_out",
+                audio_path=audio_file,
+            )
+

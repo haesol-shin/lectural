@@ -233,6 +233,26 @@ def acquire_speech_with_caption_injection(
 # Quality Metrics Evaluation (Interface Dependency on lectural_bench.metrics)
 # ============================================================================
 
+def slide_cer_reference(slides_text: dict[str, Any] | None) -> str | None:
+    """Join unique authored slide texts, skipping near-duplicate copies. Pure.
+
+    Dual keys (`slide_00_title.png` and `slide_00_title`) are collapsed by
+    ignoring `.png` names. Near-duplicate slides are excluded because
+    production dedupe drops them, so they must not inflate the CER reference.
+    """
+    if not slides_text:
+        return None
+    seen: list[str] = []
+    for key, raw in slides_text.items():
+        name = str(key)
+        if name.endswith(".png") or "near_dup" in name:
+            continue
+        text = str(raw).strip()
+        if text and text not in seen:
+            seen.append(text)
+    return "\n".join(seen) if seen else None
+
+
 def evaluate_quality_metrics(
     gt: dict[str, Any],
     track: Any,
@@ -348,10 +368,7 @@ def evaluate_quality_metrics(
     combined_ocr = " ".join(
         getattr(f, "ocr_text", "") for f in slide_frames if getattr(f, "ocr_text", "")
     )
-    slides_text_map = gt.get("slides_text", {})
-    combined_ref = "\n".join(
-        v for k, v in slides_text_map.items() if not k.endswith(".png")
-    ) if slides_text_map else None
+    combined_ref = slide_cer_reference(gt.get("slides_text"))
     try:
         results["ocr_quality"] = ocr_quality(
             key_fields,
@@ -583,14 +600,16 @@ def measure_fixture_run(
 
         # Stage: vad (voice activity detection)
         def _run_vad() -> list[tuple[float, float]]:
+            from lectural.deps import DependencyError
             from lectural.vad import detect_speech_spans
 
             target_audio = str(audio_path or (track.meta.get("audio_path", resolved_audio) if track else resolved_audio))
             if os.path.isfile(target_audio):
                 try:
                     return detect_speech_spans(target_audio, fixture_duration_sec)
-                except Exception:
-                    # In offline environments without ffmpeg, fall back cleanly to GT speech_spans
+                except DependencyError:
+                    # Offline gate has no ffmpeg. Real ffmpeg failures (RuntimeError)
+                    # must surface via timed_stage, not look like perfect GT recall.
                     if gt and "speech_spans" in gt:
                         return [tuple(span) for span in gt["speech_spans"]]  # type: ignore
                     return [(0.0, fixture_duration_sec)]

@@ -24,6 +24,7 @@ import json
 import os
 import random
 import re
+import shutil
 import subprocess
 import wave
 from dataclasses import asdict, dataclass, field
@@ -894,8 +895,20 @@ def generate_fixture_set(
     (force_stt_dir / "ground_truth.json").write_text(json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
     (force_stt_dir / "captions.vtt").write_text(captions_usable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
     (force_stt_dir / "audio.wav").write_bytes(audio_wav.read_bytes())
+    if audio_degraded_wav.exists():
+        (force_stt_dir / "audio_degraded.wav").write_bytes(audio_degraded_wav.read_bytes())
+    script_src = fixture_dir / "script.txt"
+    if script_src.exists():
+        (force_stt_dir / "script.txt").write_text(script_src.read_text(encoding="utf-8"), encoding="utf-8")
+    if slides_dir.exists():
+        dest_slides = force_stt_dir / "slides"
+        if dest_slides.exists():
+            shutil.rmtree(dest_slides)
+        shutil.copytree(slides_dir, dest_slides)
     if not skip_video and video_mp4.exists():
         (force_stt_dir / "video.mp4").write_bytes(video_mp4.read_bytes())
+    if not skip_video and video_360p_mp4.exists():
+        (force_stt_dir / "video_360p.mp4").write_bytes(video_360p_mp4.read_bytes())
     # Clean up scratch files
     if scratch_dir.exists():
         for p in scratch_dir.glob("*"):
