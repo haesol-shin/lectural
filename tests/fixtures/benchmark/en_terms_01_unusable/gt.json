@@ -1,0 +1,50 @@
+{
+  "fixture_id": "en_terms_01_unusable",
+  "language": "en",
+  "script": "Welcome to lecture four on optimization. In 1986, Geoffrey Hinton popularized backpropagation for multi-layer perceptrons. The learning rate was set to 0.05 across 128 batch iterations.",
+  "speech_spans": [
+    [
+      1.0,
+      4.089
+    ],
+    [
+      5.089,
+      12.052
+    ],
+    [
+      13.052,
+      19.305
+    ]
+  ],
+  "slide_change_timestamps": [
+    0.0,
+    5.0,
+    13.0,
+    18.0
+  ],
+  "key_fields": {
+    "lecture_title": "Lecture 4: Optimization",
+    "key_author": "Geoffrey Hinton",
+    "algorithm": "Backpropagation Algorithm",
+    "batch_iterations": "128",
+    "learning_rate": "0.05",
+    "model_architecture": "Multi-layer perceptrons"
+  },
+  "usable_ocr_threshold_chars": 8,
+  "degradation": {
+    "visual": [
+      "blur_l1",
+      "near_duplicate"
+    ],
+    "audio": [
+      "noise_l1",
+      "silence_gap"
+    ]
+  },
+  "caption_variant": "unusable",
+  "independent_review": {
+    "reviewer": "Fixtures (independent subagent)",
+    "date": "2026-09-18",
+    "notes": "Audio synthesized via Microsoft Zira Desktop (SAPI5). Utterance 1 clear. Utterance 2: 'Geoffrey Hinton' vocalized accurately as /ˈdʒɛfri ˈhɪntən/; '1986' pronounced 'nineteen eighty-six'; 'backpropagation' articulated clearly. Utterance 3: '0.05' pronounced 'zero point zero five'; '128' as 'one hundred twenty-eight'. Slides: Slide 2 near-duplicate has hamming distance 0 to Slide 1; Slide 4 strictly extends Slide 3."
+  }
+}

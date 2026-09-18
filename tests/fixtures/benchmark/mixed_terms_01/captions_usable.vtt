@@ -1,0 +1,10 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:06.803
+이번 세션에서는 PyTorch 프레임워크의 Tensor 연산을 살펴봅니다.
+
+00:00:07.803 --> 00:00:13.272
+Yann LeCun 교수가 제안한 Convolutional Neural Network 구조입니다.
+
+00:00:14.272 --> 00:00:21.590
+배치 크기 64에서 AdamW optimizer의 weight decay는 0.01로 설정합니다.

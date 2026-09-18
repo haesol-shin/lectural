@@ -1,0 +1,1 @@
+Welcome to lecture four on optimization. In 1986, Geoffrey Hinton popularized backpropagation for multi-layer perceptrons. The learning rate was set to 0.05 across 128 batch iterations.

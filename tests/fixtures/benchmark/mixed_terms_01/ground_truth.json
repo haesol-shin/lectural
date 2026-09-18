@@ -1,0 +1,50 @@
+{
+  "fixture_id": "mixed_terms_01",
+  "language": "mixed",
+  "script": "이번 세션에서는 PyTorch 프레임워크의 Tensor 연산을 살펴봅니다. Yann LeCun 교수가 제안한 Convolutional Neural Network 구조입니다. 배치 크기 64에서 AdamW optimizer의 weight decay는 0.01로 설정합니다.",
+  "speech_spans": [
+    [
+      1.0,
+      6.803
+    ],
+    [
+      7.803,
+      13.272
+    ],
+    [
+      14.272,
+      21.59
+    ]
+  ],
+  "slide_change_timestamps": [
+    0.0,
+    5.0,
+    13.0,
+    18.0
+  ],
+  "key_fields": {
+    "framework": "PyTorch",
+    "researcher": "Yann LeCun",
+    "architecture": "Convolutional Neural Network",
+    "batch_size": "64",
+    "optimizer": "AdamW",
+    "weight_decay": "0.01"
+  },
+  "usable_ocr_threshold_chars": 8,
+  "degradation": {
+    "visual": [
+      "blur_l1",
+      "near_duplicate"
+    ],
+    "audio": [
+      "noise_l1",
+      "silence_gap"
+    ]
+  },
+  "caption_variant": "usable",
+  "independent_review": {
+    "reviewer": "Fixtures (independent subagent)",
+    "date": "2026-09-18",
+    "notes": "Audio synthesized via Microsoft Heami Desktop (SAPI5). Mixed language vocalization: Korean phrasing smooth, with English loanwords ('PyTorch', 'Tensor', 'Convolutional Neural Network', 'AdamW', 'weight decay') vocalized via SAPI phoneme adaptation. Utterance 3: '64' pronounced as '육십사', '0.01' as '영점영일'. Slides: Bilingual text rendered cleanly with balanced spacing and clear fonts."
+  }
+}
