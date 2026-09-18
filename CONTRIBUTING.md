@@ -51,6 +51,8 @@ Use Conventional Commits with these common types:
 - `chore:` maintenance without behavior change
 - `refactor:` behavior-preserving code change
 
+A squash-merge commit message additionally carries a scope naming the functional area it changed: `type(scope): imperative summary` (e.g. `feat(visual): reduce near-duplicate keyframes`). Common scopes match `lectural/` modules — `acquisition`, `visual`, `ocr`, `speech`, `vad`, `evidence`, `coverage`, `media`, `source`, `synthesis`, `cli` — plus `bench` (benchmark harness), `ops` (repository-operations tooling/plans), `docs`, and `ci`. Rebase-and-merge commits are not required to carry a scope.
+
 ## Pull requests
 
 - Title: short imperative summary (about 50-72 characters), no Conventional Commit prefix. Example: `Set up repo operations & distribution model`.

@@ -1,6 +1,6 @@
 {
   "name": "lectural",
-  "description": "LecturAL marketplace: the LecturAL Claude Code plugin that turns a YouTube lecture into complete study notes.",
+  "description": "LecturAL marketplace: turns video into deterministic evidence for video-based work — markdown notes or a versioned JSON contract.",
   "owner": {
     "name": "Haesol Shin",
     "url": "https://github.com/haesol-shin/lectural"
@@ -9,7 +9,7 @@
     {
       "name": "lectural",
       "source": "./",
-      "description": "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, and every scene, with a completeness gate that blocks premature done."
+      "description": "Turn a video (YouTube or local) into deterministic evidence for video-based work: every utterance, every on-screen text, every scene, with a completeness gate that blocks premature done."
     }
   ]
 }
