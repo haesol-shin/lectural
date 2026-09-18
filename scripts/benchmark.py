@@ -828,23 +828,35 @@ def run_fixture_repetitions(
 
 
 def find_fixture_dirs(fixtures_dir: str | os.PathLike) -> list[Path]:
-    """Find all fixture directories containing a GT JSON file (flat or nested)."""
-    p = Path(fixtures_dir)
-    if not p.is_dir():
-        return []
+    """Find all fixture directories containing a GT JSON file (flat, nested, or comma-separated)."""
+    raw_str = str(fixtures_dir)
+    targets: list[Path] = []
+    if "," in raw_str or ";" in raw_str:
+        for part in re.split(r"[,;]", raw_str):
+            p_part = Path(part.strip())
+            if p_part.exists():
+                targets.append(p_part)
+    else:
+        p_single = Path(fixtures_dir)
+        if p_single.exists():
+            targets.append(p_single)
+
     found_dirs: set[Path] = set()
-    # Search for gt.json or ground_truth.json anywhere in tree
-    for gt_candidate in p.rglob("*.json"):
-        # Verify it's a fixture GT file by reading fixture_id or name
-        if gt_candidate.name in ("gt.json", "ground_truth.json"):
-            found_dirs.add(gt_candidate.parent)
-        else:
-            try:
-                data = json.loads(gt_candidate.read_text(encoding="utf-8"))
-                if isinstance(data, dict) and "fixture_id" in data:
-                    found_dirs.add(gt_candidate.parent)
-            except Exception:
-                continue
+    for p in targets:
+        if p.is_file():
+            if p.name in ("gt.json", "ground_truth.json"):
+                found_dirs.add(p.parent)
+            continue
+        for gt_candidate in p.rglob("*.json"):
+            if gt_candidate.name in ("gt.json", "ground_truth.json"):
+                found_dirs.add(gt_candidate.parent)
+            else:
+                try:
+                    data = json.loads(gt_candidate.read_text(encoding="utf-8"))
+                    if isinstance(data, dict) and "fixture_id" in data:
+                        found_dirs.add(gt_candidate.parent)
+                except Exception:
+                    continue
     return sorted(found_dirs)
 
 
