@@ -51,8 +51,26 @@
   },
   "caption_variant": "unusable",
   "independent_review": {
-    "reviewer": "Fixtures (independent subagent)",
+    "reviewer": "generator_synthesis_notes",
     "date": "2026-09-18",
     "notes": "Audio synthesized via Microsoft Zira Desktop (SAPI5). Utterance 1 clear. Utterance 2: 'Geoffrey Hinton' vocalized accurately as /ˈdʒɛfri ˈhɪntən/; '1986' pronounced 'nineteen eighty-six'; 'backpropagation' articulated clearly. Utterance 3: '0.05' pronounced 'zero point zero five'; '128' as 'one hundred twenty-eight'. Slides: Slide 2 near-duplicate has hamming distance 0 to Slide 1; Slide 4 strictly extends Slide 3."
-  }
+  },
+  "slides_text": {
+    "slide_00_title.png": "Lecture 4: Optimization\nDeep Learning Foundations\nSpeaker: Geoffrey Hinton\nTopics: Gradient Descent & Neural Networks",
+    "slide_00_title": "Lecture 4: Optimization\nDeep Learning Foundations\nSpeaker: Geoffrey Hinton\nTopics: Gradient Descent & Neural Networks",
+    "slide_01_concept.png": "Backpropagation Algorithm\nYear: 1986\nKey Concept: Gradient computation via chain rule\nTarget Architecture: Multi-layer perceptrons",
+    "slide_01_concept": "Backpropagation Algorithm\nYear: 1986\nKey Concept: Gradient computation via chain rule\nTarget Architecture: Multi-layer perceptrons",
+    "slide_02_near_dup.png": "Backpropagation Algorithm\nYear: 1986\nKey Concept: Gradient computation via chain rule\nTarget Architecture: Multi-layer perceptrons",
+    "slide_02_near_dup": "Backpropagation Algorithm\nYear: 1986\nKey Concept: Gradient computation via chain rule\nTarget Architecture: Multi-layer perceptrons",
+    "slide_03_inc_base.png": "Hyperparameter Settings\nBatch Iterations: 128",
+    "slide_03_inc_base": "Hyperparameter Settings\nBatch Iterations: 128",
+    "slide_04_inc_ext.png": "Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05\nArchitecture: Multi-layer perceptrons",
+    "slide_04_inc_ext": "Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05\nArchitecture: Multi-layer perceptrons"
+  },
+  "near_duplicate_timestamps": [
+    9.0
+  ],
+  "incremental_timestamps": [
+    18.0
+  ]
 }

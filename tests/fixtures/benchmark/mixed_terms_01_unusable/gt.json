@@ -51,8 +51,26 @@
   },
   "caption_variant": "unusable",
   "independent_review": {
-    "reviewer": "Fixtures (independent subagent)",
+    "reviewer": "generator_synthesis_notes",
     "date": "2026-09-18",
     "notes": "Audio synthesized via Microsoft Heami Desktop (SAPI5). Mixed language vocalization: Korean phrasing smooth, with English loanwords ('PyTorch', 'Tensor', 'Convolutional Neural Network', 'AdamW', 'weight decay') vocalized via SAPI phoneme adaptation. Utterance 3: '64' pronounced as '육십사', '0.01' as '영점영일'. Slides: Bilingual text rendered cleanly with balanced spacing and clear fonts."
-  }
+  },
+  "slides_text": {
+    "slide_00_title.png": "Deep Learning with PyTorch\nTensor 연산과 신경망 기초\n자료 출처: Yann LeCun 교수\n실습 환경: Python 3.11",
+    "slide_00_title": "Deep Learning with PyTorch\nTensor 연산과 신경망 기초\n자료 출처: Yann LeCun 교수\n실습 환경: Python 3.11",
+    "slide_01_concept.png": "Convolutional Neural Network\n대표 구조: 합성곱 계층 및 풀링 계층\n적용 분야: 이미지 인식 및 컴퓨터 비전\n핵심 장점: 공간적 불변성 유지",
+    "slide_01_concept": "Convolutional Neural Network\n대표 구조: 합성곱 계층 및 풀링 계층\n적용 분야: 이미지 인식 및 컴퓨터 비전\n핵심 장점: 공간적 불변성 유지",
+    "slide_02_near_dup.png": "Convolutional Neural Network\n대표 구조: 합성곱 계층 및 풀링 계층\n적용 분야: 이미지 인식 및 컴퓨터 비전\n핵심 장점: 공간적 불변성 유지",
+    "slide_02_near_dup": "Convolutional Neural Network\n대표 구조: 합성곱 계층 및 풀링 계층\n적용 분야: 이미지 인식 및 컴퓨터 비전\n핵심 장점: 공간적 불변성 유지",
+    "slide_03_inc_base.png": "Optimization Hyperparameters\n배치 크기: 64",
+    "slide_03_inc_base": "Optimization Hyperparameters\n배치 크기: 64",
+    "slide_04_inc_ext.png": "Optimization Hyperparameters\n배치 크기: 64\nOptimizer: AdamW\nWeight Decay: 0.01",
+    "slide_04_inc_ext": "Optimization Hyperparameters\n배치 크기: 64\nOptimizer: AdamW\nWeight Decay: 0.01"
+  },
+  "near_duplicate_timestamps": [
+    9.0
+  ],
+  "incremental_timestamps": [
+    18.0
+  ]
 }

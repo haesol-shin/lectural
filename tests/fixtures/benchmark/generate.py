@@ -55,6 +55,9 @@ class FixtureGroundTruth:
     degradation: dict[str, list[str]]
     caption_variant: str
     independent_review: dict[str, str]
+    slides_text: dict[str, str] = field(default_factory=dict)
+    near_duplicate_timestamps: list[float] = field(default_factory=list)
+    incremental_timestamps: list[float] = field(default_factory=list)
 
 
 @dataclass
@@ -66,6 +69,10 @@ class SlideDefinition:
     is_near_duplicate_of: str | None = None
     shift_xy: tuple[int, int] = (0, 0)
 
+    @property
+    def authored_text(self) -> str:
+        """Full authored text of the slide: title followed by body lines."""
+        return "\n".join([self.title] + [ln for ln in self.lines if ln]).strip()
 
 @dataclass
 class FixtureSpec:
@@ -142,7 +149,7 @@ SPECS: dict[str, FixtureSpec] = {
                 ],
             ),
         ],
-        slide_durations=[5.0, 4.0, 4.0, 5.0],  # Last slide takes remaining duration
+        slide_durations=[5.0, 4.0, 4.0, 5.0, 5.0],
         key_fields={
             "lecture_title": "Lecture 4: Optimization",
             "key_author": "Geoffrey Hinton",
@@ -217,7 +224,7 @@ SPECS: dict[str, FixtureSpec] = {
                 ],
             ),
         ],
-        slide_durations=[5.0, 4.0, 4.0, 5.0],
+        slide_durations=[5.0, 4.0, 4.0, 5.0, 5.0],
         key_fields={
             "lecture_title": "그래프 탐색",
             "researcher": "에츠허르 데이크스트라",
@@ -292,7 +299,7 @@ SPECS: dict[str, FixtureSpec] = {
                 ],
             ),
         ],
-        slide_durations=[5.0, 4.0, 4.0, 5.0],
+        slide_durations=[5.0, 4.0, 4.0, 5.0, 5.0],
         key_fields={
             "framework": "PyTorch",
             "researcher": "Yann LeCun",
@@ -558,18 +565,8 @@ def degrade_image_pil_fallback(img_path: Path, out_path: Path, level: str = "l1"
 
 
 def apply_visual_degradation(img_path: Path, out_path: Path, level: str = "l1") -> None:
-    """Apply visual degradation via Augraphy if available, else PIL fallback."""
-    try:
-        import cv2  # lazy
-        import numpy as np  # lazy
-        from augraphy import AugraphyPipeline  # lazy
-        # If augraphy is importable, execute pipeline
-        # (In this sandbox, augraphy is not installed, so ImportError directs to fallback)
-        raise ImportError("Augraphy package not installed")
-    except (ImportError, Exception):
-        # Documented lightweight PIL fallback
-        degrade_image_pil_fallback(img_path, out_path, level=level)
-
+    """Apply visual degradation using PIL ImageFilter / ImageEnhance."""
+    degrade_image_pil_fallback(img_path, out_path, level=level)
 
 # ---------------------------------------------------------------------------
 # Audio Degradation (Audiomentations with FFmpeg Fallback)
@@ -582,32 +579,19 @@ def apply_audio_degradation(
     gap_duration: float = 0.5,
     noise_level: float = 0.02,
 ) -> None:
-    """Inject background noise and silence gap into audio.
-    
-    Uses FFmpeg fallback when Audiomentations is not installed.
-    Exact FFmpeg filter:
-    - anoisesrc creates pink noise at amplitude 0.02
-    - amix mixes background noise into clean audio
-    - volume filter mutes audio between gap_start and gap_start + gap_duration
-    """
-    try:
-        from audiomentations import Compose, AddGaussianNoise  # lazy
-        raise ImportError("audiomentations not installed in sandbox")
-    except (ImportError, Exception):
-        # FFmpeg fallback
-        filter_str = (
-            f"anoisesrc=d=60:c=pink:r=16000:a={noise_level} [noise]; "
-            f"[0:a][noise] amix=inputs=2:duration=first:dropout_transition=0, "
-            f"volume=enable='between(t,{gap_start},{gap_start + gap_duration})':volume=0"
-        )
-        cmd = [
-            "ffmpeg", "-y", "-i", str(in_wav),
-            "-filter_complex", filter_str,
-            "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
-            str(out_wav),
-        ]
-        subprocess.run(cmd, check=True, capture_output=True)
-
+    """Inject background noise and silence gap into audio using FFmpeg filter."""
+    filter_str = (
+        f"anoisesrc=d=60:c=pink:r=16000:a={noise_level} [noise]; "
+        f"[0:a][noise] amix=inputs=2:duration=first:dropout_transition=0, "
+        f"volume=enable='between(t,{gap_start},{gap_start + gap_duration})':volume=0"
+    )
+    cmd = [
+        "ffmpeg", "-y", "-i", str(in_wav),
+        "-filter_complex", filter_str,
+        "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+        str(out_wav),
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
 
 # ---------------------------------------------------------------------------
 # Video Assembly & 360p Re-encode (FFmpeg)
@@ -811,6 +795,15 @@ def generate_fixture_set(
     (fixture_dir / "captions.vtt").write_text(captions_usable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
     
     # 8. Ground Truth JSON (Schema compliant)
+    slides_text: dict[str, str] = {}
+    for s in spec.slides:
+        slides_text[s.filename] = s.authored_text
+        slides_text[Path(s.filename).stem] = s.authored_text
+
+    near_duplicate_timestamps = [9.0]
+    incremental_timestamps = [18.0]
+
+    # 8. Ground Truth JSON (Schema compliant)
     gt_data = FixtureGroundTruth(
         fixture_id=spec.fixture_id,
         language=spec.language,
@@ -826,10 +819,13 @@ def generate_fixture_set(
         },
         caption_variant="usable",
         independent_review={
-            "reviewer": "Fixtures (independent subagent)",
+            "reviewer": "generator_synthesis_notes",
             "date": "2026-09-18",
             "notes": spec.review_notes,
         },
+        slides_text=slides_text,
+        near_duplicate_timestamps=near_duplicate_timestamps,
+        incremental_timestamps=incremental_timestamps,
     )
     gt_dict = asdict(gt_data)
     (fixture_dir / "gt.json").write_text(json.dumps(gt_dict, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -853,10 +849,13 @@ def generate_fixture_set(
         },
         caption_variant="unusable",
         independent_review={
-            "reviewer": "Fixtures (independent subagent)",
+            "reviewer": "generator_synthesis_notes",
             "date": "2026-09-18",
             "notes": spec.review_notes,
         },
+        slides_text=slides_text,
+        near_duplicate_timestamps=near_duplicate_timestamps,
+        incremental_timestamps=incremental_timestamps,
     )
     (unusable_dir / "gt.json").write_text(json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
     (unusable_dir / "ground_truth.json").write_text(json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
@@ -864,7 +863,39 @@ def generate_fixture_set(
     (unusable_dir / "audio.wav").write_bytes(audio_wav.read_bytes())
     if not skip_video and video_mp4.exists():
         (unusable_dir / "video.mp4").write_bytes(video_mp4.read_bytes())
-    
+
+    # 10. Also produce the force_stt companion directory for harness STT execution
+    force_stt_dir = base_dir / f"{spec.fixture_id}_force_stt"
+    force_stt_dir.mkdir(parents=True, exist_ok=True)
+    force_stt_gt_data = FixtureGroundTruth(
+        fixture_id=f"{spec.fixture_id}_force_stt",
+        language=spec.language,
+        script=script_text,
+        speech_spans=speech_spans,
+        slide_change_timestamps=slide_change_timestamps,
+        key_fields=spec.key_fields,
+        terms=spec.terms,
+        usable_ocr_threshold_chars=spec.usable_ocr_threshold_chars,
+        degradation={
+            "visual": ["blur_l1", "near_duplicate"],
+            "audio": ["noise_l1", "silence_gap"],
+        },
+        caption_variant="force_stt",
+        independent_review={
+            "reviewer": "generator_synthesis_notes",
+            "date": "2026-09-18",
+            "notes": spec.review_notes,
+        },
+        slides_text=slides_text,
+        near_duplicate_timestamps=near_duplicate_timestamps,
+        incremental_timestamps=incremental_timestamps,
+    )
+    (force_stt_dir / "gt.json").write_text(json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
+    (force_stt_dir / "ground_truth.json").write_text(json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
+    (force_stt_dir / "captions.vtt").write_text(captions_usable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
+    (force_stt_dir / "audio.wav").write_bytes(audio_wav.read_bytes())
+    if not skip_video and video_mp4.exists():
+        (force_stt_dir / "video.mp4").write_bytes(video_mp4.read_bytes())
     # Clean up scratch files
     if scratch_dir.exists():
         for p in scratch_dir.glob("*"):

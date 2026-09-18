@@ -32,8 +32,6 @@ test = ["pytest>=7.0", "numpy>=1.24"]
 bench = [
     "jiwer>=3.0",
     "whisper-normalizer>=0.1",
-    "augraphy>=8.2",
-    "audiomentations>=0.34",
     "Levenshtein>=0.20",
 ]
 # Keep transitive runtime providers inside the approved WU-1 matrix without

@@ -50,8 +50,26 @@
   },
   "caption_variant": "usable",
   "independent_review": {
-    "reviewer": "Fixtures (independent subagent)",
+    "reviewer": "generator_synthesis_notes",
     "date": "2026-09-18",
     "notes": "Audio synthesized via Microsoft Heami Desktop (SAPI5 Korean). Utterance 1 natural. Utterance 2: '에츠허르 데이크스트라' (Edsger Dijkstra) rendered with consistent phoneme mapping; '1956년' articulated as '천구백오십육년'. Utterance 3: '256개' spoken as '이백오십육개'; '우선순위 큐' articulated crisply. Slides: Malgun Gothic font rendered cleanly without glyph tofu or clipping."
-  }
+  },
+  "slides_text": {
+    "slide_00_title.png": "알고리즘 특론: 그래프 탐색\n컴퓨터공학과 전공 강의\n연구자: 에츠허르 데이크스트라\n주제: 최단 경로 및 복잡도 분석",
+    "slide_00_title": "알고리즘 특론: 그래프 탐색\n컴퓨터공학과 전공 강의\n연구자: 에츠허르 데이크스트라\n주제: 최단 경로 및 복잡도 분석",
+    "slide_01_concept.png": "최단 경로 알고리즘\n연도: 1956년\n핵심 원리: 단일 출발지 최단 경로 탐색\n조건: 음의 가중치가 없는 방향 그래프",
+    "slide_01_concept": "최단 경로 알고리즘\n연도: 1956년\n핵심 원리: 단일 출발지 최단 경로 탐색\n조건: 음의 가중치가 없는 방향 그래프",
+    "slide_02_near_dup.png": "최단 경로 알고리즘\n연도: 1956년\n핵심 원리: 단일 출발지 최단 경로 탐색\n조건: 음의 가중치가 없는 방향 그래프",
+    "slide_02_near_dup": "최단 경로 알고리즘\n연도: 1956년\n핵심 원리: 단일 출발지 최단 경로 탐색\n조건: 음의 가중치가 없는 방향 그래프",
+    "slide_03_inc_base.png": "성능 분석 및 복잡도\n노드 개수: 256",
+    "slide_03_inc_base": "성능 분석 및 복잡도\n노드 개수: 256",
+    "slide_04_inc_ext.png": "성능 분석 및 복잡도\n노드 개수: 256\n자료구조: 우선순위 큐\n시간 복잡도: O(E log V)",
+    "slide_04_inc_ext": "성능 분석 및 복잡도\n노드 개수: 256\n자료구조: 우선순위 큐\n시간 복잡도: O(E log V)"
+  },
+  "near_duplicate_timestamps": [
+    9.0
+  ],
+  "incremental_timestamps": [
+    18.0
+  ]
 }

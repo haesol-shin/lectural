@@ -176,3 +176,37 @@ def test_unusable_companion_directory(fixture_id: str):
         data = json.load(f)
     assert data["caption_variant"] == "unusable"
     assert data["fixture_id"] == f"{fixture_id}_unusable"
+
+
+@pytest.mark.parametrize("fixture_id", FIXTURE_IDS)
+def test_gt_contains_slide_text_references(fixture_id: str):
+    gt_path = BENCHMARK_DIR / fixture_id / "gt.json"
+    with open(gt_path, encoding="utf-8") as f:
+        data = json.load(f)
+    assert "slides_text" in data
+    slides_text = data["slides_text"]
+    assert isinstance(slides_text, dict)
+    assert len(slides_text) >= 5
+    assert any("slide_04" in k for k in slides_text.keys())
+    for k, v in slides_text.items():
+        assert isinstance(v, str) and len(v) > 0
+
+
+@pytest.mark.parametrize("fixture_id", FIXTURE_IDS)
+def test_force_stt_companion_directory(fixture_id: str):
+    force_stt_dir = BENCHMARK_DIR / f"{fixture_id}_force_stt"
+    assert force_stt_dir.exists()
+    gt_path = force_stt_dir / "gt.json"
+    assert gt_path.exists()
+    with open(gt_path, encoding="utf-8") as f:
+        data = json.load(f)
+    assert data["caption_variant"] == "force_stt"
+    assert data["fixture_id"] == f"{fixture_id}_force_stt"
+    assert (force_stt_dir / "audio.wav").exists()
+
+
+def test_bench_extra_has_no_unused_augraphy_audiomentations():
+    pyproject_path = BENCHMARK_DIR.parent.parent.parent / "pyproject.toml"
+    content = pyproject_path.read_text(encoding="utf-8")
+    assert "augraphy" not in content
+    assert "audiomentations" not in content
