@@ -22,6 +22,7 @@
         "cache_mode": {"enum": ["cold", "warm"]},
         "reps": {"type": "integer", "minimum": 1},
         "skip_ocr": {"type": "boolean"},
+        "media_variant": {"enum": ["clean", "degraded"]},
         "sample_interval": {"type": "number", "exclusiveMinimum": 0},
         "model": {"type": "string"}
       }

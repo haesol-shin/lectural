@@ -271,7 +271,7 @@ def test_measure_fixture_run_computes_rtf_and_storage(tmp_path: Path) -> None:
     assert "initial_target_bytes" in storage
     assert "final_target_bytes" in storage
     assert "target_storage_delta_bytes" in storage
-    assert "temp_storage_bytes" in storage
+    assert "temp_storage_delta_bytes" in storage
     assert storage["total_storage_delta_bytes"] >= 0
 
     # Stages recorded

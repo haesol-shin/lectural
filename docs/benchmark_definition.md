@@ -78,8 +78,11 @@ Normalization rules: English text is lowercased, punctuation-stripped, and white
   × {OCR-on, OCR-off (--skip-ocr)}
   × {EN, KO, mixed}
   × {cold, warm}
+  × {clean, degraded (`--media-variant`)}
   × 3 repetitions (median + variance)
 ```
+
+`--media-variant clean` (default) uses the fixture's clean TTS audio and 720p video. `--media-variant degraded` uses `audio_degraded.wav` (noise/silence-injected) and `video_360p.mp4` instead, falling back to the clean asset when a degraded one is absent for a given fixture — this is what actually exercises the injected failure modes end to end, rather than leaving `audio_degraded.wav`/`video_360p.mp4` as committed but unused sidecars. Independent of this flag, every run also scores OCR against the fixture's standalone visually-degraded slide images (`slide_degraded_l1.png`, `slide_degraded_l2.png`) under `quality_metrics.degraded_slide_ocr`, since the assembled video itself is always built from clean slides.
 
 Frame selection (`extract_candidate_frames` + `dedupe_frames`) always runs when the fixture has video — it is not a separate axis. OCR preprocessing-effect attribution (raw vs. `ocr.ocr_image`'s built-in ROI+upscale+Otsu preprocessing) is **explicitly out of reach** for this harness: production `ocr_image` always preprocesses and `lectural/ocr.py` is never modified by this benchmark, so the issue's "preprocessing ... where measurable" acceptance criterion is knowingly scoped to the resolution (360p vs. 720p source) and STT model-size (`small` vs. `medium`) factorials instead of silently dropped.
 

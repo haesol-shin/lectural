@@ -342,6 +342,38 @@ def evaluate_quality_metrics(
     return results
 
 
+def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[Path]) -> dict[str, Any]:
+    """Run OCR on the fixture's standalone visually-degraded slide images.
+
+    Scores each `slide_degraded_l*.png` with `lectural.ocr.ocr_image` against
+    the fixture's `key_fields`/`usable_ocr_threshold_chars`, via
+    `lectural_bench.metrics.ocr_quality`. This is the only committed asset
+    that exercises Augraphy/PIL-blur visual degradation directly (the
+    assembled `video.mp4` is built from clean slides), so it runs regardless
+    of `media_variant`.
+    """
+    try:
+        from lectural.ocr import ocr_image
+        from lectural_bench.metrics import ocr_quality
+    except ImportError as exc:
+        return {"status": "deferred", "reason": f"{exc.__class__.__name__}: {exc}"}
+
+    key_fields = gt.get("key_fields", {})
+    usable_thresh = int(gt.get("usable_ocr_threshold_chars", 8))
+    ocr_lang = "en" if str(gt.get("language", "")).lower() == "en" else "korean"
+    per_level: dict[str, Any] = {}
+    for path in degraded_slide_paths:
+        try:
+            text, engine_used = ocr_image(str(path), lang=ocr_lang)
+            per_level[path.stem] = {
+                "engine_used": engine_used,
+                **ocr_quality(key_fields, text, usable_thresh),
+            }
+        except Exception as exc:  # noqa: BLE001
+            per_level[path.stem] = {"error": f"{exc.__class__.__name__}: {exc}"}
+    return per_level
+
+
 # ============================================================================
 # Resource Measurement Function (StageSampler Integration)
 # ============================================================================
@@ -353,6 +385,7 @@ def measure_fixture_run(
     sample_interval: float = 0.2,
     skip_ocr: bool = False,
     model: str = "small",
+    media_variant: str = "clean",
     temp_dir: str | os.PathLike | None = None,
     audio_path: str | os.PathLike | None = None,
     video_path: str | os.PathLike | None = None,
@@ -371,8 +404,13 @@ def measure_fixture_run(
     """
     out_p = Path(out_dir)
     out_p.mkdir(parents=True, exist_ok=True)
-    temp_p = Path(temp_dir) if temp_dir else (out_p / "_work")
+    # Sibling directory, never nested under out_p: measure_directory_bytes(out_p)
+    # must not silently include the scratch tree, or storage totals double-count it.
+    temp_p = Path(temp_dir) if temp_dir else (out_p.parent / f"_work_{out_p.name}")
     temp_p.mkdir(parents=True, exist_ok=True)
+    media_variant = (media_variant or "clean").lower()
+    if media_variant not in ("clean", "degraded"):
+        raise ValueError(f"media_variant must be 'clean' or 'degraded', got {media_variant!r}")
 
     # 1. Resolve GT dict and companion fixture file paths
     gt: dict[str, Any] = {}
@@ -398,22 +436,35 @@ def measure_fixture_run(
 
     caption_variant = str(gt.get("caption_variant", "usable")).lower()
 
-    # Resolve companion paths if not provided
+    # Resolve companion paths if not provided. `media_variant="degraded"` prefers
+    # the fixture's noise/silence-injected audio and 360p re-encode so the run
+    # actually exercises the injected failure modes, not just clean sources;
+    # each falls back to the clean asset when a degraded one is absent.
     if fixture_dir is not None:
         if audio_path is None:
-            audio_candidates = (
-                list(fixture_dir.glob("audio.wav"))
-                or list(fixture_dir.glob("*.wav"))
-                or list(fixture_dir.glob("*.mp3"))
-            )
+            if media_variant == "degraded":
+                audio_candidates = list(fixture_dir.glob("audio_degraded.wav")) or list(
+                    fixture_dir.glob("audio.wav")
+                )
+            else:
+                audio_candidates = (
+                    list(fixture_dir.glob("audio.wav"))
+                    or list(fixture_dir.glob("*.wav"))
+                    or list(fixture_dir.glob("*.mp3"))
+                )
             if audio_candidates:
                 audio_path = audio_candidates[0]
         if video_path is None:
-            video_candidates = (
-                list(fixture_dir.glob("video.mp4"))
-                or list(fixture_dir.glob("*.mp4"))
-                or list(fixture_dir.glob("*.webm"))
-            )
+            if media_variant == "degraded":
+                video_candidates = list(fixture_dir.glob("video_360p.mp4")) or list(
+                    fixture_dir.glob("video.mp4")
+                )
+            else:
+                video_candidates = (
+                    list(fixture_dir.glob("video.mp4"))
+                    or list(fixture_dir.glob("*.mp4"))
+                    or list(fixture_dir.glob("*.webm"))
+                )
             if video_candidates:
                 video_path = video_candidates[0]
         if vtt_path is None:
@@ -542,6 +593,20 @@ def measure_fixture_run(
             ),
         )
 
+        # Always score OCR against the fixture's standalone visually-degraded
+        # slide images (slide_degraded_l1/l2.png), independent of media_variant:
+        # these are cheap (two extra images) and are the only committed asset
+        # that directly exercises Augraphy/PIL-blur degradation for OCR, per
+        # the accepted plan's "OCR CER/key-field recall against degraded
+        # frames" requirement.
+        if fixture_dir is not None:
+            degraded_slide_paths = sorted(fixture_dir.glob("slide_degraded_l*.png"))
+            if degraded_slide_paths:
+                quality_metrics["degraded_slide_ocr"] = timed_stage(
+                    "degraded_slide_ocr",
+                    lambda: evaluate_degraded_slide_ocr(gt, degraded_slide_paths),
+                )
+
     finally:
         if sampler is not None:
             sampler.stop()
@@ -550,7 +615,10 @@ def measure_fixture_run(
     final_target_bytes = measure_directory_bytes(out_p)
     final_temp_bytes = measure_directory_bytes(temp_p)
     target_storage_delta_bytes = max(0, final_target_bytes - initial_target_bytes)
-    temp_storage_bytes = final_temp_bytes
+    # temp_p is a sibling of out_p (never nested under it, see construction
+    # above), so this delta is disjoint from target_storage_delta_bytes --
+    # summing them does not double-count the scratch tree.
+    temp_storage_delta_bytes = max(0, final_temp_bytes - initial_temp_bytes)
 
     # 6. Resource metrics & RTF aggregation
     sampler_summary = sampler.summary() if sampler is not None else {}
@@ -585,8 +653,8 @@ def measure_fixture_run(
             "initial_target_bytes": initial_target_bytes,
             "final_target_bytes": final_target_bytes,
             "target_storage_delta_bytes": target_storage_delta_bytes,
-            "temp_storage_bytes": temp_storage_bytes,
-            "total_storage_delta_bytes": target_storage_delta_bytes + temp_storage_bytes,
+            "temp_storage_delta_bytes": temp_storage_delta_bytes,
+            "total_storage_delta_bytes": target_storage_delta_bytes + temp_storage_delta_bytes,
         },
         "stages": per_stage,
         "quality_metrics": quality_metrics,
@@ -604,6 +672,7 @@ def run_fixture_repetitions(
     cold: bool = False,
     sample_interval: float = 0.2,
     model: str = "small",
+    media_variant: str = "clean",
     audio_path: str | os.PathLike | None = None,
     video_path: str | os.PathLike | None = None,
     vtt_path: str | os.PathLike | None = None,
@@ -624,6 +693,7 @@ def run_fixture_repetitions(
             sample_interval=sample_interval,
             skip_ocr=skip_ocr,
             model=model,
+            media_variant=media_variant,
             audio_path=audio_path,
             video_path=video_path,
             vtt_path=vtt_path,
@@ -665,6 +735,7 @@ def run_fixture_repetitions(
         "language": first_run.get("language", "unknown"),
         "caption_variant": first_run.get("caption_variant", "unknown"),
         "skip_ocr": skip_ocr,
+        "media_variant": media_variant,
         "cache_mode": "cold" if cold else "warm",
         "reps": reps,
         "fixture_duration_sec": first_run.get("fixture_duration_sec", 1.0),
@@ -753,6 +824,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the OCR-off side of the paired comparison",
     )
     parser.add_argument(
+        "--media-variant",
+        choices=["clean", "degraded"],
+        default="clean",
+        help=(
+            "'clean' uses the fixture's clean TTS audio/720p video (default); "
+            "'degraded' uses audio_degraded.wav/video_360p.mp4 (falls back to "
+            "clean assets when a degraded one is absent). Standalone degraded "
+            "slide images are always OCR-scored regardless of this flag."
+        ),
+    )
+    parser.add_argument(
         "--sample-interval",
         type=float,
         default=0.2,
@@ -836,6 +918,7 @@ def main(argv: list[str] | None = None) -> int:
             "cache_mode": cache_mode,
             "reps": args.reps,
             "skip_ocr": args.skip_ocr,
+            "media_variant": args.media_variant,
             "sample_interval": args.sample_interval,
             "model": args.model,
         },
@@ -878,6 +961,7 @@ def main(argv: list[str] | None = None) -> int:
             cold=is_cold,
             sample_interval=args.sample_interval,
             model=args.model,
+            media_variant=args.media_variant,
         )
         report["results"].append(res)
         agg = res["aggregate"]
