@@ -26,6 +26,8 @@ Korean `notes.md` section names are product identifiers and are intentionally ke
 | AC-19 | Local `.mp4`/`.webm`/`.mkv`/`.wav` inputs classify without yt-dlp; missing supported paths are FileNotFoundError | `tests/test_source.py`; `tests/test_media.py`; `tests/test_acquisition.py` | unit ✅ |
 | AC-20 | `--skip-ocr` keeps scene frames and relaxes only the slide-text OCR predicate | `tests/test_cli.py`; `tests/test_coverage.py` | unit ✅ |
 | AC-21 | `synthesis_input.json` schema 2 (`speech_source`, `input_source`); hook fails closed without citation policy | `tests/test_notes.py`; `tests/test_hook.py` | unit ✅ |
+| PR18-1 | Existing or same-batch output slug collisions use `<slug>-2`, `<slug>-3`, while result and run-state artifact paths stay aligned | `tests/test_cli.py::test_run_default_processor_suffixes_existing_and_reserved_mixed_sources` | unit ✅ |
+| PR18-2 | Video visual timeline coverage fails closed without a positive finite duration; local audio remains not-applicable | `tests/test_cli.py::test_default_video_processor_fails_closed_when_duration_is_missing`; `tests/test_coverage.py::test_visual_timeline_fails_closed_without_positive_finite_duration` | unit ✅ |
 
 ## Smoke (requires ffmpeg + yt-dlp + models; not run in this environment)
 

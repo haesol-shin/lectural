@@ -142,13 +142,15 @@ def test_gap_check_empty_speech_zero_duration_and_exact_threshold_boundary():
     assert just_over_threshold["pass"] is False
 
 
-def test_scene_coverage_empty_zero_duration_slide_text_fail_and_all_bins_pass():
+def test_scene_coverage_empty_zero_duration_fails_visual_timeline_and_all_bins_pass():
     empty = scene_coverage([], [], duration=120.0, bins=20)
     assert empty["pass"] is True
     assert empty["speech_bins"] == []
 
     zero_duration = scene_coverage([0.0], [(0.0, 10.0)], duration=0.0, bins=0)
-    assert zero_duration["pass"] is True
+    assert zero_duration["pass"] is False
+    assert zero_duration["timeline_pass"] is False
+    assert zero_duration["duration_valid"] is False
     assert zero_duration["bins"] == 1
     assert zero_duration["speech_bins"] == []
 

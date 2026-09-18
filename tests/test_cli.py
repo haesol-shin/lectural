@@ -102,9 +102,33 @@ def test_main_forwards_skip_ocr_and_exit_code(monkeypatch):
     assert cli.main(["./deck.mp4"]) == 2
 
 
-def _install_default_processor_fakes(monkeypatch, tmp_path: Path, *, title: str, duration: float, source_kind: SourceKind):
+_DEFAULT_DURATION = object()
+
+
+def _install_default_processor_fakes(
+    monkeypatch,
+    tmp_path: Path,
+    *,
+    title: str,
+    duration: float,
+    source_kind: SourceKind,
+    metadata_duration: object = _DEFAULT_DURATION,
+    stt_duration: object = _DEFAULT_DURATION,
+):
+    if metadata_duration is _DEFAULT_DURATION:
+        metadata_duration = duration
+    if stt_duration is _DEFAULT_DURATION:
+        stt_duration = duration
     calls = []
-    monkeypatch.setattr(media, "probe_source", lambda source: media.SourceMetadata(title, duration, "dQw4w9WgXcQ" if source_kind is SourceKind.YOUTUBE else None))
+    monkeypatch.setattr(
+        media,
+        "probe_source",
+        lambda source: media.SourceMetadata(
+            title,
+            metadata_duration,
+            "dQw4w9WgXcQ" if source_kind is SourceKind.YOUTUBE else None,
+        ),
+    )
 
     def fake_acquire(source, out_dir, force_stt=False, model="medium"):
         calls.append(("acquire", source, out_dir, force_stt, model))
@@ -113,7 +137,7 @@ def _install_default_processor_fakes(monkeypatch, tmp_path: Path, *, title: str,
         return acquisition.SpeechTrack(
             [acquisition.Segment(0.0, "첫 번째 문장입니다"), acquisition.Segment(30.0, "두 번째 문장입니다"), acquisition.Segment(60.0, "세 번째 문장입니다")],
             "caption" if source_kind is SourceKind.YOUTUBE else "stt",
-            meta={"audio_path": str(audio), "duration": duration},
+            meta={"audio_path": str(audio), "duration": stt_duration},
         )
 
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
@@ -192,6 +216,169 @@ def test_local_wav_processor_skips_visual_and_has_not_applicable_scene(monkeypat
     notes = (out / "notes.md").read_text(encoding="utf-8")
     assert "### 전체" in notes and "Scene coverage: not applicable (audio source)" in notes
     assert "frames/" not in notes
+
+
+def test_local_wav_processor_keeps_visual_coverage_not_applicable_without_duration(
+    monkeypatch, tmp_path
+):
+    path = tmp_path / "recording.wav"
+    path.write_bytes(b"source")
+    _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        title="recording",
+        duration=0.0,
+        source_kind=SourceKind.LOCAL_AUDIO,
+        metadata_duration=None,
+        stt_duration=float("nan"),
+    )
+    monkeypatch.setattr(
+        visual,
+        "extract_candidate_frames",
+        lambda *_args: (_ for _ in ()).throw(AssertionError("visual called")),
+    )
+
+    result = cli._default_processor(
+        str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
+    )
+    coverage_payload = json.loads(
+        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
+    )
+
+    assert coverage_payload["duration_sec"] == 0.0
+    assert coverage_payload["scene_coverage"]["duration_valid"] is False
+    assert coverage_payload["scene_coverage"]["visual_required"] is False
+    assert coverage_payload["scene_coverage"]["timeline_pass"] is True
+    assert coverage_payload["scene_coverage"]["pass"] is True
+    assert result["overall_pass"] is True
+
+
+@pytest.mark.parametrize(
+    "metadata_duration",
+    [None, float("nan")],
+    ids=["missing-metadata", "invalid-metadata"],
+)
+def test_default_video_processor_uses_valid_stt_duration_when_metadata_is_unusable(
+    monkeypatch, tmp_path, metadata_duration
+):
+    _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        title="deck",
+        duration=42.0,
+        source_kind=SourceKind.LOCAL_VIDEO,
+        metadata_duration=metadata_duration,
+        stt_duration=42.0,
+    )
+    source_path = tmp_path / "deck.mp4"
+    source_path.write_bytes(b"source")
+
+    result = cli._default_processor(
+        str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
+    )
+    coverage_payload = json.loads(
+        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
+    )
+
+    assert coverage_payload["duration_sec"] == 42.0
+    assert coverage_payload["scene_coverage"]["duration_valid"] is True
+
+
+@pytest.mark.parametrize(
+    ("metadata_duration", "stt_duration"),
+    [(None, 0.0), (float("nan"), float("inf"))],
+    ids=["missing-and-zero", "nan-and-infinity"],
+)
+def test_default_video_processor_fails_closed_when_both_durations_are_invalid(
+    monkeypatch, tmp_path, metadata_duration, stt_duration
+):
+    _install_default_processor_fakes(
+        monkeypatch,
+        tmp_path,
+        title="deck",
+        duration=0.0,
+        source_kind=SourceKind.LOCAL_VIDEO,
+        metadata_duration=metadata_duration,
+        stt_duration=stt_duration,
+    )
+    source_path = tmp_path / "deck.mp4"
+    source_path.write_bytes(b"source")
+
+    result = cli._default_processor(
+        str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
+    )
+    coverage_payload = json.loads(
+        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
+    )
+
+    assert result["overall_pass"] is False
+    assert coverage_payload["duration_sec"] == 0.0
+    assert coverage_payload["scene_coverage"]["duration_valid"] is False
+    assert coverage_payload["scene_coverage"]["timeline_pass"] is False
+
+
+def test_run_default_processor_suffixes_existing_and_reserved_mixed_sources(monkeypatch, tmp_path):
+    audio_path = tmp_path / "audio" / "lecture.wav"
+    video_path = tmp_path / "video" / "lecture.mp4"
+    audio_path.parent.mkdir()
+    video_path.parent.mkdir()
+    audio_path.write_bytes(b"audio")
+    video_path.write_bytes(b"video")
+
+    out_root = tmp_path / "output"
+    (out_root / "Lecture-Intro").mkdir(parents=True)
+    runstate_path = tmp_path / "runstate.json"
+
+    monkeypatch.setattr(
+        media,
+        "probe_source",
+        lambda source: media.SourceMetadata("Lecture / Intro", 30.0, None),
+    )
+
+    def fake_acquire(source, out_dir, force_stt=False, model="medium"):
+        audio = Path(out_dir) / "audio.wav"
+        audio.write_bytes(b"generated audio")
+        return acquisition.SpeechTrack(
+            [acquisition.Segment(0.0, "첫 번째 문장입니다")],
+            "stt",
+            meta={"audio_path": str(audio), "duration": 30.0},
+        )
+
+    monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
+    monkeypatch.setattr(media, "resolve_video", lambda source, out_dir: source.locator)
+
+    def fake_extract(video, frames_dir):
+        frames_dir = Path(frames_dir)
+        frames_dir.mkdir(parents=True, exist_ok=True)
+        frame_path = frames_dir / "frame_00001.png"
+        frame_path.write_bytes(b"frame")
+        return [visual.Frame(0.0, str(frame_path))]
+
+    monkeypatch.setattr(visual, "extract_candidate_frames", fake_extract)
+    monkeypatch.setattr(visual, "dedupe_frames", lambda frames: frames[:1])
+    monkeypatch.setattr(vad, "detect_speech_spans", lambda audio, duration: [(0.0, duration)])
+
+    results = cli.run(
+        [str(audio_path), str(video_path)],
+        out_root=str(out_root),
+        runstate_file=str(runstate_path),
+        skip_ocr=True,
+    )
+    state = json.loads(runstate_path.read_text(encoding="utf-8"))
+
+    assert [Path(result["output_dir"]).name for result in results] == [
+        "Lecture-Intro-2",
+        "Lecture-Intro-3",
+    ]
+    assert len({result["output_dir"] for result in results}) == 2
+    assert all(result["overall_pass"] for result in results)
+    for result, entry in zip(results, state["runs"]):
+        assert entry["status"] == "complete"
+        assert entry["output_dir"] == result["output_dir"]
+        assert entry["coverage_json"] == result["coverage_json"]
+        assert entry["notes_md"] == result["notes_md"]
+        assert Path(result["coverage_json"]).is_file()
+        assert Path(result["notes_md"]).is_file()
 
 
 def test_main_dispatches_doctor_json(monkeypatch, capsys):

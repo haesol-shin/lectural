@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import inspect
+import math
 import os
 import re
 import sys
@@ -33,6 +34,46 @@ def slugify(title: str, fallback: str = "video") -> str:
 def output_dir_for(out_root: str, title: str, fallback: str = "video") -> str:
     """Pure: ``out_root/<slug>`` path for a source's artifacts."""
     return os.path.join(out_root, slugify(title, fallback))
+
+
+def _output_path_key(path: str) -> str:
+    """Normalize an output path for collision checks on every platform."""
+    return os.path.normcase(os.path.abspath(path))
+
+
+def _reserve_output_dir(
+    out_root: str,
+    title: str,
+    fallback: str = "video",
+    reserved_output_dirs: set[str] | None = None,
+) -> str:
+    """Reserve a non-colliding ``out_root/<slug>`` artifact directory.
+
+    Existing files/directories and paths reserved earlier in the same batch
+    are both occupied.  The unsuffixed slug remains the first choice so the
+    single-source output contract is unchanged.
+    """
+    reserved = reserved_output_dirs if reserved_output_dirs is not None else set()
+    slug = slugify(title, fallback)
+    candidate = os.path.join(out_root, slug)
+    suffix = 2
+    while os.path.lexists(candidate) or _output_path_key(candidate) in reserved:
+        candidate = os.path.join(out_root, f"{slug}-{suffix}")
+        suffix += 1
+    reserved.add(_output_path_key(candidate))
+    return candidate
+
+
+def _positive_finite_duration(*values: object) -> float:
+    """Return the first usable duration, or zero as an explicit fail-closed value."""
+    for value in values:
+        try:
+            duration = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(duration) and duration > 0:
+            return duration
+    return 0.0
 
 
 def _frame_link(image_path: str, out_dir: str) -> str:
@@ -104,6 +145,8 @@ def run(
 ) -> list[dict]:
     """Sequentially process each source and record every run-state entry."""
     processor = processor or _default_processor
+    reserved_output_dirs: set[str] = set()
+    used_output_dirs: set[str] = set()
 
     def _call_processor(source_argument: str, out_dir: str) -> dict:
         try:
@@ -120,6 +163,8 @@ def run(
             kwargs["keep_frames"] = keep_frames
         if accepts_var_kwargs or "skip_ocr" in signature.parameters:
             kwargs["skip_ocr"] = skip_ocr
+        if accepts_var_kwargs or "reserved_output_dirs" in signature.parameters:
+            kwargs["reserved_output_dirs"] = reserved_output_dirs
         return processor(source_argument, out_dir, force_stt, model, **kwargs)
 
     runstate.start_session(sources, runstate_file)
@@ -128,6 +173,16 @@ def run(
         out_dir = os.path.join(out_root, f"video_{index + 1:02d}")  # provisional
         try:
             result = _call_processor(source_argument, out_dir)
+            result_output_dir = result.get("output_dir")
+            if not isinstance(result_output_dir, str) or not result_output_dir:
+                raise ValueError("Processor returned no output directory")
+            result_output_key = _output_path_key(result_output_dir)
+            if result_output_key in used_output_dirs:
+                raise RuntimeError(
+                    f"Processor returned an output directory already used in this batch: {result_output_dir}"
+                )
+            used_output_dirs.add(result_output_key)
+            reserved_output_dirs.add(result_output_key)
             runstate.update_run(
                 index,
                 status="complete",
@@ -163,6 +218,7 @@ def _default_processor(
     *,
     keep_frames: bool = False,
     skip_ocr: bool = False,
+    reserved_output_dirs: set[str] | None = None,
 ) -> dict:
     """Run the shared speech/visual/synthesis/coverage pipeline for one source."""
     from . import acquisition, media, visual
@@ -184,14 +240,19 @@ def _default_processor(
     fallback_title = metadata_video_id or source.video_id or source.title_hint or "video"
     title_seed = metadata_title or fallback_title
     out_root = os.path.dirname(out_dir_hint) or "."
-    out_dir = output_dir_for(out_root, title_seed, fallback=fallback_title)
+    out_dir = _reserve_output_dir(
+        out_root,
+        title_seed,
+        fallback=fallback_title,
+        reserved_output_dirs=reserved_output_dirs,
+    )
     os.makedirs(out_dir, exist_ok=True)
 
     # Speech acquisition is common to every source. Caption policy lives in
     # acquisition; local inputs go directly through the STT resolver.
     track = acquisition.acquire_speech(source, out_dir, force_stt=force_stt, model=model)
     title = metadata_title or track.meta.get("title") or fallback_title
-    duration = float(metadata_duration or track.meta.get("duration") or 0.0)
+    duration = _positive_finite_duration(metadata_duration, track.meta.get("duration"))
 
     frames_dir = os.path.join(out_dir, "frames")
     raw_frames = []

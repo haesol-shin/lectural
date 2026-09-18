@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import math
 import os
 import subprocess
 
@@ -35,7 +36,7 @@ def _positive_float(value: object) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    return number if number > 0 else None
+    return number if math.isfinite(number) and number > 0 else None
 
 
 def parse_ytdlp_metadata(text: str) -> dict:

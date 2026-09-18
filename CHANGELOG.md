@@ -11,6 +11,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `--skip-ocr` to keep scene frames while skipping OCR and the slide-text coverage check.
 - Source-aware citations: local notes use relative `transcript.md#tHHMMSS[-n]` anchors instead of `youtu.be` links.
 
+### Fixed
+- Sequential sources no longer overwrite an existing or already-reserved output slug; collisions use `-2`, `-3`, and later suffixes.
+- Video visual timeline coverage now fails closed when duration is missing, zero, negative, or non-finite; local audio remains visual not-applicable.
+
 ## [0.1.2] - 2026-06-14
 
 ### Fixed

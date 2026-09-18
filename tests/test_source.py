@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -95,8 +96,39 @@ def test_tilde_and_symlink_normalize_without_modifying_target(tmp_path: Path, mo
         link.symlink_to(target)
     except (OSError, NotImplementedError):
         pytest.skip("symlinks unavailable")
-    monkeypatch.setenv("HOME", str(tmp_path))
+    home = str(tmp_path)
+    drive, home_path = os.path.splitdrive(home)
+    # os.path.expanduser() uses different environment variables on POSIX and
+    # Windows.  Isolate every relevant branch so the test never resolves the
+    # tilde through the real user's home directory on CI.
+    monkeypatch.setenv("HOME", home)
+    monkeypatch.setenv("USERPROFILE", home)
+    monkeypatch.setenv("HOMEDRIVE", drive)
+    monkeypatch.setenv("HOMEPATH", home_path or os.sep)
     source = classify_source("~/alias.mkv")
     assert source.locator == str(target.resolve())
     assert source.title_hint == "target"
     assert target.read_bytes() == b"unchanged"
+
+
+def test_tilde_path_uses_isolated_expanduser_environment_without_symlink(
+    tmp_path: Path, monkeypatch
+):
+    home = tmp_path / "isolated-home"
+    home.mkdir()
+    target = home / "lecture.mp4"
+    target.write_bytes(b"source")
+    drive, home_path = os.path.splitdrive(str(home))
+
+    # Isolate both POSIX and Windows expanduser branches from the real user
+    # profile before classifying a real file, without requiring symlinks.
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    monkeypatch.setenv("HOMEDRIVE", drive)
+    monkeypatch.setenv("HOMEPATH", home_path or os.sep)
+
+    source = classify_source("~/lecture.mp4")
+
+    assert source.locator == str(target.resolve())
+    assert source.kind is SourceKind.LOCAL_VIDEO
+    assert source.title_hint == "lecture"

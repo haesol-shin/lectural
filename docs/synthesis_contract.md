@@ -63,8 +63,18 @@ The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven
 section anchors, and — when `frames/` images exist for the run — at least one
 `frames/` slide image link.
 
+### Artifact-directory collision policy
+
+The CLI initially uses `out_root/<slug>` for a source. If that path already
+exists, or was reserved earlier in the same sequential batch, it uses the
+next available suffix: `<slug>-2`, `<slug>-3`, and so on. The returned result
+and its run-state entry record the selected directory and artifact paths.
+
 ## `coverage.json`
 
 See `lectural.coverage.build_coverage`. Top-level `overall_pass` is the AND of
-`gap_check.pass`, `scene_coverage.pass`, and `artifacts.pass`; `artifacts.pass`
-reflects `transcript.md` and `notes.md` non-emptiness.
+`gap_check.pass`, `scene_coverage.pass`, `artifacts.pass`, and the checked
+notes contract. For video sources, `scene_coverage.timeline_pass` fails closed
+when `duration_sec` is missing, zero, negative, or non-finite. Audio-only
+sources set `visual_required=false`, so the visual timeline remains
+not-applicable and passes independently of duration.

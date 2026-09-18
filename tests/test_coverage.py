@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from lectural.coverage import CoverageInputs, artifact_check, build_coverage, coverage_inputs_from_extraction, gap_check, scene_coverage, write_coverage
 from lectural.synthesis import build_synthesis_input, render_notes_md, render_transcript_md
 
@@ -41,6 +43,21 @@ def test_scene_coverage_timeline_pass_and_stall_fail():
     assert bad["timeline_pass"] is False and bad["uncovered_speech_bins"]
 
 
+@pytest.mark.parametrize("duration", [None, 0.0, -1.0, float("nan"), float("inf")])
+def test_visual_timeline_fails_closed_without_positive_finite_duration(duration):
+    result = scene_coverage(
+        [0.0],
+        [(0.0, 10.0)],
+        duration,
+        visual_required=True,
+        ocr_required=False,
+    )
+
+    assert result["duration_valid"] is False
+    assert result["timeline_pass"] is False
+    assert result["pass"] is False
+
+
 def test_default_visual_source_fails_when_slide_lacks_ocr_text():
     result = scene_coverage([10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10, slide_frames_total=3, slide_frames_with_text=2)
     assert result["visual_required"] is True and result["ocr_required"] is True
@@ -60,9 +77,10 @@ def test_skip_ocr_passes_slide_predicate_but_preserves_real_counts_and_timeline(
 
 
 def test_audio_source_visual_and_ocr_checks_are_explicitly_not_applicable():
-    result = scene_coverage([], [(0, 100)], 100, visual_required=False, ocr_required=False)
+    result = scene_coverage([], [(0, 100)], 0.0, visual_required=False, ocr_required=False)
     assert result["visual_required"] is False and result["ocr_required"] is False
     assert result["timeline_pass"] is True and result["slide_text_pass"] is True and result["pass"] is True
+    assert result["duration_valid"] is False
     assert result["uncovered_speech_bins"] == []
 
 
