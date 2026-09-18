@@ -395,11 +395,8 @@ def test_harness_default_model_is_medium() -> None:
 def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
     """Verify evaluate_degraded_slide_ocr scores against slide_04 authored text and key fields."""
     from scripts.benchmark import evaluate_degraded_slide_ocr
-    from PIL import Image
-
     img_path = tmp_path / "slide_degraded_l1.png"
-    im = Image.new("RGB", (100, 100), color=(255, 255, 255))
-    im.save(img_path)
+    img_path.write_bytes(b"\x89PNG\r\n\x1a\n")
 
     gt = {
         "fixture_id": "test_synth_01",
