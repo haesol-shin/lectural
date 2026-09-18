@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/version.schema.json",
+  "title": "LecturAL version response",
+  "type": "object",
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "status", "result", "errors", "generated_at"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "contract_version": {"const": 1},
+    "tool": {"const": "lectural"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "status": {"const": "ok"},
+    "result": {
+      "type": "object",
+      "required": ["version", "contract", "contract_version", "supported_contract_versions", "schema_version", "supported_schema_versions"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "lectural_version": {"type": "string", "minLength": 1},
+        "contract": {"const": "extraction"},
+        "contract_version": {"const": 1},
+        "supported_contract_versions": {"type": "array", "contains": {"const": 1}},
+        "schema_version": {"const": 1},
+        "supported_schema_versions": {"type": "array", "contains": {"const": 1}}
+      },
+      "additionalProperties": true
+    },
+    "errors": {"type": "array", "maxItems": 0},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}

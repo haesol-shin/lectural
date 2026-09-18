@@ -10,6 +10,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Local lecture inputs: existing `.mp4`, `.webm`, `.mkv`, and `.wav` files alongside YouTube URLs/IDs.
 - `--skip-ocr` to keep scene frames while skipping OCR and the slide-text coverage check.
 - Source-aware citations: local notes use relative `transcript.md#tHHMMSS[-n]` anchors instead of `youtu.be` links.
+- Versioned `lectural --version --json` and `lectural extract ... --json` evidence responses with safe paths, completeness, timestamp integrity, representative frames, and explicit OCR states.
 
 ### Fixed
 - Sequential sources no longer overwrite an existing or already-reserved output slug; collisions use `-2`, `-3`, and later suffixes.

@@ -62,7 +62,10 @@ def fetch_video_metadata(url: str) -> dict:
     """Fetch YouTube title/duration/video ID without downloading media."""
     require_binary("yt-dlp")
     proc = subprocess.run(
-        ["yt-dlp", "--skip-download", "--dump-json", url],
+        [
+            "yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
+            "--extractor-args", "youtube:player_client=android", url,
+        ],
         check=True,
         capture_output=True,
         text=True,
@@ -112,8 +115,14 @@ def download_audio(url: str, out_dir: str) -> str:
     os.makedirs(out_dir, exist_ok=True)
     out_template = os.path.join(out_dir, "audio.%(ext)s")
     subprocess.run(
-        ["yt-dlp", "-x", "--audio-format", "wav", "-o", out_template, url],
+        [
+            "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
+            "--extractor-args", "youtube:player_client=android",
+            "-x", "--audio-format", "wav", "-o", out_template, url,
+        ],
         check=True,
+        capture_output=True,
+        text=True,
     )
     wav = os.path.join(out_dir, "audio.wav")
     if not os.path.exists(wav):
@@ -139,6 +148,8 @@ def _resolve_audio_local_video(source: InputSource, out_dir: str) -> str:
             "-vn", "-acodec", "pcm_s16le", audio_path,
         ],
         check=True,
+        capture_output=True,
+        text=True,
     )
     if not os.path.isfile(audio_path):
         raise RuntimeError("Audio extraction did not produce audio.wav")
@@ -164,10 +175,14 @@ def _download_video(url: str, out_dir: str) -> str:
     out_template = os.path.join(out_dir, "video.%(ext)s")
     subprocess.run(
         [
-            "yt-dlp", "-f", "bestvideo[height<=720]+bestaudio/best",
+            "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
+            "--extractor-args", "youtube:player_client=android",
+            "-f", "bestvideo[height<=720]+bestaudio/best",
             "-o", out_template, url,
         ],
         check=True,
+        capture_output=True,
+        text=True,
     )
     for name in os.listdir(out_dir):
         if name.startswith("video."):

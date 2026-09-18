@@ -87,6 +87,27 @@ class InputSource:
             "citation": citation,
         }
 
+    def safe_as_dict(self) -> dict:
+        """Return a portable source descriptor without private input paths.
+
+        The legacy ``as_dict`` shape remains available to callers that already
+        own the raw CLI argument.  Public extraction artifacts use this bounded
+        descriptor instead: local inputs retain only their filename and YouTube
+        inputs retain only the canonical video ID.
+        """
+        citation = {"kind": self.citation_kind.value}
+        if self.citation_kind is CitationKind.YOUTUBE:
+            citation["video_id"] = self.video_id
+            argument = f"https://youtu.be/{self.video_id}" if self.video_id else "youtube"
+        else:
+            argument = Path(self.locator).name or "local-media"
+        return {
+            "kind": self.kind.value,
+            "argument": argument,
+            "has_video": self.has_video,
+            "citation": citation,
+        }
+
 
 def _normalized_local_path(argument: str) -> str:
     # realpath both resolves symlinks and normalizes the absolute runtime path.

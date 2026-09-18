@@ -11,6 +11,7 @@
 - 🔗 **Video deeplinks** — YouTube inputs use `youtu.be?t=` links; local media uses `transcript.md#tHHMMSS[-n]` anchors.
 - 🇰🇷 **Korean & English** — uses YouTube captions when available, falls back to speech-to-text (faster-whisper) otherwise. Local files always use STT.
 - 🚧 **Completeness gate** — checks speech gaps, scene coverage, and artifact presence, and blocks "done" until they pass. `--skip-ocr` keeps scene frames and skips only the slide-text OCR check.
+- 📦 **Versioned extraction JSON** — `lectural extract ... --json` writes a public `evidence.json` manifest with safe artifact paths, completeness, timestamp integrity, representative frames, and explicit OCR state.
 
 ## How it works
 
@@ -77,6 +78,15 @@ uvx --from ".[run]" lectural "https://youtu.be/<VIDEO_ID>" --out ./output
 uvx --from ".[run]" lectural ./recording.mp4 --skip-ocr --out ./output
 ```
 
+For machine-readable extraction, negotiate the contract and use a new output directory:
+
+```bash
+lectural --version --json
+lectural extract ./recording.mp4 --out ./evidence-run --skip-ocr --json
+```
+
+See [`docs/contracts/cli.md`](docs/contracts/cli.md) for the public contract and JSON Schemas. The extraction command accepts one source, rejects an existing output directory, and retains representative frames independently of OCR annotations.
+
 ## Usage
 
 | Command | Description |
@@ -98,6 +108,9 @@ output/<video-title>/
 ├── coverage.json          # completeness-gate results
 └── synthesis_input.json   # text input used to enrich the notes
 ```
+
+`lectural extract ... --json` additionally writes `evidence.json` in its new
+output directory.
 
 ## FAQ
 

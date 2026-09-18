@@ -26,7 +26,10 @@ def test_probe_youtube_uses_existing_metadata_command(monkeypatch):
     assert metadata.title == "Lecture"
     assert metadata.duration == 12.5
     assert metadata.video_id == "dQw4w9WgXcQ"
-    assert calls[1][1] == ["yt-dlp", "--skip-download", "--dump-json", source.locator]
+    assert calls[1][1] == [
+        "yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
+        "--extractor-args", "youtube:player_client=android", source.locator,
+    ]
     assert calls[1][2] == {"check": True, "capture_output": True, "text": True}
 
 
@@ -38,7 +41,7 @@ def test_youtube_audio_and_video_commands_remain_current(monkeypatch, tmp_path: 
 
     def fake_run(command, **kwargs):
         calls.append(("run", command, kwargs))
-        if command[0] == "yt-dlp" and command[1] == "-x":
+        if command[0] == "yt-dlp" and "-x" in command:
             (tmp_path / "audio.wav").write_bytes(b"audio")
         elif command[0] == "yt-dlp":
             (tmp_path / "video.mp4").write_bytes(b"video")
@@ -50,11 +53,15 @@ def test_youtube_audio_and_video_commands_remain_current(monkeypatch, tmp_path: 
     assert media.resolve_video(source, str(tmp_path)) == str(tmp_path / "video.mp4")
     assert calls[0] == ("ready",)
     assert calls[1][1] == [
-        "yt-dlp", "-x", "--audio-format", "wav", "-o", str(tmp_path / "audio.%(ext)s"), source.locator,
+        "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
+        "--extractor-args", "youtube:player_client=android",
+        "-x", "--audio-format", "wav", "-o", str(tmp_path / "audio.%(ext)s"), source.locator,
     ]
     assert calls[2] == ("ready",)
     assert calls[3][1] == [
-        "yt-dlp", "-f", "bestvideo[height<=720]+bestaudio/best",
+        "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
+        "--extractor-args", "youtube:player_client=android",
+        "-f", "bestvideo[height<=720]+bestaudio/best",
         "-o", str(tmp_path / "video.%(ext)s"), source.locator,
     ]
 

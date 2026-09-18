@@ -65,6 +65,7 @@ def scene_coverage(
     *,
     visual_required: bool = True,
     ocr_required: bool = True,
+    ocr_failed: bool = False,
 ) -> dict:
     """Pure visual coverage with explicit applicability and gate state.
 
@@ -98,13 +99,16 @@ def scene_coverage(
     uncovered = sorted(b for b in speech_bins if b not in covered)
     timeline_pass = True if not visual_required else duration_valid and not uncovered
     slide_text_pass = (
-        slide_frames_with_text >= slide_frames_total if ocr_required else True
+        (not ocr_failed and slide_frames_with_text >= slide_frames_total)
+        if ocr_required
+        else True
     )
     return {
         "bins": bins,
         "carry_max_sec": carry_max_sec,
         "visual_required": visual_required,
         "ocr_required": ocr_required,
+        "ocr_failed": ocr_failed,
         "duration_valid": duration_valid,
         "speech_bins": sorted(speech_bins),
         "covered_speech_bins": sorted(covered),
@@ -159,6 +163,7 @@ class CoverageInputs:
     ocr_engine: str = "none"
     visual_required: bool = True
     ocr_required: bool = True
+    ocr_failed: bool = False
     slide_frames_total: int = 0
     slide_frames_with_text: int = 0
     transcript_text: str | None = None
@@ -183,6 +188,7 @@ def coverage_inputs_from_extraction(
     ocr_engine: str = "none",
     visual_required: bool = True,
     ocr_required: bool = True,
+    ocr_failed: bool = False,
     transcript_text: str | None = None,
     notes_text: str | None = None,
 ) -> "CoverageInputs":
@@ -207,6 +213,7 @@ def coverage_inputs_from_extraction(
         ocr_engine=ocr_engine,
         visual_required=visual_required,
         ocr_required=ocr_required,
+        ocr_failed=ocr_failed,
         slide_frames_total=slide_total,
         slide_frames_with_text=slide_with_text,
         transcript_text=transcript_text,
@@ -224,6 +231,7 @@ def build_coverage(inp: CoverageInputs) -> dict:
         slide_frames_with_text=inp.slide_frames_with_text,
         visual_required=inp.visual_required,
         ocr_required=inp.ocr_required,
+        ocr_failed=inp.ocr_failed,
     )
     artifacts = artifact_check(
         inp.transcript_path,
