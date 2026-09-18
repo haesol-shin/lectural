@@ -115,7 +115,3 @@ git diff --check
 - [ ] `uv run --with pytest --with numpy pytest -q` passes or the PR explains why it was not run.
 - [ ] `lectural doctor` reports the runtime status or the PR explains unavailable runtime dependencies.
 - [ ] No `.claude/` mirror or duplicate plugin tree was introduced.
-
-## Agent audit policy
-
-Release-time agent audit material is governed by [RELEASE.md](RELEASE.md).
