@@ -1,15 +1,10 @@
 # Synthesis Contract (synthesis_input.json + notes.md)
 
-`schema_version` is `2` (`lectural.config.SCHEMA_VERSION`). Bump it on any
-incompatible change to the shapes below; readers MUST check it.
+`schema_version` is `2` (`lectural.config.SCHEMA_VERSION`). Bump it on any incompatible change to the shapes below; readers MUST check it.
 
 ## `synthesis_input.json`
 
-The deterministic core writes this compact, **text-only** handoff. It is the
-primary input a command-driven host-agent enrichment step reads to enrich
-`notes.md`; raw frame images remain separate under `frames/` and may be opened
-on disk when OCR text is garbled. Bare CLI runs stop at deterministic low-level
-artifacts and do not call an external LLM.
+The deterministic core writes this compact, **text-only** handoff. It is the primary input a command-driven host-agent enrichment step reads to enrich `notes.md`; raw frame images remain separate under `frames/` and may be opened on disk when OCR text is garbled. Bare CLI runs stop at deterministic low-level artifacts and do not call an external LLM.
 
 ```jsonc
 {
@@ -37,11 +32,7 @@ The deterministic core writes two markdown outputs with separate ownership:
 | `transcript.md` | verbatim, timestamped transcript with per-cue `<a id="tHHMMSS[-n]">` anchors; no summarization or enrichment |
 | `notes.md` | deterministic 7-section study-note skeleton; owns `NOTES_ENRICH_MARKER`, the seven section anchors, `<!-- 미보강 -->` placeholders, citation deeplinks, and the coverage footer |
 
-For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich only
-the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve
-`NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript
-anchors, and the `정리 커버리지` footer. Bare CLI runs do not perform this
-enrichment.
+For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich only the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve `NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript anchors, and the `정리 커버리지` footer. Bare CLI runs do not perform this enrichment.
 
 ## `notes.md` required structure (validated by the completeness hook)
 
@@ -59,22 +50,12 @@ enrichment.
 | `![...](frames/...)` | — | slide image link (present when slide frames exist) |
 | `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | — | YouTube: `youtu.be` seconds. Local: exact relative `transcript.md#tHHMMSS[-n]` only |
 
-The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven
-section anchors, and — when `frames/` images exist for the run — at least one
-`frames/` slide image link.
+The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven section anchors, and — when `frames/` images exist for the run — at least one `frames/` slide image link.
 
 ### Artifact-directory collision policy
 
-The CLI initially uses `out_root/<slug>` for a source. If that path already
-exists, or was reserved earlier in the same sequential batch, it uses the
-next available suffix: `<slug>-2`, `<slug>-3`, and so on. The returned result
-and its run-state entry record the selected directory and artifact paths.
+The CLI initially uses `out_root/<slug>` for a source. If that path already exists, or was reserved earlier in the same sequential batch, it uses the next available suffix: `<slug>-2`, `<slug>-3`, and so on. The returned result and its run-state entry record the selected directory and artifact paths.
 
 ## `coverage.json`
 
-See `lectural.coverage.build_coverage`. Top-level `overall_pass` is the AND of
-`gap_check.pass`, `scene_coverage.pass`, `artifacts.pass`, and the checked
-notes contract. For video sources, `scene_coverage.timeline_pass` fails closed
-when `duration_sec` is missing, zero, negative, or non-finite. Audio-only
-sources set `visual_required=false`, so the visual timeline remains
-not-applicable and passes independently of duration.
+See `lectural.coverage.build_coverage`. Top-level `overall_pass` is the AND of `gap_check.pass`, `scene_coverage.pass`, `artifacts.pass`, and the checked notes contract. For video sources, `scene_coverage.timeline_pass` fails closed when `duration_sec` is missing, zero, negative, or non-finite. Audio-only sources set `visual_required=false`, so the visual timeline remains not-applicable and passes independently of duration.

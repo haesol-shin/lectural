@@ -1,7 +1,6 @@
 # LecturAL pipeline reference
 
-Module map (all heavy deps lazy-imported; deterministic logic is unit-tested
-offline):
+Module map (all heavy deps lazy-imported; deterministic logic is unit-tested offline):
 
 | Module | Responsibility | AC |
 |--------|----------------|----|
@@ -20,34 +19,21 @@ offline):
 
 ## Doctor component manifest
 
-Run `lectural doctor --fix` before the first lecture run in a checkout or Claude
-plugin installation. The doctor validates:
+Run `lectural doctor --fix` before the first lecture run in a checkout or Claude plugin installation. The doctor validates:
 
 - Python core import/version for `lectural` and runtime Python imports.
 - External binaries: `ffmpeg` and `yt-dlp` on PATH.
 - Agent-side files: `AGENTS.md`, `summary_prompt.md`, and `hooks/hooks.json`.
-- Claude plugin manifests: plugin name, marketplace plugin entry, exact
-  marketplace `source` value `./`, and hook path existence.
+- Claude plugin manifests: plugin name, marketplace plugin entry, exact marketplace `source` value `./`, and hook path existence.
 
-Doctor exit codes are `0` ready, `2` user action needed, and `1` internal or
-unfixable state. `--fix` is bounded and safe: it may attempt `uv tool install
-yt-dlp`, may use obvious Windows/macOS package managers for ffmpeg, and otherwise
-reports a one-line hint.
+Doctor exit codes are `0` ready, `2` user action needed, and `1` internal or unfixable state. `--fix` is bounded and safe: it may attempt `uv tool install yt-dlp`, may use obvious Windows/macOS package managers for ffmpeg, and otherwise reports a one-line hint.
 
 ## Key invariants
 
-- **No external LLM tokens.** Raw transcript and OCR are deterministic. The
-  `notes.md` skeleton is deterministic too; host-agent enrichment fills the
-  `NOTES_UNENRICHED_MARKER` prose sections.
-- **Capture ALL speech.** `transcript.md` iterates every segment; `notes.md`
-  assigns every in-duration segment to exactly one section (no drops), with an
-  intro section for pre-first-slide speech; host-agent enrichment fills the
-  `NOTES_UNENRICHED_MARKER` prose sections.
-- **Honest scene coverage.** `scene_coverage` is fed RAW sampled keyframe times
-  (via `coverage_inputs_from_extraction`); a capped carry-forward passes static
-  slides but FAILs a keyframe-less stall.
-- **Speech gap, not silence.** `gap_check` measures untranscribed SPEECH only
-  (VAD/silence mask), gated at `MAX_GAP_SEC`.
+- **No external LLM tokens.** Raw transcript and OCR are deterministic. The `notes.md` skeleton is deterministic too; host-agent enrichment fills the `NOTES_UNENRICHED_MARKER` prose sections.
+- **Capture ALL speech.** `transcript.md` iterates every segment; `notes.md` assigns every in-duration segment to exactly one section (no drops), with an intro section for pre-first-slide speech; host-agent enrichment fills the `NOTES_UNENRICHED_MARKER` prose sections.
+- **Honest scene coverage.** `scene_coverage` is fed RAW sampled keyframe times (via `coverage_inputs_from_extraction`); a capped carry-forward passes static slides but FAILs a keyframe-less stall.
+- **Speech gap, not silence.** `gap_check` measures untranscribed SPEECH only (VAD/silence mask), gated at `MAX_GAP_SEC`.
 
 ## Running offline tests
 
@@ -55,5 +41,4 @@ reports a one-line hint.
 uv run --with pytest --with numpy pytest -q
 ```
 
-Tests for STT/acquisition/visual that need binaries/models are marked `smoke`
-and excluded by default (see `pyproject.toml [tool.pytest.ini_options]`).
+Tests for STT/acquisition/visual that need binaries/models are marked `smoke` and excluded by default (see `pyproject.toml [tool.pytest.ini_options]`).

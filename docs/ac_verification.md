@@ -1,8 +1,6 @@
 # AC-1..AC-21 Verification Matrix
 
-Offline verification is split across focused suites; use `uv run --with pytest --with numpy pytest -q` for the full offline suite or the narrower commands named below.
-Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smoke.txt`.
-Korean `notes.md` section names are product identifiers and are intentionally kept verbatim.
+Offline verification is split across focused suites; use `uv run --with pytest --with numpy pytest -q` for the full offline suite or the narrower commands named below. Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smoke.txt`. Korean `notes.md` section names are product identifiers and are intentionally kept verbatim.
 
 | AC | Requirement | How verified | Status |
 |----|-------------|--------------|--------|
@@ -31,9 +29,7 @@ Korean `notes.md` section names are product identifiers and are intentionally ke
 
 ## Smoke (requires ffmpeg + yt-dlp + models; not run in this environment)
 
-ffmpeg/yt-dlp/tesseract are NOT installed here, so live acquisition/STT/visual/OCR
-paths are exercised by a real-video smoke run after `uv pip install -e ".[run]"`
-and installing the binaries. Suggested smoke commands:
+ffmpeg/yt-dlp/tesseract are NOT installed here, so live acquisition/STT/visual/OCR paths are exercised by a real-video smoke run after `uv pip install -e ".[run]"` and installing the binaries. Suggested smoke commands:
 
 ```bash
 lectural "https://www.youtube.com/watch?v=<captioned-lecture>"   # AC-1,3,7,8,12
@@ -43,9 +39,7 @@ lectural ./recording.mp4 --skip-ocr                               # AC-19,20 loc
 python scripts/completeness_hook.py < /dev/null                   # AC-13 (after a run)
 ```
 
-Deterministic logic (dedup, gap, OCR re-split, anchors, coverage, hook, CLI
-orchestration) is fully proven offline; only the external-binary I/O edges are
-smoke-only.
+Deterministic logic (dedup, gap, OCR re-split, anchors, coverage, hook, CLI orchestration) is fully proven offline; only the external-binary I/O edges are smoke-only.
 
 ## Next Release (2026-06-13) — AC-A..AC-J
 
