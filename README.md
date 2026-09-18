@@ -2,8 +2,7 @@
 
 > A Claude Code plugin that turns one YouTube video or local lecture file into complete markdown notes — **every utterance, every on-screen text, every scene**. Best on lecture and slide-style videos.
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Features
 
@@ -109,8 +108,7 @@ output/<video-title>/
 └── synthesis_input.json   # text input used to enrich the notes
 ```
 
-`lectural extract ... --json` additionally writes `evidence.json` in its new
-output directory.
+`lectural extract ... --json` additionally writes `evidence.json` in its new output directory.
 
 ## FAQ
 

@@ -64,15 +64,9 @@ Use Conventional Commits with these common types:
 
 ## Dependency policy
 
-Runtime dependencies are pinned with intentional upper-bound caps (`opencv-python`,
-`paddleocr`, `paddlepaddle`, `setuptools`). These caps are compatibility boundaries,
-not arbitrary: for example `opencv-python` is held at `<=4.6.0.66` because cv2 4.11+
-breaks the runtime. The offline CI does not exercise these heavy deps (they are
-lazily imported and smoke-skipped), so a green CI does not validate a major bump.
+Runtime dependencies are pinned with intentional upper-bound caps (`opencv-python`, `paddleocr`, `paddlepaddle`, `setuptools`). These caps are compatibility boundaries, not arbitrary: for example `opencv-python` is held at `<=4.6.0.66` because cv2 4.11+ breaks the runtime. The offline CI does not exercise these heavy deps (they are lazily imported and smoke-skipped), so a green CI does not validate a major bump.
 
-Because of this, Dependabot is scoped to GitHub Actions plus security updates only;
-it does not open scheduled version-bump PRs for the Python caps. To raise a heavy
-dependency major, do it deliberately:
+Because of this, Dependabot is scoped to GitHub Actions plus security updates only; it does not open scheduled version-bump PRs for the Python caps. To raise a heavy dependency major, do it deliberately:
 
 1. Raise the cap in `pyproject.toml`.
 2. Regenerate the lockfile: `uv lock`.
@@ -93,15 +87,13 @@ Check runtime readiness separately:
 lectural doctor
 ```
 
-Validate the plugin manifests (offline; catches plugin.json / marketplace.json /
-hooks.json errors the unit suite does not):
+Validate the plugin manifests (offline; catches plugin.json / marketplace.json / hooks.json errors the unit suite does not):
 
 ```bash
 claude plugin validate .
 ```
 
-Before committing, scan the diff for whitespace errors and stray conflict
-markers:
+Before committing, scan the diff for whitespace errors and stray conflict markers:
 
 ```bash
 git diff --check
