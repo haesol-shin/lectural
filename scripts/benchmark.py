@@ -769,7 +769,43 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Parse fixtures and print execution plan without invoking speech/OCR models",
     )
+    parser.add_argument(
+        "--observational-perf-smoke",
+        type=str,
+        default=None,
+        help=(
+            "Path to a raw scripts/perf_smoke.py JSON result (e.g. the real "
+            "555-second YouTube run) to embed as one non-repeated, "
+            "non-cold/warm-controlled observational row in the report. "
+            "Never merged into the controlled fixture results or treated as "
+            "ground truth."
+        ),
+    )
     return parser
+
+
+def build_observational_entry(perf_smoke_json_path: str | os.PathLike) -> dict[str, Any]:
+    """Wrap a raw scripts/perf_smoke.py JSON result as one observational report row. Pure.
+
+    `observational: true` marks this row as a live, uncontrolled real-world
+    data point (e.g. the 555-second YouTube run) -- never ground truth, never
+    averaged into the fixture-derived `results` list's medians/variances.
+    """
+    raw = json.loads(Path(perf_smoke_json_path).read_text(encoding="utf-8"))
+    return {
+        "observational": True,
+        "source_harness": raw.get("harness", "scripts/perf_smoke.py"),
+        "source_url": raw.get("url"),
+        "started_at": raw.get("started_at"),
+        "finished_at": raw.get("finished_at"),
+        "machine": raw.get("machine", {}),
+        "dependency_versions": raw.get("dependency_versions", {}),
+        "status": raw.get("status"),
+        "overall_pass": raw.get("overall_pass"),
+        "stage_wall_seconds": raw.get("stage_wall_seconds", {}),
+        "stage_resource_usage": raw.get("stage_resource_usage", {}),
+        "raw_source_path": str(perf_smoke_json_path),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -787,6 +823,7 @@ def main(argv: list[str] | None = None) -> int:
     fixtures = find_fixture_dirs(args.fixtures_dir)
 
     report: dict[str, Any] = {
+        "schema_version": 1,
         "harness": "scripts/benchmark.py",
         "started_at": started_at,
         "platform_label": args.platform_label,
@@ -804,7 +841,13 @@ def main(argv: list[str] | None = None) -> int:
         },
         "fixtures_found": len(fixtures),
         "results": [],
+        "observational_results": [],
     }
+
+    if args.observational_perf_smoke:
+        report["observational_results"].append(
+            build_observational_entry(args.observational_perf_smoke)
+        )
 
     print(
         f"LecturAL Benchmark Harness [Platform: {args.platform_label}, Mode: {cache_mode}, Reps: {args.reps}, Skip-OCR: {args.skip_ocr}]"
