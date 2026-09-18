@@ -87,6 +87,17 @@ Check runtime readiness separately:
 lectural doctor
 ```
 
+### Evidence quality and resource benchmark (dev/maintainer-only)
+
+`scripts/benchmark.py` measures speech/OCR extraction accuracy and CPU/RAM/storage/time cost against committed synthetic fixtures. It is separate from the completeness gate above and from the offline test suite — it never runs in CI and never affects `lectural`'s public exit codes or JSON contract. See [`docs/benchmark_definition.md`](docs/benchmark_definition.md) for the fixture/metric/profile definitions.
+
+```bash
+uv pip install -e ".[bench,run]"
+uv run python scripts/benchmark.py --fixtures-dir tests/fixtures/benchmark --out output/benchmark --platform-label x86_64 --warm --reps 3
+```
+
+The offline contract tests for its report schema and fixture determinism (`tests/test_benchmark_contract.py`, `tests/test_bench_metrics.py`, `tests/test_benchmark_harness.py`, `tests/test_fixtures_smoke.py`) run as part of the normal `pytest -q` gate above and require none of the `bench` extra.
+
 Validate the plugin manifests (offline; catches plugin.json / marketplace.json / hooks.json errors the unit suite does not):
 
 ```bash
