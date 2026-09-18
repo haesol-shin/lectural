@@ -107,7 +107,11 @@ def build_synthesis_input(
     segments: list[dict],
     slides: list[dict],
 ) -> dict:
-    """Pure: assemble the compact host-agent handoff JSON."""
+    """Purely assemble the schema-versioned host-agent handoff.
+
+    Version 2 stores source-aware ``video.input_source`` and the selected
+    ``video.speech_source`` alongside the existing transcript/slide data.
+    """
     duration = float(video.get("duration_sec", 0.0))
     return {
         "schema_version": SCHEMA_VERSION,
@@ -141,11 +145,12 @@ def assign_segments_to_sections(segments: list[dict], hints: list[dict]) -> dict
         buckets[owner["index"]].append(s)
     return buckets
 
-
 def render_transcript_md(video: dict, segments: list[dict]) -> str:
     """Pure: raw timestamped transcript covering every utterance (AC-7)."""
     title = video.get("title", "Untitled")
-    src = video.get("source", "unknown")
+    # ``speech_source`` replaces the former scalar ``source`` in version 2;
+    # retaining the fallback keeps direct legacy renderer callers stable.
+    src = video.get("speech_source", video.get("source", "unknown"))
     lines = [f"# {title} — 전체 전사본 (raw)", "", f"- 소스: {src}", ""]
     for s, anchor_id in zip(segments, build_transcript_anchor_ids(segments)):
         lines.append(
@@ -167,19 +172,38 @@ def _renderable_section_hints(segments: list[dict], hints: list[dict]) -> tuple[
 
 
 
-
-
 def _coverage_footer_lines(coverage: dict) -> list[str]:
     gap = coverage.get("gap_check", {})
     scene = coverage.get("scene_coverage", {})
     arts = coverage.get("artifacts", {})
+    visual_required = scene.get("visual_required", True)
+    ocr_required = scene.get("ocr_required", True)
+    if not visual_required:
+        scene_line = "- Scene coverage: not applicable (audio source)"
+        ocr_line = "- OCR: not applicable (audio source)"
+    elif not ocr_required:
+        scene_line = (
+            f"- 장면 커버리지: 발화 구간 {len(scene.get('speech_bins', []))}개 중 "
+            f"미커버 {len(scene.get('uncovered_speech_bins', []))}개 → "
+            f"{'통과' if scene.get('timeline_pass', scene.get('pass')) else '미달'}"
+        )
+        ocr_line = "- OCR: skipped (--skip-ocr)"
+    else:
+        scene_line = (
+            f"- 장면 커버리지: 발화 구간 {len(scene.get('speech_bins', []))}개 중 "
+            f"미커버 {len(scene.get('uncovered_speech_bins', []))}개 → "
+            f"{'통과' if scene.get('pass') else '미달'}"
+        )
+        ocr_line = (
+            f"- 슬라이드: {scene.get('slide_frames_with_text', 0)}/"
+            f"{scene.get('slide_frames_total', 0)} (OCR 텍스트 보유)"
+        )
     return [
         f"- 전체 길이: {format_timestamp(float(coverage.get('duration_sec', 0.0)))}",
         f"- 대사 공백: 최대 {gap.get('max_untranscribed_speech_gap_sec', 0)}s "
         f"(임계 {gap.get('threshold_sec', 0)}s) → {'통과' if gap.get('pass') else '미달'}",
-        f"- 장면 커버리지: 발화 구간 {len(scene.get('speech_bins', []))}개 중 "
-        f"미커버 {len(scene.get('uncovered_speech_bins', []))}개 → {'통과' if scene.get('pass') else '미달'}",
-        f"- 슬라이드: {scene.get('slide_frames_with_text', 0)}/{scene.get('slide_frames_total', 0)} (OCR 텍스트 보유)",
+        scene_line,
+        ocr_line,
         f"- OCR 엔진: {coverage.get('ocr_engine', 'none')}",
         f"- 산출물: transcript={'O' if arts.get('transcript_nonempty') else 'X'}, "
         f"notes={'O' if arts.get('notes_nonempty') else 'X'}",
@@ -192,6 +216,12 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
     segments = synthesis_input.get("transcript_segments", [])
     hints = synthesis_input.get("section_hints", [])
     title = video.get("title", "Untitled")
+    citation = (video.get("input_source") or {}).get("citation") or {}
+    concepts_guidance = (
+        "- 미보강: 핵심 용어 → 정의를 전사 타임스탬프 링크와 함께 정리하세요."
+        if citation.get("kind") == "transcript"
+        else "- 미보강: 핵심 용어 → 정의를 영상 딥링크와 함께 정리하세요."
+    )
 
     shown, _buckets = _renderable_section_hints(segments, hints)
 
@@ -217,7 +247,7 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
         "",
         NOTES_CONCEPTS_ANCHOR,
         NOTES_UNENRICHED_MARKER,
-        "- 미보강: 핵심 용어 → 정의를 영상 딥링크와 함께 정리하세요.",
+        concepts_guidance,
         "",
         NOTES_DETAIL_ANCHOR,
         NOTES_UNENRICHED_MARKER,

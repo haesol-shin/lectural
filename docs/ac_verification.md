@@ -1,4 +1,4 @@
-# AC-1..AC-18 Verification Matrix
+# AC-1..AC-21 Verification Matrix
 
 Offline verification is split across focused suites; use `uv run --with pytest --with numpy pytest -q` for the full offline suite or the narrower commands named below.
 Real-invocation evidence: `artifacts/g00*-pytest.txt`, `artifacts/g003-hook-smoke.txt`.
@@ -21,8 +21,13 @@ Korean `notes.md` section names are product identifiers and are intentionally ke
 | AC-13 | Completeness hook: gap + scene + notes.md contract + artifacts; exit 2 blocks done | `tests/test_hook.py` + `tests/test_redteam_cli_hook.py`; **real**: `artifacts/g003-hook-smoke.txt` (no-runstate→0, good→0, failed/pending→2, malformed→2) | unit ✅ + CLI ✅ |
 | AC-15 | `coverage.json` folds the structure-only `notes_contract` into `overall_pass`; Layer-1 accepts a valid deterministic skeleton shape, while the Stop hook owns `미보강` enrichment and citation checks | `tests/test_coverage.py::test_bare_skeleton_notes_contract_is_marker_agnostic`, `::test_notes_contract_dangling_concept_anchor_fails_coverage`, `::test_notes_contract_youtube_seconds_mismatch_fails_coverage`; adversarial coverage folding in `tests/test_redteam_notes.py` and `tests/test_redteam_notes_contract.py` | unit ✅ |
 | AC-16 | Stop hook validates the seven required notes sections and per-slide detail blocks: every `###` slide heading needs a bullet, and every non-intro slide heading needs its own `frames/` image when frames exist | `tests/test_hook.py` section-order failures, `test_hook_passes_when_every_slide_heading_has_image_and_bullet`, `test_hook_blocks_when_non_intro_slide_heading_lacks_own_image`, `test_hook_allows_intro_heading_without_image_when_real_slides_have_images`, `test_hook_blocks_when_slide_heading_has_image_but_no_bullet`; red-team checks in `tests/test_redteam_notes_contract.py` | unit ✅ |
-| AC-17 | Citation gate: `핵심 개념·이론` + `복습 질문` carry a `youtu.be...?t=` deeplink within ±1s of a real transcript cue; `정리 노트` is citation-exempt | `tests/test_notes.py`; `tests/test_redteam_notes.py`; `tests/test_redteam_notes_contract.py` | unit ✅ |
+| AC-17 | Citation gate: `핵심 개념·이론` + `복습 질문` carry a `youtu.be...?t=` deeplink within ±1s of a real transcript cue (YouTube) or exact `transcript.md#tHHMMSS[-n]` anchors (local); `정리 노트` is citation-exempt | `tests/test_notes.py`; `tests/test_notes_contract.py`; `tests/test_redteam_notes.py`; `tests/test_redteam_notes_contract.py` | unit ✅ |
 | AC-18 | Stop hook blocks while `미보강` remains; CLI coverage is marker-agnostic, so the bare skeleton can still exit 0 when Layer-1 coverage passes | `tests/test_hook.py::test_hook_blocks_bare_skeleton_because_unenriched_marker_remains`; `tests/test_coverage.py::test_bare_skeleton_notes_contract_is_marker_agnostic`; `tests/test_redteam_notes_contract.py::test_layer1_coverage_is_marker_agnostic_for_bare_skeleton` | unit ✅ |
+| AC-19 | Local `.mp4`/`.webm`/`.mkv`/`.wav` inputs classify without yt-dlp; missing supported paths are FileNotFoundError | `tests/test_source.py`; `tests/test_media.py`; `tests/test_acquisition.py` | unit ✅ |
+| AC-20 | `--skip-ocr` keeps scene frames and relaxes only the slide-text OCR predicate | `tests/test_cli.py`; `tests/test_coverage.py` | unit ✅ |
+| AC-21 | `synthesis_input.json` schema 2 (`speech_source`, `input_source`); hook fails closed without citation policy | `tests/test_notes.py`; `tests/test_hook.py` | unit ✅ |
+| PR18-1 | Existing or same-batch output slug collisions use `<slug>-2`, `<slug>-3`, while result and run-state artifact paths stay aligned | `tests/test_cli.py::test_run_default_processor_suffixes_existing_and_reserved_mixed_sources` | unit ✅ |
+| PR18-2 | Video visual timeline coverage fails closed without a positive finite duration; local audio remains not-applicable | `tests/test_cli.py::test_default_video_processor_fails_closed_when_duration_is_missing`; `tests/test_coverage.py::test_visual_timeline_fails_closed_without_positive_finite_duration` | unit ✅ |
 
 ## Smoke (requires ffmpeg + yt-dlp + models; not run in this environment)
 
@@ -34,6 +39,7 @@ and installing the binaries. Suggested smoke commands:
 lectural "https://www.youtube.com/watch?v=<captioned-lecture>"   # AC-1,3,7,8,12
 lectural "<url-a>" "<url-b>"                                       # AC-2 sequential
 lectural "<no-caption-url>" --force-stt --model medium            # AC-3,4 STT path
+lectural ./recording.mp4 --skip-ocr                               # AC-19,20 local
 python scripts/completeness_hook.py < /dev/null                   # AC-13 (after a run)
 ```
 

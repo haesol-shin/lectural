@@ -249,6 +249,15 @@ def _write_run_dir(tmp_path: Path, name: str, notes_text: str, transcript_text: 
     out.mkdir()
     (out / "notes.md").write_text(notes_text, encoding="utf-8")
     (out / "transcript.md").write_text(transcript_text, encoding="utf-8")
+    (out / "synthesis_input.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+            }
+        ),
+        encoding="utf-8",
+    )
     frames = out / "frames"
     frames.mkdir()
     (frames / "slide-001.png").write_bytes(b"png")

@@ -221,3 +221,86 @@ def test_narrative_sections_are_skeleton_only_with_no_fabricated_prose_or_legacy
 
     for legacy in ("<!-- lectural:baseline -->", "## 핵심 요약", "## 구간별 요약", "## TO-ENRICH", "## 커버리지 요약"):
         assert legacy not in md
+
+
+def test_synthesis_input_preserves_version2_source_descriptor():
+    video, segments, slides, _ = _fixture()
+    video = {
+        "title": video["title"],
+        "duration_sec": video["duration_sec"],
+        "language": None,
+        "speech_source": "stt",
+        "input_source": {
+            "kind": "local_video",
+            "argument": "lecture.mp4",
+            "has_video": True,
+            "citation": {"kind": "transcript"},
+        },
+    }
+    handoff = build_synthesis_input(video, segments, slides)
+    assert handoff["schema_version"] == 2
+    assert handoff["video"]["input_source"]["citation"] == {"kind": "transcript"}
+    assert "locator" not in handoff["video"]["input_source"]
+
+
+def test_local_placeholder_guidance_uses_transcript_citations():
+    video, segments, _, coverage = _fixture()
+    video = {
+        "title": "recording",
+        "duration_sec": 240.0,
+        "language": "ko",
+        "speech_source": "stt",
+        "input_source": {
+            "kind": "local_audio",
+            "argument": "recording.wav",
+            "has_video": False,
+            "citation": {"kind": "transcript"},
+        },
+    }
+    notes = render_notes_md(build_synthesis_input(video, segments, []), coverage)
+    concepts = _block(notes, NOTES_CONCEPTS_ANCHOR, NOTES_DETAIL_ANCHOR)
+    assert "전사 타임스탬프 링크" in concepts
+    assert "youtu.be/" not in concepts
+
+
+def test_local_audio_uses_one_whole_source_detail_without_image():
+    video, segments, _, coverage = _fixture()
+    video = {
+        "title": "recording",
+        "duration_sec": 240.0,
+        "speech_source": "stt",
+        "input_source": {
+            "kind": "local_audio",
+            "argument": "recording.wav",
+            "has_video": False,
+            "citation": {"kind": "transcript"},
+        },
+    }
+    notes = render_notes_md(build_synthesis_input(video, segments, []), coverage)
+    detail = _block(notes, NOTES_DETAIL_ANCHOR, NOTES_QUESTIONS_ANCHOR)
+    assert detail.count("### ") == 1 and "### 전체" in detail
+    assert "<img" not in detail and "frames/" not in detail
+
+
+def test_skip_ocr_video_keeps_frame_links_with_fallback_titles():
+    video, _, _, coverage = _fixture()
+    video = {
+        "title": "deck",
+        "duration_sec": 240.0,
+        "speech_source": "stt",
+        "input_source": {
+            "kind": "local_video",
+            "argument": "deck.mp4",
+            "has_video": True,
+            "citation": {"kind": "transcript"},
+        },
+    }
+    slides = [
+        {"t": 0.0, "frame": "frames/frame_00001.png", "ocr_text": "", "is_slide": True},
+        {"t": 120.0, "frame": "frames/frame_00002.png", "ocr_text": "", "is_slide": True},
+    ]
+    notes = render_notes_md(build_synthesis_input(video, [], slides), coverage)
+    detail = _block(notes, NOTES_DETAIL_ANCHOR, NOTES_QUESTIONS_ANCHOR)
+    assert "### 슬라이드 1" in detail and "### 슬라이드 2" in detail
+    assert 'src="frames/frame_00001.png"' in detail
+    assert 'src="frames/frame_00002.png"' in detail

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 # --- Synthesis contract ----------------------------------------------------
 # Bump when the synthesis_input.json shape changes incompatibly.
-SCHEMA_VERSION: int = 1
+SCHEMA_VERSION: int = 2
 
 # --- Frame dedup -----------------------------------------------------------
 # Two consecutive frames are considered the SAME slide when their colour

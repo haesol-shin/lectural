@@ -142,13 +142,15 @@ def test_gap_check_empty_speech_zero_duration_and_exact_threshold_boundary():
     assert just_over_threshold["pass"] is False
 
 
-def test_scene_coverage_empty_zero_duration_slide_text_fail_and_all_bins_pass():
+def test_scene_coverage_empty_zero_duration_fails_visual_timeline_and_all_bins_pass():
     empty = scene_coverage([], [], duration=120.0, bins=20)
     assert empty["pass"] is True
     assert empty["speech_bins"] == []
 
     zero_duration = scene_coverage([0.0], [(0.0, 10.0)], duration=0.0, bins=0)
-    assert zero_duration["pass"] is True
+    assert zero_duration["pass"] is False
+    assert zero_duration["timeline_pass"] is False
+    assert zero_duration["duration_valid"] is False
     assert zero_duration["bins"] == 1
     assert zero_duration["speech_bins"] == []
 
@@ -192,7 +194,7 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
     synthesis_path = tmp_path / "synthesis_input.json"
     write_synthesis_input(synthesis_input, str(synthesis_path))
     reloaded_synthesis = json.loads(synthesis_path.read_text(encoding="utf-8"))
-    assert reloaded_synthesis["schema_version"] == 1
+    assert reloaded_synthesis["schema_version"] == SCHEMA_VERSION
 
     transcript_path = tmp_path / "transcript.md"
     transcript = render_transcript_md(video, segments)
@@ -221,5 +223,5 @@ def test_write_helpers_round_trip_with_tmp_path_and_schema_reload(tmp_path):
     coverage_path = tmp_path / "coverage.json"
     write_coverage(coverage, str(coverage_path))
     reloaded_coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
-    assert reloaded_coverage["schema_version"] == 1
+    assert reloaded_coverage["schema_version"] == SCHEMA_VERSION
     assert reloaded_coverage["overall_pass"] is True

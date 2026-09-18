@@ -82,7 +82,7 @@ Write user-facing prose in Korean. Keep identifiers, paths, anchor ids, and link
 `## 핵심 개념·이론`
 
 - Use short `- **용어**: 정의. (...)` bullets.
-- Each bullet MUST end with exactly one compact deeplink: `([영상 M:SS](https://youtu.be/<VID>?t=<sec>))`.
+- Each bullet MUST end with exactly one compact deeplink: `([영상 M:SS](https://youtu.be/<VID>?t=<sec>))` for YouTube, or `([전사 M:SS](transcript.md#tHHMMSS[-n]))` for local.
 - Use only timestamps that match a real transcript cue in `transcript.md`.
 - YouTube seconds MUST be within ±1s of a real transcript cue.
 
@@ -121,9 +121,10 @@ Write user-facing prose in Korean. Keep identifiers, paths, anchor ids, and link
 <citation_rules>
 ONLY `## 핵심 개념·이론` and `## 복습 질문` carry citations.
 
-Citation-bearing answers or bullets MUST include exactly one YouTube deeplink:
+Branch on `synthesis_input.json.video.input_source.citation.kind`:
 
-- `https://youtu.be/<VID>?t=<sec>`
+- `youtube`: exactly one `([영상 M:SS](https://youtu.be/<VID>?t=<sec>))` per cited bullet/answer; seconds within ±1s of a real cue.
+- `transcript`: exactly one `([전사 M:SS](transcript.md#tHHMMSS[-n]))` per cited bullet/answer; never emit `youtu.be`.
 
 `## 3줄 요약`, `## 목차`, `## 흐름`, and `## 정리 노트` are citation-exempt and MUST NOT contain transcript links, YouTube links, timestamps, or citation parentheticals.
 </citation_rules>

@@ -1,12 +1,14 @@
 """Active-run pointer so the completeness hook knows what to validate.
 
-A single CLI invocation (one URL or a sequential batch) opens a fresh session
-and PRE-REGISTERS every requested URL as a `pending` run. As each video is
-processed the entry is updated to `complete` (with artifact paths) or `failed`.
+A single CLI invocation (one source or a sequential batch) opens a fresh
+session and PRE-REGISTERS every requested source as a `pending` run. As each
+source is processed the entry is updated to `complete` (with artifact paths)
+or `failed`.
 
-The Stop hook validates EVERY entry, so a failed or never-produced video stays
-visible and blocks "done" (it cannot be hidden by aborting early). When the
-run-state file is absent, the turn was not a LecturAL run and the hook no-ops.
+The Stop hook validates EVERY entry, so a failed or never-produced source
+stays visible and blocks "done" (it cannot be hidden by aborting early). When
+the run-state file is absent, the turn was not a LecturAL run and the hook
+no-ops.
 """
 
 from __future__ import annotations
@@ -26,8 +28,8 @@ def runstate_path() -> str:
     )
 
 
-def start_session(urls: list[str] | None = None, path: str | None = None) -> dict:
-    """Begin a fresh batch session, pre-registering each URL as `pending`."""
+def start_session(sources: list[str] | None = None, path: str | None = None) -> dict:
+    """Begin a fresh batch session, pre-registering each source as pending."""
     path = path or runstate_path()
     state = {
         "session_id": uuid.uuid4().hex,
@@ -36,13 +38,13 @@ def start_session(urls: list[str] | None = None, path: str | None = None) -> dic
         "runs": [
             {
                 "index": i,
-                "url": url,
+                "source": source,
                 "status": "pending",
                 "output_dir": None,
                 "coverage_json": None,
                 "notes_md": None,
             }
-            for i, url in enumerate(urls or [])
+            for i, source in enumerate(sources or [])
         ],
     }
     _write(path, state)

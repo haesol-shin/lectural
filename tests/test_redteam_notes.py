@@ -41,7 +41,7 @@ LEGACY_NOTES_MARKERS = (
 
 def _coverage_payload(overall_pass: bool = True) -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "video_title": "WU-2 smoke",
         "duration_sec": 240.0,
         "ocr_engine": "none",
@@ -400,6 +400,16 @@ def _write_hook_case(root: Path, name: str, *, notes_text: str | None = None, fr
         notes_text = _enrich(default_notes)
     notes_path.write_text(notes_text, encoding="utf-8")
     (out / "transcript.md").write_text(transcript_text, encoding="utf-8")
+    (out / "synthesis_input.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "video": {"input_source": {"citation": {"kind": "youtube", "video_id": VIDEO_ID}}},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
 
     coverage_path = out / "coverage.json"
     coverage_path.write_text(json.dumps(_coverage_payload(True), ensure_ascii=False), encoding="utf-8")

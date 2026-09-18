@@ -1,6 +1,6 @@
 # Synthesis Contract (synthesis_input.json + notes.md)
 
-`schema_version` is `1` (`lectural.config.SCHEMA_VERSION`). Bump it on any
+`schema_version` is `2` (`lectural.config.SCHEMA_VERSION`). Bump it on any
 incompatible change to the shapes below; readers MUST check it.
 
 ## `synthesis_input.json`
@@ -13,9 +13,13 @@ artifacts and do not call an external LLM.
 
 ```jsonc
 {
-  "schema_version": 1,
-  "video":   { "title": str, "url": str, "duration_sec": float,
-               "language": str|null, "source": "caption"|"stt" },
+  "schema_version": 2,
+  "video":   { "title": str, "duration_sec": float,
+               "language": str|null, "speech_source": "caption"|"stt",
+               "input_source": { "kind": "youtube"|"local_video"|"local_audio",
+                                 "argument": str, "has_video": bool,
+                                 "citation": { "kind": "youtube", "video_id": str }
+                                              | { "kind": "transcript" } } },
   "transcript_segments": [ { "t": float /*sec*/, "text": str } ],
   "slides":  [ { "t": float, "frame": "frames/xxxx.png",
                  "ocr_text": str, "is_slide": true } ],
@@ -53,14 +57,24 @@ enrichment.
 | `## 정리 커버리지` | `NOTES_COVERAGE_ANCHOR` | coverage footer section |
 | `<!-- 미보강 -->` | `NOTES_UNENRICHED_MARKER` | deterministic placeholder marker for host-agent prose enrichment |
 | `![...](frames/...)` | — | slide image link (present when slide frames exist) |
-| `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | — | citation deeplink back to transcript anchors and YouTube seconds |
+| `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | — | YouTube: `youtu.be` seconds. Local: exact relative `transcript.md#tHHMMSS[-n]` only |
 
 The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven
 section anchors, and — when `frames/` images exist for the run — at least one
 `frames/` slide image link.
 
+### Artifact-directory collision policy
+
+The CLI initially uses `out_root/<slug>` for a source. If that path already
+exists, or was reserved earlier in the same sequential batch, it uses the
+next available suffix: `<slug>-2`, `<slug>-3`, and so on. The returned result
+and its run-state entry record the selected directory and artifact paths.
+
 ## `coverage.json`
 
 See `lectural.coverage.build_coverage`. Top-level `overall_pass` is the AND of
-`gap_check.pass`, `scene_coverage.pass`, and `artifacts.pass`; `artifacts.pass`
-reflects `transcript.md` and `notes.md` non-emptiness.
+`gap_check.pass`, `scene_coverage.pass`, `artifacts.pass`, and the checked
+notes contract. For video sources, `scene_coverage.timeline_pass` fails closed
+when `duration_sec` is missing, zero, negative, or non-finite. Audio-only
+sources set `visual_required=false`, so the visual timeline remains
+not-applicable and passes independently of duration.

@@ -13,12 +13,22 @@ Four checks (all pure, unit-tested):
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass
 
 from .config import FRAME_CARRY_MAX_SEC, MAX_GAP_SEC, SCENE_BINS_N, SCHEMA_VERSION
 from .notes_contract import NOTES_CONTRACT_VERSION, coverage_contract_problems
 from .vad import Span, max_non_silence_untranscribed_gap, transcript_coverage_spans
+
+
+def _normalized_duration(value: object) -> float:
+    """Return a positive finite duration, or zero for an invalid value."""
+    try:
+        duration = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return duration if math.isfinite(duration) and duration > 0 else 0.0
 
 
 def gap_check(
@@ -52,26 +62,26 @@ def scene_coverage(
     slide_frames_total: int = 0,
     slide_frames_with_text: int = 0,
     carry_max_sec: float = FRAME_CARRY_MAX_SEC,
+    *,
+    visual_required: bool = True,
+    ocr_required: bool = True,
 ) -> dict:
-    """Pure: every speech bin must be covered by a keyframe (capped carry).
+    """Pure visual coverage with explicit applicability and gate state.
 
-    A bin "contains speech" when any speech span overlaps its time range. A
-    keyframe covers its own bin AND carries forward to later bins, but only for
-    up to `carry_max_sec`. So a static slide passes when the visual pass feeds
-    dense RAW samples (~SAMPLE_FPS), while a stretch with NO keyframe for longer
-    than the cap (an extractor stall, mid-video OR tail, or speech before the
-    first keyframe) stays uncovered and FAILs. `pass` also requires every
-    slide-classified frame to carry OCR text.
-
-    `frame_times` MUST be the RAW sampled keyframe times (pre-dedup); the cap is
-    what makes a missing/stalled visual pass detectable.
+    ``frame_times`` are RAW sampled keyframe timestamps (pre-dedup), while
+    slide counts describe retained deduplicated frames.  Audio-only sources
+    set ``visual_required=False`` and receive an explicit not-applicable pass;
+    skipping OCR changes only the slide-text predicate, never timeline
+    coverage or its actual frame/text counts.
     """
+    duration = _normalized_duration(duration)
+    duration_valid = duration > 0
     bins = max(bins, 1)
-    times = sorted(t for t in frame_times if 0 <= t <= duration)
+    times = sorted(t for t in frame_times if duration_valid and 0 <= t <= duration)
 
     speech_bins: set[int] = set()
     covered: set[int] = set()
-    if duration > 0:
+    if visual_required and duration_valid:
         bin_width = duration / bins
         import bisect
 
@@ -86,16 +96,24 @@ def scene_coverage(
                 covered.add(b)
 
     uncovered = sorted(b for b in speech_bins if b not in covered)
-    slides_ok = slide_frames_with_text >= slide_frames_total  # every slide has text
+    timeline_pass = True if not visual_required else duration_valid and not uncovered
+    slide_text_pass = (
+        slide_frames_with_text >= slide_frames_total if ocr_required else True
+    )
     return {
         "bins": bins,
         "carry_max_sec": carry_max_sec,
+        "visual_required": visual_required,
+        "ocr_required": ocr_required,
+        "duration_valid": duration_valid,
         "speech_bins": sorted(speech_bins),
         "covered_speech_bins": sorted(covered),
         "uncovered_speech_bins": uncovered,
         "slide_frames_total": slide_frames_total,
         "slide_frames_with_text": slide_frames_with_text,
-        "pass": not uncovered and slides_ok,
+        "timeline_pass": timeline_pass,
+        "slide_text_pass": slide_text_pass,
+        "pass": timeline_pass and slide_text_pass,
     }
 
 
@@ -139,6 +157,8 @@ class CoverageInputs:
     transcript_path: str
     notes_path: str
     ocr_engine: str = "none"
+    visual_required: bool = True
+    ocr_required: bool = True
     slide_frames_total: int = 0
     slide_frames_with_text: int = 0
     transcript_text: str | None = None
@@ -161,6 +181,8 @@ def coverage_inputs_from_extraction(
     transcript_path: str,
     notes_path: str,
     ocr_engine: str = "none",
+    visual_required: bool = True,
+    ocr_required: bool = True,
     transcript_text: str | None = None,
     notes_text: str | None = None,
 ) -> "CoverageInputs":
@@ -183,22 +205,25 @@ def coverage_inputs_from_extraction(
         transcript_path=transcript_path,
         notes_path=notes_path,
         ocr_engine=ocr_engine,
+        visual_required=visual_required,
+        ocr_required=ocr_required,
         slide_frames_total=slide_total,
         slide_frames_with_text=slide_with_text,
         transcript_text=transcript_text,
         notes_text=notes_text,
     )
-
-
 def build_coverage(inp: CoverageInputs) -> dict:
     """Assemble the full coverage.json structure. Pure (except file stat)."""
-    gap = gap_check(inp.speech_spans, inp.segment_times, inp.duration_sec)
+    duration = _normalized_duration(inp.duration_sec)
+    gap = gap_check(inp.speech_spans, inp.segment_times, duration)
     scene = scene_coverage(
         inp.frame_times,
         inp.speech_spans,
-        inp.duration_sec,
+        duration,
         slide_frames_total=inp.slide_frames_total,
         slide_frames_with_text=inp.slide_frames_with_text,
+        visual_required=inp.visual_required,
+        ocr_required=inp.ocr_required,
     )
     artifacts = artifact_check(
         inp.transcript_path,
@@ -224,7 +249,7 @@ def build_coverage(inp: CoverageInputs) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "video_title": inp.video_title,
-        "duration_sec": round(inp.duration_sec, 3),
+        "duration_sec": round(duration, 3),
         "ocr_engine": inp.ocr_engine,
         "gap_check": gap,
         "scene_coverage": scene,

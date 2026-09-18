@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Purpose
-Turn a YouTube video into complete notes; lecture/slide content is the sweet spot.
+Turn a YouTube video or local lecture file into complete notes; lecture/slide content is the sweet spot.
 
 ## Install & preflight
 Before the first run in a checkout or plugin installation, run:
@@ -22,6 +22,7 @@ Interpret the exit code exactly:
 
 ```bash
 lectural "<url>" --out ./output
+lectural ./recording.mp4 --skip-ocr --out ./output
 uvx --from ".[run]" lectural "<url>"
 ```
 
@@ -30,12 +31,12 @@ After a `/lectural:notes` run exits successfully, enrich the prose of
 `notes.md` in the `미보강` sections by following
 `skills/lectural/references/summary_prompt.md` and reading only
 `synthesis_input.json`. Preserve `NOTES_ENRICH_MARKER`, the seven section
-anchors, citation deeplinks, transcript anchors, and the `정리 커버리지` footer.
+anchors, citation deeplinks (`youtu.be` or `transcript.md#t…` per `input_source.citation.kind`), transcript anchors, and the `정리 커버리지` footer.
 Bare CLI runs remain deterministic low-level artifacts and do not call an
 external LLM.
 
 ## Completeness gate (HARD RULE)
-Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
+Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. `--skip-ocr` does not relax speech, timeline, artifact, or citation gates. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
 See `README.md`, the `commands/` slash commands, and `skills/lectural/references/`.
