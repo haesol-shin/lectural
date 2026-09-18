@@ -15,10 +15,12 @@ Tests:
 """
 from __future__ import annotations
 
+import json
+import math
 import os
 from pathlib import Path
 import sys
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import warnings
 import wave
 # Ensure repository root is on sys.path for scripts import
@@ -357,7 +359,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     assert args.skip_ocr is False
     assert args.cold is False
     assert args.warm is False
-
+    assert args.model == "medium"
     # Custom flags
     custom = parser.parse_args([
         "--fixtures-dir", "custom/fixtures",
@@ -381,3 +383,109 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     # Mutual exclusion between --cold and --warm
     with pytest.raises(SystemExit):
         parser.parse_args(["--cold", "--warm"])
+
+
+def test_harness_default_model_is_medium() -> None:
+    parser = build_parser()
+    args = parser.parse_args([])
+    assert args.model == "medium"
+
+
+def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
+    """Verify evaluate_degraded_slide_ocr scores against slide_04 authored text and key fields."""
+    from scripts.benchmark import evaluate_degraded_slide_ocr
+    from PIL import Image
+
+    img_path = tmp_path / "slide_degraded_l1.png"
+    im = Image.new("RGB", (100, 100), color=(255, 255, 255))
+    im.save(img_path)
+
+    gt = {
+        "fixture_id": "test_synth_01",
+        "language": "en",
+        "key_fields": {
+            "lecture_title": "Lecture 4: Optimization",
+            "key_author": "Geoffrey Hinton",
+            "batch_iterations": "128",
+            "learning_rate": "0.05",
+        },
+        "slides_text": {
+            "slide_00_title": "Lecture 4: Optimization\nSpeaker: Geoffrey Hinton",
+            "slide_04_inc_ext": "Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05",
+        },
+        "usable_ocr_threshold_chars": 12,
+    }
+
+    mock_ocr = ("Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05", "paddle")
+    with patch("lectural.ocr.ocr_image", return_value=mock_ocr):
+        res = evaluate_degraded_slide_ocr(gt, [img_path])
+
+    assert "slide_degraded_l1" in res
+    entry = res["slide_degraded_l1"]
+    assert entry["engine_used"] == "paddle"
+    assert math.isclose(entry["cer"], 0.0, rel_tol=1e-5)
+    assert entry["key_field_recall_exact"] == 1.0
+
+
+def test_harness_records_explicit_speech_source(tmp_path: Path) -> None:
+    """Verify measure_fixture_run and run_fixture_repetitions record explicit speech_source."""
+    audio_file = tmp_path / "audio.wav"
+    _write_minimal_wav(audio_file, duration_sec=5.0)
+
+    gt = {
+        "fixture_id": "test_speech_src_01",
+        "language": "en",
+        "caption_variant": "usable",
+        "speech_spans": [[0.0, 5.0]],
+        "vtt": _MINIMAL_USABLE_VTT,
+    }
+    out_dir = tmp_path / "run_out"
+    res = measure_fixture_run(
+        fixture_data=gt,
+        out_dir=out_dir,
+        audio_path=audio_file,
+    )
+    assert res["speech_source"] == "caption"
+
+    f_dir = tmp_path / "fixture_dir"
+    f_dir.mkdir(parents=True, exist_ok=True)
+    gt_file = f_dir / "gt.json"
+    gt_file.write_text(json.dumps(gt), encoding="utf-8")
+    (f_dir / "audio.wav").write_bytes(audio_file.read_bytes())
+    (f_dir / "captions.vtt").write_text(_MINIMAL_USABLE_VTT, encoding="utf-8")
+
+    rep_out = tmp_path / "rep_out"
+    agg_res = run_fixture_repetitions(
+        fixture_data=gt,
+        out_dir=rep_out,
+        reps=1,
+        audio_path=audio_file,
+    )
+    assert agg_res["speech_source"] == "caption"
+def test_measure_fixture_run_offline_vad_falls_back_without_ffmpeg(tmp_path: Path) -> None:
+    """Verify that when ffmpeg is absent and detect_speech_spans raises DependencyError,
+    measure_fixture_run cleanly falls back to GT speech_spans without raising."""
+    from lectural.deps import DependencyError
+
+    audio_file = tmp_path / "audio.wav"
+    _write_minimal_wav(audio_file, duration_sec=5.0)
+
+    gt = {
+        "fixture_id": "test_offline_vad",
+        "language": "en",
+        "caption_variant": "usable",
+        "speech_spans": [[0.5, 4.5]],
+        "vtt": _MINIMAL_USABLE_VTT,
+    }
+    out_dir = tmp_path / "offline_vad_out"
+
+    with patch("lectural.vad.detect_speech_spans", side_effect=DependencyError("Required binary `ffmpeg` not found")):
+        res = measure_fixture_run(
+            fixture_data=gt,
+            out_dir=out_dir,
+            audio_path=audio_file,
+        )
+
+    assert res["fixture_id"] == "test_offline_vad"
+    assert "vad" in res["stages"]
+    assert res["stages"]["vad"]["wall_time_sec"] >= 0
