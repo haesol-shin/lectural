@@ -1,6 +1,6 @@
 # LecturAL
 
-> A Claude Code plugin that turns one YouTube video or local lecture file into complete markdown notes — **every utterance, every on-screen text, every scene**. Best on lecture and slide-style videos.
+> A tool that turns a YouTube video, local video, or local audio file into deterministic evidence for video-based work — every utterance, every on-screen text, every scene — available as markdown notes or a versioned JSON contract. Best on lecture and slide-style video.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -91,7 +91,7 @@ See [`docs/contracts/cli.md`](docs/contracts/cli.md) for the public contract and
 | Command | Description |
 |---------|-------------|
 | `/lectural:setup` | Prepare and verify the runtime (first run) |
-| `/lectural:notes <source> [options]` | Turn a lecture URL or local file into complete notes |
+| `/lectural:notes <source> [options]` | Turn a video or audio source into deterministic evidence as complete markdown notes |
 
 Options: `--force-stt` (ignore captions, force STT), `--model medium|small` (STT model size), `--out ./output` (output location), `--keep-frames`, `--skip-ocr` (keep scene frames, skip OCR). Pass multiple YouTube URLs/IDs or existing `.mp4`/`.webm`/`.mkv`/`.wav` files to process them sequentially.
 

@@ -1,4 +1,4 @@
-"""`lectural` CLI: turn lecture media into complete study notes.
+"""`lectural` CLI: turn video into deterministic evidence for video-based work.
 
 Usage:
     lectural doctor [--fix] [--json]
@@ -88,7 +88,7 @@ def _frame_link(image_path: str, out_dir: str) -> str:
 def _run_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lectural",
-        description="Lecture media -> complete study notes",
+        description="Video-based work -> deterministic evidence as markdown notes",
         epilog="Command: lectural doctor [--fix] [--json]",
     )
     parser.add_argument(
@@ -118,7 +118,7 @@ def _run_parser() -> argparse.ArgumentParser:
 def _extract_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lectural extract",
-        description="Extract a versioned evidence bundle from one lecture source",
+        description="Extract a versioned JSON evidence bundle from one source",
     )
     parser.add_argument("source", help="One YouTube URL/ID or local mp4/webm/mkv/wav file")
     parser.add_argument("--out", required=True, help="New, empty output directory for this extraction")

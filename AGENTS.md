@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Purpose
-Turn a YouTube video or local lecture file into complete notes; lecture/slide content is the sweet spot.
+Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: markdown notes (`/lectural:notes`) or a versioned JSON contract (`lectural extract --json`). Best on lecture and slide-style video.
 
 ## Install & preflight
 Before the first run in a checkout or plugin installation, run:

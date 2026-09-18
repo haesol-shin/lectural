@@ -1,5 +1,5 @@
 ---
-description: Turn a YouTube URL or local lecture file into complete study notes.
+description: Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: complete markdown notes.
 argument-hint: <source> [more-sources...] [--force-stt] [--model medium] [--out ./output] [--skip-ocr]
 ---
 

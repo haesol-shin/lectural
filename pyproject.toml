@@ -1,7 +1,7 @@
 [project]
 name = "lectural"
 version = "0.1.2"
-description = "Turn a YouTube lecture URL into complete study notes: every utterance, every on-screen text, every scene."
+description = "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 # Heavy runtime deps are imported lazily inside functions so the package
