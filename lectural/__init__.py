@@ -11,6 +11,8 @@ from .config import (
     MAX_GAP_SEC,
     SCENE_BINS_N,
     SCHEMA_VERSION,
+    EXTRACTION_CONTRACT_VERSION,
+    EXTRACTION_SCHEMA_VERSION,
 )
 
 __all__ = [
@@ -19,6 +21,8 @@ __all__ = [
     "MAX_GAP_SEC",
     "SCENE_BINS_N",
     "SCHEMA_VERSION",
+    "EXTRACTION_CONTRACT_VERSION",
+    "EXTRACTION_SCHEMA_VERSION",
 ]
 
 __version__ = "0.1.2"

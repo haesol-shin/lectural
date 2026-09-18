@@ -10,6 +10,13 @@ from __future__ import annotations
 # Bump when the synthesis_input.json shape changes incompatibly.
 SCHEMA_VERSION: int = 2
 
+# --- Public extraction contract -------------------------------------------
+# This is independent from the synthesis_input.json schema above.  The
+# extraction response and evidence manifest are public, machine-consumed
+# artifacts and must be negotiated separately from the internal notes handoff.
+EXTRACTION_CONTRACT_VERSION: int = 1
+EXTRACTION_SCHEMA_VERSION: int = 1
+
 # --- Frame dedup -----------------------------------------------------------
 # Two consecutive frames are considered the SAME slide when their colour
 # histogram correlation is at or above this threshold AND their structural

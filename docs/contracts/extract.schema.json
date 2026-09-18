@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/extract.schema.json",
+  "title": "LecturAL extract JSON response",
+  "type": "object",
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "status", "result", "errors", "generated_at"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "contract_version": {"const": 1},
+    "tool": {"const": "lectural"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ok", "partial", "error"]},
+    "result": {"$ref": "evidence.schema.json"},
+    "errors": {"type": "array", "items": {"$ref": "evidence.schema.json#/$defs/failure"}},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}

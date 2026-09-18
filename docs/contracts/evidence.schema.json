@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/evidence.schema.json",
+  "title": "LecturAL extraction response and evidence manifest",
+  "type": "object",
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "source", "source_kind", "status", "artifacts", "extraction", "representative_frames", "failure"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "contract_version": {"const": 1},
+    "tool": {"const": "lectural"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "source": {"$ref": "#/$defs/source"},
+    "source_kind": {"enum": ["youtube", "local_video", "local_audio"]},
+    "status": {"enum": ["pass", "warn", "fail"]},
+    "extraction_status": {"enum": ["pass", "warn", "fail"]},
+    "artifacts": {"$ref": "#/$defs/artifacts"},
+    "extraction": {"$ref": "#/$defs/extraction"},
+    "representative_frames": {"type": "array", "items": {"$ref": "#/$defs/frame"}},
+    "failure": {"anyOf": [{"$ref": "#/$defs/failure"}, {"type": "null"}]}
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["kind", "argument", "has_video", "citation"],
+      "properties": {
+        "kind": {"enum": ["youtube", "local_video", "local_audio"]},
+        "argument": {"type": "string"},
+        "has_video": {"type": "boolean"},
+        "citation": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "path": {"type": ["string", "null"]},
+    "artifacts": {
+      "type": "object",
+      "required": ["output_dir", "evidence", "transcript", "notes", "synthesis_input", "coverage", "frames_dir"],
+      "properties": {
+        "output_dir": {"type": "string"},
+        "evidence": {"type": "string"},
+        "evidence_json": {"type": "string"},
+        "transcript": {"type": "string"},
+        "transcript_md": {"type": "string"},
+        "notes": {"type": "string"},
+        "notes_md": {"type": "string"},
+        "synthesis_input": {"type": "string"},
+        "synthesis_input_json": {"type": "string"},
+        "coverage": {"type": "string"},
+        "coverage_json": {"type": "string"},
+        "frames_dir": {"$ref": "#/$defs/path"}
+      },
+      "additionalProperties": true
+    },
+    "failure": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "message": {"type": "string", "minLength": 1, "maxLength": 200}
+      },
+      "additionalProperties": false
+    },
+    "reason": {"$ref": "#/$defs/failure"},
+    "completeness": {
+      "type": "object",
+      "required": ["status", "pass"],
+      "properties": {"status": {"type": "string"}, "pass": {"type": "boolean"}},
+      "additionalProperties": true
+    },
+    "extraction": {
+      "type": "object",
+      "required": ["status", "reasons", "speech_completeness", "visual_completeness", "timestamp_integrity", "ocr"],
+      "properties": {
+        "status": {"enum": ["pass", "warn", "fail"]},
+        "reasons": {"type": "array", "items": {"$ref": "#/$defs/reason"}},
+        "speech_completeness": {"$ref": "#/$defs/completeness"},
+        "visual_completeness": {"$ref": "#/$defs/completeness"},
+        "timestamp_integrity": {"$ref": "#/$defs/completeness"},
+        "ocr": {
+          "type": "object",
+          "required": ["status", "engine", "annotation_only"],
+          "properties": {
+            "status": {"enum": ["skipped", "completed-no-text", "completed-with-text", "failed"]},
+            "engine": {"type": "string"},
+            "annotation_only": {"const": true}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "frame": {
+      "type": "object",
+      "required": ["timestamp_sec", "path", "ocr"],
+      "properties": {
+        "timestamp_sec": {"type": "number", "minimum": 0},
+        "path": {"type": "string"},
+        "ocr": {
+          "type": "object",
+          "required": ["status", "text", "is_slide"],
+          "properties": {
+            "status": {"enum": ["skipped", "text", "no-text", "failed"]},
+            "text": {"type": ["string", "null"]},
+            "is_slide": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -17,7 +17,7 @@ artifacts and do not call an external LLM.
   "video":   { "title": str, "duration_sec": float,
                "language": str|null, "speech_source": "caption"|"stt",
                "input_source": { "kind": "youtube"|"local_video"|"local_audio",
-                                 "argument": str, "has_video": bool,
+                                 "argument": str /* safe label, not a runtime path */, "has_video": bool,
                                  "citation": { "kind": "youtube", "video_id": str }
                                               | { "kind": "transcript" } } },
   "transcript_segments": [ { "t": float /*sec*/, "text": str } ],
