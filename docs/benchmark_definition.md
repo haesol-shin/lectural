@@ -46,7 +46,10 @@ same in-memory source at generation time, not independently maintained): ground-
   "usable_ocr_threshold_chars": 8,
   "degradation": {"visual": ["blur_l1", "near_duplicate"], "audio": ["noise_l1", "silence_gap"]},
   "caption_variant": "usable",
-  "independent_review": {"reviewer": "...", "date": "YYYY-MM-DD", "notes": "..."}
+  "slides_text": {"slide_00_title": "...", "slide_04_inc_ext": "..."},
+  "near_duplicate_timestamps": [9.0],
+  "incremental_timestamps": [18.0],
+  "independent_review": {"reviewer": "generator_synthesis_notes", "date": "YYYY-MM-DD", "notes": "..."}
 }
 ```
 
@@ -64,10 +67,10 @@ Per fixture set, one independent review pass compared the **rendered audio/video
 | `terminology_recall` | Terminology recall | Case-insensitive, normalized substring match of `gt["terms"]` against the hypothesis text. |
 | `timestamp_error` | Cue-timestamp median/P95 | **Cue-level only.** Word-level P95 is out of reach because `lectural/speech.py` sets `word_timestamps=False`; this benchmark does not change that. |
 | `voiced_recall_and_gap` | Voiced-speech recall / max untranscribed gap | Scored against the fixture's authored `speech_spans`, never against `lectural.vad`'s own output on the same audio (that would be circular). |
-| `frame_recall_and_duplicate_rate` | Frame recall / duplicate rate | Scores `visual.extract_candidate_frames` + `visual.dedupe_frames`'s **output** against `slide_change_timestamps`; production dedupe logic itself is never modified or reimplemented. |
-| `ocr_quality` | OCR CER / key-field recall (exact + fuzzy) / usable | `Levenshtein` when installed; `difflib.SequenceMatcher` fallback otherwise. Exercised against the visually-degraded slide variants, not the clean source. |
+| `frame_recall_and_duplicate_rate` | Frame recall / duplicate rate / near-dup dropped / incremental retained | Scores `visual.extract_candidate_frames` + `visual.dedupe_frames`'s **output** against `slide_change_timestamps`, near-duplicate timestamps, and incremental build timestamps; production dedupe logic itself is never modified or reimplemented. |
+| `ocr_quality` | OCR CER / key-field recall (exact + fuzzy) / usable | `Levenshtein` when installed; `difflib.SequenceMatcher` fallback otherwise. CER is computed against authored slide reference text (`slides_text`); `key_fields` is dedicated to exact and fuzzy key-field recall. Exercised against the visually-degraded slide variants. |
 
-Normalization rules: English text is lowercased, punctuation-stripped, and whitespace-collapsed via `whisper_normalizer` when available. Korean text is normalized by stripping non-Hangul/whitespace characters and computing CER space-insensitively (Korean word segmentation is not meaningful for a character-error-rate comparison the way it is for English WER).
+Normalization rules: English text is lowercased, punctuation-stripped, and whitespace-collapsed via `whisper_normalizer` when available. Korean text is normalized by stripping punctuation/whitespace while preserving Hangul syllables, digits (e.g. 1956, 256), and ASCII letters, and computing CER space-insensitively (Korean word segmentation is not meaningful for a character-error-rate comparison the way it is for English WER).
 
 ## Execution matrix
 

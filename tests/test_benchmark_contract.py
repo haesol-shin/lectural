@@ -68,6 +68,13 @@ def test_benchmark_schema_is_valid_json_and_has_required_defs():
     assert "medianVariance" in schema["$defs"]
 
 
+def test_schema_requires_speech_source():
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    fixture_result_def = schema["$defs"]["fixtureResult"]
+    assert "speech_source" in fixture_result_def["required"]
+    assert "speech_source" in fixture_result_def["properties"]
+    assert set(fixture_result_def["properties"]["speech_source"]["enum"]) == {"caption", "stt", "unknown"}
+
 def _validate_against_schema(report: dict, schema: dict) -> None:
     """Minimal structural validator: required-key presence and basic typing.
 
@@ -230,3 +237,10 @@ def test_benchmark_definition_doc_references_committed_files():
     assert "en_terms_01" in text and "ko_terms_01" in text and "mixed_terms_01" in text
     assert "observational_555s_perf_smoke_2026-06-14.json" in text
     assert "word_timestamps=False" in text  # cue-level-only limitation stated explicitly
+
+
+def test_benchmark_definition_reflects_updated_contracts():
+    text = DEFINITION_PATH.read_text(encoding="utf-8")
+    assert "slides_text" in text
+    assert "near_duplicate_timestamps" in text
+    assert "incremental_timestamps" in text

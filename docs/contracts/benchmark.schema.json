@@ -42,11 +42,12 @@
   "$defs": {
     "fixtureResult": {
       "type": "object",
-      "required": ["fixture_id", "language", "caption_variant", "skip_ocr", "cache_mode", "reps", "fixture_duration_sec", "aggregate", "quality_metrics", "runs"],
+      "required": ["fixture_id", "language", "caption_variant", "speech_source", "skip_ocr", "cache_mode", "reps", "fixture_duration_sec", "aggregate", "quality_metrics", "runs"],
       "properties": {
         "fixture_id": {"type": "string"},
         "language": {"enum": ["en", "ko", "mixed", "unknown"]},
         "caption_variant": {"enum": ["usable", "unusable", "fetch_failure", "force_stt", "unknown"]},
+        "speech_source": {"type": "string", "enum": ["caption", "stt", "unknown"], "description": "Source of speech track: caption (parsed from VTT), stt (transcribed via Whisper), or unknown."},
         "skip_ocr": {"type": "boolean"},
         "cache_mode": {"enum": ["cold", "warm"]},
         "reps": {"type": "integer", "minimum": 1},

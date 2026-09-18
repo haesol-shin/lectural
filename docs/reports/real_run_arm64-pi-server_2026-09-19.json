@@ -37,6 +37,7 @@
       "fixture_id": "en_terms_01",
       "language": "en",
       "caption_variant": "usable",
+      "speech_source": "caption",
       "skip_ocr": false,
       "media_variant": "clean",
       "cache_mode": "warm",
