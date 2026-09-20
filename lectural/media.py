@@ -22,6 +22,8 @@ class SourceMetadata:
     title: str
     duration: float | None = None
     video_id: str | None = None
+    width: int | None = None
+    height: int | None = None
 
 
 def _metadata_text(value: object) -> str | None:
@@ -212,3 +214,25 @@ _VIDEO_RESOLVERS = {
 def resolve_video(source: InputSource, out_dir: str) -> str | None:
     """Resolve the source video path, or ``None`` for audio-only input."""
     return _VIDEO_RESOLVERS[source.kind](source, out_dir)
+
+
+def probe_video_resolution(video_path: str) -> tuple[int | None, int | None]:
+    """Read dimensions from the exact video file used for frame extraction."""
+    require_binary("ffprobe")
+    try:
+        proc = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_entries", "stream=width,height", "-of", "json", video_path,
+            ],
+            check=True, capture_output=True, text=True,
+        )
+    except subprocess.CalledProcessError:
+        return None, None
+    streams = json.loads(proc.stdout).get("streams", [])
+    stream = streams[0] if streams else {}
+    width, height = stream.get("width"), stream.get("height")
+    return (
+        int(width) if isinstance(width, int) and width > 0 else None,
+        int(height) if isinstance(height, int) and height > 0 else None,
+    )

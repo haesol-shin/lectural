@@ -109,3 +109,14 @@ def test_all_source_kinds_have_explicit_resolver_entries():
     assert set(media._PROBE_RESOLVERS) == set(SourceKind)
     assert set(media._AUDIO_RESOLVERS) == set(SourceKind)
     assert set(media._VIDEO_RESOLVERS) == set(SourceKind)
+
+
+def test_probe_video_resolution_uses_processed_file(monkeypatch):
+    calls = []
+    monkeypatch.setattr(media, "require_binary", lambda name: calls.append(name))
+    monkeypatch.setattr(
+        media.subprocess, "run",
+        lambda command, **_kwargs: type("Result", (), {"stdout": '{"streams":[{"width":1280,"height":720}]}'})(),
+    )
+    assert media.probe_video_resolution("processed.mp4") == (1280, 720)
+    assert calls == ["ffprobe"]

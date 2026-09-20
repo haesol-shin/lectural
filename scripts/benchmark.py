@@ -123,6 +123,138 @@ def clear_model_caches() -> None:
     """
     gc.collect()
 
+
+def summarize_alignment_observability(frames: list[Any]) -> dict[str, Any]:
+    """Summarize raw dedupe/alignment work without re-decoding any frame."""
+    counts = {
+        "host_decode_count": len(frames),
+        "host_decode_pixels": 0,
+        "phash_persistent_candidates": 0,
+        "alignment_worker_invocations": 0,
+        "alignment_worker_decode_count": 0,
+        "alignment_worker_decode_pixels": 0,
+        "alignment_attempts": 0,
+        "warp_count": 0,
+        "warp_pixels": 0,
+    }
+    outcomes: dict[str, int] = {}
+    failure_gates: dict[str, int] = {}
+    distributions: dict[str, list[float]] = {
+        "keypoints_reference": [],
+        "keypoints_candidate": [],
+        "ratio_match_rows": [],
+        "ratio_matches": [],
+        "inlier_count": [],
+        "inlier_ratio": [],
+        "forward_coverage": [],
+        "reverse_coverage": [],
+        "direct_ssim": [],
+        "forward_ssim": [],
+        "reverse_ssim": [],
+    }
+    runtime: dict[str, list[Any]] = {
+        "opencv_versions": [],
+        "opencv_builds": [],
+        "requested_threads": [],
+        "requested_seeds": [],
+        "provenance": [],
+    }
+    provenance_keys: set[str] = set()
+
+    def add_number(name: str, value: Any) -> None:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            distributions[name].append(float(value))
+
+    def shape_pixels(shapes: Any) -> int:
+        if not isinstance(shapes, dict):
+            return 0
+        total = 0
+        for name in ("reference", "candidate"):
+            shape = shapes.get(name)
+            if (
+                isinstance(shape, list)
+                and len(shape) == 2
+                and all(isinstance(value, int) and value >= 0 for value in shape)
+            ):
+                total += shape[0] * shape[1]
+        return total
+
+    for frame in frames:
+        meta = getattr(frame, "meta", {}) or {}
+        width, height = meta.get("width"), meta.get("height")
+        if isinstance(width, int) and isinstance(height, int):
+            counts["host_decode_pixels"] += width * height
+        if "alignment_worker_invoked" not in meta:
+            continue
+        counts["phash_persistent_candidates"] += 1
+        counts["alignment_worker_invocations"] += int(meta.get("alignment_worker_invoked") is True)
+        counts["alignment_attempts"] += int(meta.get("alignment_attempted") is True)
+        outcome = str(meta.get("alignment_result") or "unknown")
+        outcomes[outcome] = outcomes.get(outcome, 0) + 1
+        failure = meta.get("alignment_first_failed_gate") or meta.get(
+            "alignment_worker_first_failed_gate"
+        )
+        if failure:
+            failure_name = str(failure)
+            failure_gates[failure_name] = failure_gates.get(failure_name, 0) + 1
+
+        metrics = meta.get("alignment_metrics")
+        if not isinstance(metrics, dict):
+            continue
+        decoded_pixels = shape_pixels(metrics.get("decoded_shapes"))
+        if decoded_pixels:
+            counts["alignment_worker_decode_count"] += 2
+            counts["alignment_worker_decode_pixels"] += decoded_pixels
+        warp_count = metrics.get("alignment_warp_count")
+        warp_pixels = metrics.get("alignment_warp_pixels")
+        if isinstance(warp_count, int) and warp_count >= 0:
+            counts["warp_count"] += warp_count
+        if isinstance(warp_pixels, int) and warp_pixels >= 0:
+            counts["warp_pixels"] += warp_pixels
+
+        keypoints = metrics.get("keypoint_counts")
+        if isinstance(keypoints, dict):
+            add_number("keypoints_reference", keypoints.get("reference"))
+            add_number("keypoints_candidate", keypoints.get("candidate"))
+        for output_name, metric_name in (
+            ("ratio_match_rows", "ratio_match_count"),
+            ("ratio_matches", "ratio_matches"),
+            ("inlier_count", "inlier_count"),
+            ("inlier_ratio", "inlier_ratio"),
+            ("forward_coverage", "forward_coverage"),
+            ("reverse_coverage", "reverse_coverage"),
+            ("forward_ssim", "forward_ssim"),
+            ("reverse_ssim", "reverse_ssim"),
+        ):
+            add_number(output_name, metrics.get(metric_name))
+        direct = metrics.get("direct_metrics")
+        if isinstance(direct, dict):
+            add_number("direct_ssim", direct.get("ssim"))
+
+        for output_name, metric_name in (
+            ("opencv_versions", "opencv_version"),
+            ("opencv_builds", "opencv_build"),
+            ("requested_threads", "requested_threads"),
+            ("requested_seeds", "requested_seed"),
+        ):
+            value = metrics.get(metric_name)
+            if value is not None and value not in runtime[output_name]:
+                runtime[output_name].append(value)
+        provenance = metrics.get("opencv_provenance")
+        if isinstance(provenance, dict):
+            key = json.dumps(provenance, sort_keys=True, separators=(",", ":"))
+            if key not in provenance_keys:
+                provenance_keys.add(key)
+                runtime["provenance"].append(provenance)
+
+    return {
+        "counts": counts,
+        "outcomes": dict(sorted(outcomes.items())),
+        "failure_gates": dict(sorted(failure_gates.items())),
+        "distributions": distributions,
+        "opencv_runtime": runtime,
+    }
+
 # ============================================================================
 # Caption and Fallback Injection Function
 # ============================================================================
@@ -368,6 +500,16 @@ def evaluate_quality_metrics(
     combined_ocr = " ".join(
         getattr(f, "ocr_text", "") for f in slide_frames if getattr(f, "ocr_text", "")
     )
+    from lectural.config import OCR_RELIABLE_CONFIDENCE_THRESHOLD
+
+    accepted_frames = [
+        frame
+        for frame in slide_frames
+        if getattr(frame, "ocr_text", "")
+        and isinstance(getattr(frame, "ocr_confidence", None), (int, float))
+        and frame.ocr_confidence >= OCR_RELIABLE_CONFIDENCE_THRESHOLD
+    ]
+    accepted_ocr = " ".join(frame.ocr_text for frame in accepted_frames)
     combined_ref = slide_cer_reference(gt.get("slides_text"))
     try:
         results["ocr_quality"] = ocr_quality(
@@ -376,6 +518,16 @@ def evaluate_quality_metrics(
             usable_thresh,
             slide_reference_text=combined_ref,
         )
+        results["accepted_ocr_quality"] = {
+            "reliable_frame_count": len(accepted_frames),
+            "rejected_frame_count": len(slide_frames) - len(accepted_frames),
+            **ocr_quality(
+                key_fields,
+                accepted_ocr,
+                usable_thresh,
+                slide_reference_text=combined_ref,
+            ),
+        }
     except Exception as exc:  # noqa: BLE001
         results["ocr_quality"] = {"error": f"{exc.__class__.__name__}: {exc}"}
     return results
@@ -388,6 +540,7 @@ def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[P
     the fixture's slide_04 authored text and key fields via `lectural_bench.metrics.ocr_quality`.
     """
     try:
+        from lectural.config import OCR_RELIABLE_CONFIDENCE_THRESHOLD
         from lectural.ocr import ocr_image
         from lectural_bench.metrics import ocr_quality
     except ImportError as exc:
@@ -421,12 +574,25 @@ def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[P
     per_level: dict[str, Any] = {}
     for path in degraded_slide_paths:
         try:
-            text, engine_used = ocr_image(str(path), lang=ocr_lang)
+            text, engine_used, confidence = ocr_image(str(path), lang=ocr_lang)
+            reliable = (
+                isinstance(confidence, (int, float))
+                and confidence >= OCR_RELIABLE_CONFIDENCE_THRESHOLD
+            )
+            raw_quality = ocr_quality(
+                slide_4_key_fields,
+                text,
+                usable_thresh,
+                slide_reference_text=slide_4_ref or None,
+            )
             per_level[path.stem] = {
                 "engine_used": engine_used,
-                **ocr_quality(
+                "ocr_confidence": confidence,
+                "reliable": reliable,
+                **raw_quality,
+                "accepted_ocr_quality": ocr_quality(
                     slide_4_key_fields,
-                    text,
+                    text if reliable else "",
                     usable_thresh,
                     slide_reference_text=slide_4_ref or None,
                 ),
@@ -732,6 +898,7 @@ def measure_fixture_run(
         },
         "stages": per_stage,
         "quality_metrics": quality_metrics,
+        "alignment_observability": summarize_alignment_observability(raw_frames),
         "stage_errors": stage_errors,
         "speech_source": getattr(track, "source", "unknown") if track else "unknown",
     }
@@ -823,6 +990,9 @@ def run_fixture_repetitions(
             "stages": stage_aggregates,
         },
         "quality_metrics": first_run.get("quality_metrics", {}),
+        "alignment_observability": first_run.get(
+            "alignment_observability", summarize_alignment_observability([])
+        ),
         "runs": runs,
     }
 

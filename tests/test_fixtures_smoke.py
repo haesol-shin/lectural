@@ -13,10 +13,36 @@ from lectural.visual import (
     _image_phash,
     phash_hamming_distance,
     select_phash_keyframe_indices,
+    Frame,
+    dedupe_frames,
+    is_same_slide,
 )
 
 BENCHMARK_DIR = Path(__file__).parent / "fixtures" / "benchmark"
 FIXTURE_IDS = ["en_terms_01", "ko_terms_01", "mixed_terms_01"]
+
+
+def _require_calibrated_opencv():
+    cv2 = pytest.importorskip("cv2")
+    from lectural.alignment import opencv_provenance
+
+    if not opencv_provenance(cv2)["distribution_supported"]:
+        pytest.skip("exact calibrated OpenCV provider set is not installed")
+
+
+def test_static_visual_duplicate_fixture_collapses_despite_ocr_noise_signature():
+    _require_calibrated_opencv()
+    fixture = BENCHMARK_DIR / "visual_static_duplicate_01" / "slides"
+    frames = [
+        Frame(timestamp=index / 2, image_path=str(fixture / f"static_article_{index:02d}.png"))
+        for index in range(3)
+    ]
+    first, changed = _image_phash(frames[0].image_path), _image_phash(frames[1].image_path)
+    assert phash_hamming_distance(first, changed) > PHASH_HAMMING_THRESHOLD
+    # OCR is intentionally not consulted here: it can drift for a static image.
+    assert dedupe_frames(frames) == [frames[0]]
+    assert frames[1].meta["dedupe_decision"] == "structural_duplicate"
+    assert is_same_slide(frames[1].meta["hist_corr"], frames[1].meta["ssim"])
 
 
 @pytest.mark.parametrize("fixture_id", FIXTURE_IDS)

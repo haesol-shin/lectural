@@ -23,7 +23,7 @@ import sys
 
 from . import evidence
 from . import runstate
-from .config import DEFAULT_STT_MODEL
+from .config import DEFAULT_STT_MODEL, OCR_RELIABLE_CONFIDENCE_THRESHOLD
 from .source import classify_source
 
 
@@ -78,6 +78,19 @@ def _positive_finite_duration(*values: object) -> float:
         if math.isfinite(duration) and duration > 0:
             return duration
     return 0.0
+
+
+def _ocr_reliable_or_none(frame, ocr_status: str) -> bool | None:
+    """Expose quality only for successfully annotated text frames."""
+    if ocr_status in {"skipped", "failed"} or not (frame.ocr_text or "").strip():
+        return None
+    if frame.ocr_confidence is None:
+        return None
+    return bool(frame.ocr_confidence >= OCR_RELIABLE_CONFIDENCE_THRESHOLD)
+
+
+def _ocr_reliable(frame, ocr_status: str) -> bool:
+    return _ocr_reliable_or_none(frame, ocr_status) is True
 
 
 def _frame_link(image_path: str, out_dir: str) -> str:
@@ -294,11 +307,14 @@ def _default_processor(
     ocr_engine = "not_applicable"
     ocr_status = "skipped"
     ocr_failed = False
+    source_resolution = {"width": None, "height": None}
     if source.has_video:
         os.makedirs(frames_dir, exist_ok=True)
         video_path = media.resolve_video(source, out_dir)
         if video_path is None:  # defensive: source capability and resolver agree
             raise RuntimeError("Video source did not resolve to a video path")
+        width, height = media.probe_video_resolution(video_path)
+        source_resolution = {"width": width, "height": height}
         raw_frames = visual.extract_candidate_frames(video_path, frames_dir)
         slides = visual.dedupe_frames(raw_frames)
         representative_frames = list(slides)
@@ -336,19 +352,20 @@ def _default_processor(
         else [(0.0, duration)]
     )
 
+    source_dict = {**source.safe_as_dict(), "resolution": source_resolution}
     video = {
         "title": title,
         "duration_sec": duration,
         "language": track.language,
         "speech_source": track.source,
-        "input_source": source.safe_as_dict(),
+        "input_source": source_dict,
     }
     segments = [segment.as_dict() for segment in track.segments]
     slide_dicts = [
         {
             "t": frame.timestamp,
             "frame": _frame_link(frame.image_path, out_dir),
-            "ocr_text": frame.ocr_text,
+            "ocr_text": frame.ocr_text if _ocr_reliable(frame, ocr_status) else "",
             "is_slide": True,
         }
         for frame in slide_frames
@@ -399,6 +416,9 @@ def _default_processor(
             "path": os.path.abspath(frame.image_path),
             "ocr_text": frame.ocr_text,
             "is_slide": bool(frame.is_slide),
+            "reliable": _ocr_reliable_or_none(frame, ocr_status),
+            "width": frame.meta.get("width"),
+            "height": frame.meta.get("height"),
         }
         for frame in representative_frames
     ]
@@ -409,7 +429,7 @@ def _default_processor(
         "notes_md": notes_path,
         "transcript_md": transcript_path,
         "synthesis_input_json": os.path.join(out_dir, "synthesis_input.json"),
-        "source": source.safe_as_dict(),
+        "source": source_dict,
         "source_kind": source.kind.value,
         "coverage": coverage,
         "transcript_segments": segments,

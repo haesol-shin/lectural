@@ -183,11 +183,16 @@ def _safe_source(source: dict) -> dict:
     else:
         raw_argument = str(source.get("argument") or "local-media")
         argument = os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
+    raw_resolution = source.get("resolution")
+    resolution = raw_resolution if isinstance(raw_resolution, dict) else {}
+    def _dimension(value: object) -> int | None:
+        return value if isinstance(value, int) and value > 0 else None
     return {
         "kind": kind,
         "argument": argument,
         "has_video": bool(source.get("has_video", kind in {"youtube", "local_video"})),
         "citation": safe_citation,
+        "resolution": {"width": _dimension(resolution.get("width")), "height": _dimension(resolution.get("height"))},
     }
 
 
@@ -276,7 +281,10 @@ def build_evidence_manifest(
                     "status": annotation_status,
                     "text": text or None,
                     "is_slide": bool(frame.get("is_slide", False)),
+                    "reliable": frame.get("reliable"),
                 },
+                "width": frame.get("width"),
+                "height": frame.get("height"),
             }
         )
 

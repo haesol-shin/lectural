@@ -68,14 +68,14 @@ Argument-parser failures before a command can be identified use argparse's stder
 
 `result` is the same evidence manifest written to `<out>/evidence.json`. Its top-level fields are:
 
-- `source` / `source_kind`: normalized `youtube`, `local_video`, or `local_audio` input kind.
+- `source` / `source_kind`: normalized `youtube`, `local_video`, or `local_audio` input kind. `source.resolution.width` and `.height` describe the actual processed video; they are null for audio-only input.
 - `status` / `extraction_status`: `pass`, `warn`, or `fail`.
 - `artifacts`: output-contained paths for `evidence`, `transcript`, `notes`, `synthesis_input`, `coverage`, `output_dir`, and `frames_dir` when visual evidence applies. The `*_md` and `*_json` names are stable aliases.
 - `extraction.reasons`: bounded machine-readable reason objects.
 - `extraction.speech_completeness` and `extraction.visual_completeness`: deterministic completeness results. Visual completeness is `not-applicable` for local audio.
 - `extraction.timestamp_integrity`: validity and counts for transcript and representative-frame timestamps.
 - `extraction.ocr.status`: exactly `skipped`, `completed-no-text`, `completed-with-text`, or `failed`. OCR is an annotation/index and never controls representative-frame retention.
-- `representative_frames`: timestamped retained frame paths. Each frame has an `ocr` annotation with `status`, nullable `text`, and `is_slide`. Frames stay available for OCR skip, OCR no-text, OCR success, and requested OCR failure.
+- `representative_frames`: timestamped retained frame paths with nullable pixel `width`/`height`. Each frame has an `ocr` annotation with `status`, nullable `text`, `is_slide`, and nullable `reliable`. `reliable` is a quality axis only for `status: text`; it never changes the existing four OCR-state values. Unreliable text remains in evidence but is omitted from trusted `synthesis_input.json` slide text.
 - `failure`: `null` on pass/warn, or one bounded code/message on fail.
 
 LecturAL reports extraction completeness only. The contract intentionally has no assignment-relevance, code-scene, or project/build eligibility field.

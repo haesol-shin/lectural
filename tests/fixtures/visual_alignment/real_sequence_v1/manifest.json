@@ -1,0 +1,2584 @@
+{
+  "corpus_kind": "real_image_sequence",
+  "development_replica_counts": {
+    "collinear_inliers": 2,
+    "high_residual": 2,
+    "incremental_build": 2,
+    "low_masked_ssim": 2,
+    "one_way_coverage": 2,
+    "out_of_scale": 2,
+    "outlier_heavy": 2,
+    "pan_zoom": 4,
+    "pan_zoom_incremental": 2,
+    "pan_zoom_reverse": 4,
+    "pan_zoom_shared_template": 2,
+    "ransac_failure": 2,
+    "same_palette_different_layout": 2,
+    "static_duplicate": 2,
+    "static_shift": 2,
+    "too_few_descriptors": 2,
+    "true_transition": 2
+  },
+  "development_sequences": [
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1100",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1100/frame_00.png",
+          "sha256": "0b54e056e5c9bafdbf3b8c82768af7ce3cd4bdf0dce11cfc57fb5812e3461a65",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1100-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1100/frame_01.png",
+          "sha256": "855d3be0512c2b1ec64fa2ee3e5233e6358670e0e45ec7ec1fdec46274a4a1c3",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1100-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1100/frame_02.png",
+          "sha256": "855d3be0512c2b1ec64fa2ee3e5233e6358670e0e45ec7ec1fdec46274a4a1c3",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1100,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1100,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1100",
+        "transform_class": "collinear_inliers",
+        "transform_parameters": {
+          "line_y": 180
+        }
+      },
+      "recipe_sha256": "c22573891587990a4fd8df681f3d96f2dc25be4fafcd2cadc9442e75002bca57",
+      "required_fallback": false,
+      "sequence_id": "development-collinear_inliers-1100",
+      "source_content_id": "development-content-1100",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1101",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1101/frame_00.png",
+          "sha256": "d8e2617c39ace88cdecdc7fdbf9b4ed324c7e45ce1f9465dbc9ec79e5a4a643f",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1101-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1101/frame_01.png",
+          "sha256": "855d3be0512c2b1ec64fa2ee3e5233e6358670e0e45ec7ec1fdec46274a4a1c3",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1101-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-collinear_inliers-1101/frame_02.png",
+          "sha256": "855d3be0512c2b1ec64fa2ee3e5233e6358670e0e45ec7ec1fdec46274a4a1c3",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1101,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1101,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1101",
+        "transform_class": "collinear_inliers",
+        "transform_parameters": {
+          "line_y": 180
+        }
+      },
+      "recipe_sha256": "f9ba730b50f9ee60ffa70928d37e47b1a2bc4299801de32d1bfc48867114dd33",
+      "required_fallback": false,
+      "sequence_id": "development-collinear_inliers-1101",
+      "source_content_id": "development-content-1101",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1110",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1110/frame_00.png",
+          "sha256": "e9238ba536bed8575b5f0a92445aaba97969ade7d6ce8b20474e2964cb2f89c5",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1110-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1110/frame_01.png",
+          "sha256": "4babca56242a1f45a3a013f44ff28ef83ebc8205876ef0c2aedd4fd3e4c1f3ce",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1110-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1110/frame_02.png",
+          "sha256": "4babca56242a1f45a3a013f44ff28ef83ebc8205876ef0c2aedd4fd3e4c1f3ce",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1110,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1110,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1110",
+        "transform_class": "high_residual",
+        "transform_parameters": {
+          "dx": 45,
+          "dy": -35,
+          "scale": 1.18
+        }
+      },
+      "recipe_sha256": "7e605665c3edf7405b36696febfe16258fd549002a59e95a61a4399cba657517",
+      "required_fallback": false,
+      "sequence_id": "development-high_residual-1110",
+      "source_content_id": "development-content-1110",
+      "transform_class": "high_residual"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1111",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1111/frame_00.png",
+          "sha256": "3dc8f2612da33b20c42d22308e132b163d46031596a57d3fbe99d52d48d6373e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1111-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1111/frame_01.png",
+          "sha256": "e11beed53d0d9596fa5f07d977c123631390b41b3fe99378bc6f69e5459530a5",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1111-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-high_residual-1111/frame_02.png",
+          "sha256": "e11beed53d0d9596fa5f07d977c123631390b41b3fe99378bc6f69e5459530a5",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1111,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1111,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1111",
+        "transform_class": "high_residual",
+        "transform_parameters": {
+          "dx": 45,
+          "dy": -35,
+          "scale": 1.18
+        }
+      },
+      "recipe_sha256": "c6c0fc29a1598b7e6dd4e966845e04b3f13af4fa13c10c6c46df329b4bec4667",
+      "required_fallback": false,
+      "sequence_id": "development-high_residual-1111",
+      "source_content_id": "development-content-1111",
+      "transform_class": "high_residual"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1120",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1120/frame_00.png",
+          "sha256": "9db04ab7f353f805acfaec62c2ab38d51f17b6704c42c64e734c3c79bc09fe05",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1120-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1120/frame_01.png",
+          "sha256": "532ecbae1bdb4e1ba17cbe474c67d8ab3e193c14ef46bbfee61eee55b5216abe",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1120-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1120/frame_02.png",
+          "sha256": "532ecbae1bdb4e1ba17cbe474c67d8ab3e193c14ef46bbfee61eee55b5216abe",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1120,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1120,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1120",
+        "transform_class": "incremental_build",
+        "transform_parameters": {
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "a84e81a2782cf70ddf75317b72eff4ece7f970781e352a67f44831e6d2ef7f74",
+      "required_fallback": false,
+      "sequence_id": "development-incremental_build-1120",
+      "source_content_id": "development-content-1120",
+      "transform_class": "incremental_build"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1121",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1121/frame_00.png",
+          "sha256": "19ac0fdd5fd4310a98e1c425c19de00847c8543edca9f7cf39ce9b89cad07edc",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1121-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1121/frame_01.png",
+          "sha256": "a7b131299d17fe226bfa97de98fc96cfed07cd4619015e640fe80d4fd61e69d0",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1121-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-incremental_build-1121/frame_02.png",
+          "sha256": "a7b131299d17fe226bfa97de98fc96cfed07cd4619015e640fe80d4fd61e69d0",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1121,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1121,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1121",
+        "transform_class": "incremental_build",
+        "transform_parameters": {
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "d1a075354973749b903f5797ca7f32d6fac946c61e226db2debb5184108c8d42",
+      "required_fallback": false,
+      "sequence_id": "development-incremental_build-1121",
+      "source_content_id": "development-content-1121",
+      "transform_class": "incremental_build"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1130",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1130/frame_00.png",
+          "sha256": "5cb387d452818587c7063a40c57faf316d19f26bd50f29b87adc8cbaf3e915c0",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1130-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1130/frame_01.png",
+          "sha256": "3e25ab87f1ec09d58293118e0c2b8894904bdd98ffa9fd15ea15efddb867c7d7",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1130-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1130/frame_02.png",
+          "sha256": "3e25ab87f1ec09d58293118e0c2b8894904bdd98ffa9fd15ea15efddb867c7d7",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1130,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1130,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1130",
+        "transform_class": "low_masked_ssim",
+        "transform_parameters": {
+          "dx": 65,
+          "dy": 28
+        }
+      },
+      "recipe_sha256": "1ac7c2ca679b3e46067dafea76ebd47a554e652a587e9e86e4c29db2e1309461",
+      "required_fallback": false,
+      "sequence_id": "development-low_masked_ssim-1130",
+      "source_content_id": "development-content-1130",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1131",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1131/frame_00.png",
+          "sha256": "74b1a8127326f560c3a6e30f45a13b105938398a13d680bba3f07e09f6a9ba52",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1131-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1131/frame_01.png",
+          "sha256": "97eec1aa501ef628c09ac7b1c130fc7ec23a26ccda8e2e305436866d734cb557",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1131-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-low_masked_ssim-1131/frame_02.png",
+          "sha256": "97eec1aa501ef628c09ac7b1c130fc7ec23a26ccda8e2e305436866d734cb557",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1131,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1131,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1131",
+        "transform_class": "low_masked_ssim",
+        "transform_parameters": {
+          "dx": 65,
+          "dy": 28
+        }
+      },
+      "recipe_sha256": "3ce07af84ac16d323994947d6cf7eed0cdb081d1a2cfe093502ed4b82e50ed94",
+      "required_fallback": false,
+      "sequence_id": "development-low_masked_ssim-1131",
+      "source_content_id": "development-content-1131",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1140",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1140/frame_00.png",
+          "sha256": "41a1e87eb3312be5a0b6808df3e1a4a313f33241c09fdb978dceabc28b9e576e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1140-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1140/frame_01.png",
+          "sha256": "4237e348cd477522b7cf73be99328e6e30f6e068b3c9547ceb7b3171bfaaca29",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1140-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1140/frame_02.png",
+          "sha256": "4237e348cd477522b7cf73be99328e6e30f6e068b3c9547ceb7b3171bfaaca29",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1140,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1140,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1140",
+        "transform_class": "one_way_coverage",
+        "transform_parameters": {
+          "dx": 105,
+          "dy": 45,
+          "scale": 1.2
+        }
+      },
+      "recipe_sha256": "409113c73522d824c6fdb75731c934c18b7fd7efeea9dc92ced63bf251c6b046",
+      "required_fallback": false,
+      "sequence_id": "development-one_way_coverage-1140",
+      "source_content_id": "development-content-1140",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1141",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1141/frame_00.png",
+          "sha256": "b74568d0437c5ef2f0e7a027cc6570df534cb09ddaa75e9cfb2871a1b1511d40",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1141-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1141/frame_01.png",
+          "sha256": "6ad9154a590d197d3175cccb6e17f6ce656208f703d7cfdadf865b6e08ea2f2b",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1141-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-one_way_coverage-1141/frame_02.png",
+          "sha256": "6ad9154a590d197d3175cccb6e17f6ce656208f703d7cfdadf865b6e08ea2f2b",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1141,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1141,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1141",
+        "transform_class": "one_way_coverage",
+        "transform_parameters": {
+          "dx": 105,
+          "dy": 45,
+          "scale": 1.2
+        }
+      },
+      "recipe_sha256": "ee8e2829cf7846977b3a10db01281d2e644e2a2096d78eef111c2a6373fc7378",
+      "required_fallback": false,
+      "sequence_id": "development-one_way_coverage-1141",
+      "source_content_id": "development-content-1141",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1150",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1150/frame_00.png",
+          "sha256": "ca9a32e55d2e9a624d24efe040db411825d5d743e25ef13e27f01eaa438c534a",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1150-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1150/frame_01.png",
+          "sha256": "1c7f0bee135f5082bb795529faf9af4d1a17eaf85b718210bbbfe01b4a5ad98c",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1150-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1150/frame_02.png",
+          "sha256": "1c7f0bee135f5082bb795529faf9af4d1a17eaf85b718210bbbfe01b4a5ad98c",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1150,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1150,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1150",
+        "transform_class": "out_of_scale",
+        "transform_parameters": {
+          "scale": 1.42
+        }
+      },
+      "recipe_sha256": "ef8f8f736765af6406a9c7ea55cb2ad6c2cd33afb5dbfcd90935333f5bfe6171",
+      "required_fallback": false,
+      "sequence_id": "development-out_of_scale-1150",
+      "source_content_id": "development-content-1150",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1151",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1151/frame_00.png",
+          "sha256": "5a5329601a61a647f680449b7611fb09b7300a78c7766b109224f9f285fe754f",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1151-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1151/frame_01.png",
+          "sha256": "b913d77e051832cc79b4a9929a3e3dc3958926974c31eaa84f522c01663e458f",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1151-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-out_of_scale-1151/frame_02.png",
+          "sha256": "b913d77e051832cc79b4a9929a3e3dc3958926974c31eaa84f522c01663e458f",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1151,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1151,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1151",
+        "transform_class": "out_of_scale",
+        "transform_parameters": {
+          "scale": 1.42
+        }
+      },
+      "recipe_sha256": "e47069280b27a762eeacc584a98cdbb872c66346ac9db6a543521878614968d6",
+      "required_fallback": false,
+      "sequence_id": "development-out_of_scale-1151",
+      "source_content_id": "development-content-1151",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1160",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1160/frame_00.png",
+          "sha256": "9cea9174f74a4ce0b7b17f7ec99d4d671fe2d56616dfb7b2acc2c5093dcfaf2f",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1160-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1160/frame_01.png",
+          "sha256": "ee2fe07ecb279b70cf2df7e6574a37c69ab6db6f0d84976768b093fd2f380569",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1160-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1160/frame_02.png",
+          "sha256": "ee2fe07ecb279b70cf2df7e6574a37c69ab6db6f0d84976768b093fd2f380569",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1160,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1160,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1160",
+        "transform_class": "outlier_heavy",
+        "transform_parameters": {
+          "seed_offset": 303,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "b463b099db356bf1516eca40760c507b528d3eeb51bcac971a7b36847c82edbe",
+      "required_fallback": false,
+      "sequence_id": "development-outlier_heavy-1160",
+      "source_content_id": "development-content-1160",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1161",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1161/frame_00.png",
+          "sha256": "b00678065b1a3fd2b400ccf6962844b44f54dde22053929ad747095ccac3e2d8",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1161-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1161/frame_01.png",
+          "sha256": "8a001da54e0211b2164cc1d0bf5cbd31610413ffecee58bf1ec2ff51300d4491",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1161-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-outlier_heavy-1161/frame_02.png",
+          "sha256": "8a001da54e0211b2164cc1d0bf5cbd31610413ffecee58bf1ec2ff51300d4491",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1161,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1161,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1161",
+        "transform_class": "outlier_heavy",
+        "transform_parameters": {
+          "seed_offset": 303,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "2bc4254107fee0574f7a9405c0d3b56c42c42778aa196e8baff7628734aa1e40",
+      "required_fallback": false,
+      "sequence_id": "development-outlier_heavy-1161",
+      "source_content_id": "development-content-1161",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "fallback_direction": "zoom_in",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1170/frame_00.png",
+          "sha256": "a89a896616414cc1002ca2680911247c344543cbd3e14837e1dda2be31afd596",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1170/frame_01.png",
+          "sha256": "d4b2806995d49da4612e264b7f1550eefa6aa2773452503bcaf4d58ba93e95cb",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1170/frame_02.png",
+          "sha256": "d4b2806995d49da4612e264b7f1550eefa6aa2773452503bcaf4d58ba93e95cb",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1170,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_in",
+        "generator_seed": 1170,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1170",
+        "transform_class": "pan_zoom",
+        "transform_parameters": {
+          "dx": 12,
+          "dy": -7,
+          "scale": 1.15
+        }
+      },
+      "recipe_sha256": "7b1dc251198672fd122ccbfb66938838d65e0a98fdd674847c86e3586c1f4830",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom-1170",
+      "source_content_id": "development-content-1170",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1171",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1171/frame_00.png",
+          "sha256": "3ac298d541fa607ba0fb52d1028f4bbfc26663cc91110f3dbea1c559e14d367e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1171",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1171/frame_01.png",
+          "sha256": "23b89e989b325abe4e93850f501dfb335e746805a3521781a530bfb9ea370bf6",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1171",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1171/frame_02.png",
+          "sha256": "23b89e989b325abe4e93850f501dfb335e746805a3521781a530bfb9ea370bf6",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1171,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1171,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1171",
+        "transform_class": "pan_zoom",
+        "transform_parameters": {
+          "dx": 13,
+          "dy": -6,
+          "scale": 1.15
+        }
+      },
+      "recipe_sha256": "264de2ed80d4d36ef5ab00cb82545b453ed4daa075b2d5536c1bbcb46c0f6ece",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom-1171",
+      "source_content_id": "development-content-1171",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "fallback_direction": "zoom_in",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1172",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1172/frame_00.png",
+          "sha256": "70f6d4dcb186975fe5b3d50ce68c495f4046ff25b4a2ecd57c346c5466421bac",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1172",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1172/frame_01.png",
+          "sha256": "5661f26a172c0bb14c8ef9a9f38f447d815d722b693e9e9988c90f3cb958afbe",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1172",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1172/frame_02.png",
+          "sha256": "5661f26a172c0bb14c8ef9a9f38f447d815d722b693e9e9988c90f3cb958afbe",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1172,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_in",
+        "generator_seed": 1172,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1172",
+        "transform_class": "pan_zoom",
+        "transform_parameters": {
+          "dx": 12,
+          "dy": -7,
+          "scale": 1.15
+        }
+      },
+      "recipe_sha256": "fe32991afac69edb7a55926c6ad5375b6fde91f283a37f9d5fb973d63235559c",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom-1172",
+      "source_content_id": "development-content-1172",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1173",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1173/frame_00.png",
+          "sha256": "c9bf7b9288ade87f7a386c0796342c6bdccbc12352e0be92f8db76351c19544b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1173",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1173/frame_01.png",
+          "sha256": "a4ed044317179d9df5d6d01142b76e6bec224994610f7d36e8d696320e2b1d7d",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1173",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom-1173/frame_02.png",
+          "sha256": "a4ed044317179d9df5d6d01142b76e6bec224994610f7d36e8d696320e2b1d7d",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1173,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1173,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1173",
+        "transform_class": "pan_zoom",
+        "transform_parameters": {
+          "dx": 26,
+          "dy": -13,
+          "photometric": "luminance_matched_colorize",
+          "scale": 1.22,
+          "shear": 0.025
+        }
+      },
+      "recipe_sha256": "a3241c61f53b9caf93a4bd5b7c543850147fdd5588a43e26cadab05b6644ccec",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom-1173",
+      "source_content_id": "development-content-1173",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "fallback_direction": "zoom_in",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1180",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1180/frame_00.png",
+          "sha256": "2734c2c1b5d609ee3f5735a2123bd461000a255d4a284976683b6df20841be88",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1180-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1180/frame_01.png",
+          "sha256": "078158087aea02eb1a092255ece258c5d1ffaa9eb851d6db454b55ba58e4b5cf",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1180-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1180/frame_02.png",
+          "sha256": "078158087aea02eb1a092255ece258c5d1ffaa9eb851d6db454b55ba58e4b5cf",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1180,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": "zoom_in",
+        "generator_seed": 1180,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1180",
+        "transform_class": "pan_zoom_incremental",
+        "transform_parameters": {
+          "dx": 12,
+          "dy": -7,
+          "scale": 1.15,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "365809b4f65727dec79d55693001f5758a0ef96a18fcfc98a9b536cb14d76dc3",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom_incremental-1180",
+      "source_content_id": "development-content-1180",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1181",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1181/frame_00.png",
+          "sha256": "61aedce23a7bed2cf9dda8cfe61074830c6adb1bf79bdf56d9f9d8327aea12e8",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1181-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1181/frame_01.png",
+          "sha256": "5861e620e1bbaac43f5d6ebf2b1beb7ad7ffdedc4f50e13b852bf1ef59a847e4",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1181-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_incremental-1181/frame_02.png",
+          "sha256": "5861e620e1bbaac43f5d6ebf2b1beb7ad7ffdedc4f50e13b852bf1ef59a847e4",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1181,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1181,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1181",
+        "transform_class": "pan_zoom_incremental",
+        "transform_parameters": {
+          "dx": 12,
+          "dy": -7,
+          "scale": 1.15,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "7527aefd4bfb4732d0317791987f2842f0e8056718d2893471a4b13fb05dc2d6",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom_incremental-1181",
+      "source_content_id": "development-content-1181",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "fallback_direction": "zoom_out",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1190/frame_00.png",
+          "sha256": "d0d14f1d07473b0bcf2e6b10676a8e1c5b6f88bad02bfde8dd669c56ff597384",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1190/frame_01.png",
+          "sha256": "255190358ccd276e1c2f17b3c6974431069f6783433c43647e49b8ac399bfa38",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1190/frame_02.png",
+          "sha256": "255190358ccd276e1c2f17b3c6974431069f6783433c43647e49b8ac399bfa38",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1190,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_out",
+        "generator_seed": 1190,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1190",
+        "transform_class": "pan_zoom_reverse",
+        "transform_parameters": {
+          "dx": 18,
+          "dy": -9,
+          "scale": 0.87
+        }
+      },
+      "recipe_sha256": "790b560f609e045c306bbfab60b2c74bafc287ef890162976f71f1a898b7c8ce",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom_reverse-1190",
+      "source_content_id": "development-content-1190",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1191",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1191/frame_00.png",
+          "sha256": "f26e5db99bf559b191ffd442d74a6ca54044d81be9c7712d357a23c8b4ca2a31",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1191",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1191/frame_01.png",
+          "sha256": "53d4e859924dd6b0ea4e5b03c065c61de8e963de0b30a2824e0e9e136fae3614",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1191",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1191/frame_02.png",
+          "sha256": "53d4e859924dd6b0ea4e5b03c065c61de8e963de0b30a2824e0e9e136fae3614",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1191,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1191,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1191",
+        "transform_class": "pan_zoom_reverse",
+        "transform_parameters": {
+          "dx": 18,
+          "dy": -9,
+          "scale": 0.87
+        }
+      },
+      "recipe_sha256": "c59d8f5e9c615feb33fac569f0eb3418a22cf1cf9501aa5cfbe7f26703dc73d4",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom_reverse-1191",
+      "source_content_id": "development-content-1191",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "fallback_direction": "zoom_out",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1192",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1192/frame_00.png",
+          "sha256": "bfb11ed4c509d83be081b7edeb6255aca383d855bb069cd16a9047402ee6bb9b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1192",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1192/frame_01.png",
+          "sha256": "738a95b5c20af120cc5ce46045d287fef0af712e20528cccb75617b318372e45",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1192",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1192/frame_02.png",
+          "sha256": "738a95b5c20af120cc5ce46045d287fef0af712e20528cccb75617b318372e45",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1192,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_out",
+        "generator_seed": 1192,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1192",
+        "transform_class": "pan_zoom_reverse",
+        "transform_parameters": {
+          "dx": 18,
+          "dy": -9,
+          "scale": 0.87
+        }
+      },
+      "recipe_sha256": "1d53384af223a49945d53484a0f73e776e4a10fe2755f8daf537e0ffaea45aae",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom_reverse-1192",
+      "source_content_id": "development-content-1192",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1193",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1193/frame_00.png",
+          "sha256": "7dfcc72de3fa0d5bfc20db8e48a41ad623bac5032da3b5868ab19c1ace05099b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1193",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1193/frame_01.png",
+          "sha256": "a201a3a70dc75d50f519746dce449949cd603064c47018475f4bd315fe23109b",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1193",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_reverse-1193/frame_02.png",
+          "sha256": "a201a3a70dc75d50f519746dce449949cd603064c47018475f4bd315fe23109b",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1193,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1193,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1193",
+        "transform_class": "pan_zoom_reverse",
+        "transform_parameters": {
+          "dx": 34,
+          "dy": -17,
+          "photometric": "luminance_matched_colorize",
+          "scale": 0.82
+        }
+      },
+      "recipe_sha256": "dec7f410160ef298bec80ba26519cee26ab0787909b18518d120e0ccad969130",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom_reverse-1193",
+      "source_content_id": "development-content-1193",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "fallback_direction": "zoom_out",
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1200",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1200/frame_00.png",
+          "sha256": "9908ef235220ef85c0a68d459335200c141a22ea6a0ec45cf211e345f5b3e5b2",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1200-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1200/frame_01.png",
+          "sha256": "4d9be8fc5392ee3ba0c8875176c7fd2b4822bdceb320d20fb8f9f9bbcba8f1d9",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1200-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1200/frame_02.png",
+          "sha256": "4d9be8fc5392ee3ba0c8875176c7fd2b4822bdceb320d20fb8f9f9bbcba8f1d9",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1200,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": "zoom_out",
+        "generator_seed": 1200,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "development-content-1200",
+        "transform_class": "pan_zoom_shared_template",
+        "transform_parameters": {
+          "dx": 18,
+          "dy": -9,
+          "scale": 0.87,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "32fbc3baeadb6652887e708bc1794969b8396d32a0bf2f4f4873e1b02793c0c7",
+      "required_fallback": true,
+      "sequence_id": "development-pan_zoom_shared_template-1200",
+      "source_content_id": "development-content-1200",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1201",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1201/frame_00.png",
+          "sha256": "7cffbbd94b1d653cc72f49cfea7ccee5f0337fbcdec1e916f0e19587fa800e34",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1201-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1201/frame_01.png",
+          "sha256": "ed26d60aa1bfa796a03956904ba99d6ff2b0148c0b904e62715154bb3fe7c128",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1201-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-pan_zoom_shared_template-1201/frame_02.png",
+          "sha256": "ed26d60aa1bfa796a03956904ba99d6ff2b0148c0b904e62715154bb3fe7c128",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1201,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1201,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1201",
+        "transform_class": "pan_zoom_shared_template",
+        "transform_parameters": {
+          "dx": 18,
+          "dy": -9,
+          "scale": 0.87,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "af7032d277acd57e33fe3b94c8157b7f6f2f81b4e46c739dbcd3f4470a0d3f20",
+      "required_fallback": false,
+      "sequence_id": "development-pan_zoom_shared_template-1201",
+      "source_content_id": "development-content-1201",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1210",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1210/frame_00.png",
+          "sha256": "7a6ffdb8b661a4c52d2e55dbc26d7ba0074329ac008c77a2876fecd6bace66ef",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1210-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1210/frame_01.png",
+          "sha256": "041b830da1ec09f2d12bd470ca6cba2d51d9d3fd22b4e08feae1c4735b241f6e",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1210-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1210/frame_02.png",
+          "sha256": "041b830da1ec09f2d12bd470ca6cba2d51d9d3fd22b4e08feae1c4735b241f6e",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1210,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1210,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1210",
+        "transform_class": "ransac_failure",
+        "transform_parameters": {
+          "dx": 120,
+          "dy": 0
+        }
+      },
+      "recipe_sha256": "0b1fe5f0479cc065f8d2dbfba9cf6dffb10335051a0ae4b2a5e2634fae74baeb",
+      "required_fallback": false,
+      "sequence_id": "development-ransac_failure-1210",
+      "source_content_id": "development-content-1210",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1211",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1211/frame_00.png",
+          "sha256": "4e8ad4c327c0458b78bdc69bef93d413a17d2cd9669c838b43d27769cd09e2dc",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1211-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1211/frame_01.png",
+          "sha256": "e3f791232083b716db89935b4b299b4481ba1d80489ba116118e454f1c2346c8",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1211-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-ransac_failure-1211/frame_02.png",
+          "sha256": "e3f791232083b716db89935b4b299b4481ba1d80489ba116118e454f1c2346c8",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1211,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1211,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1211",
+        "transform_class": "ransac_failure",
+        "transform_parameters": {
+          "dx": 120,
+          "dy": 0
+        }
+      },
+      "recipe_sha256": "24193b67d8599e2a7f049231bd9f1a28327aa95a4c2eb71d5c08982719253e7f",
+      "required_fallback": false,
+      "sequence_id": "development-ransac_failure-1211",
+      "source_content_id": "development-content-1211",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1220",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1220/frame_00.png",
+          "sha256": "3dbd14a25e6967d5a0e6ab40888a428bf9d95754faabd378873e2a0799000361",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1220-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1220/frame_01.png",
+          "sha256": "96ab9c97474146c77ef2924ddc95cdcecd559df4d1527a332f25412c0561c588",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1220-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1220/frame_02.png",
+          "sha256": "96ab9c97474146c77ef2924ddc95cdcecd559df4d1527a332f25412c0561c588",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1220,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1220,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1220",
+        "transform_class": "same_palette_different_layout",
+        "transform_parameters": {
+          "transpose": "horizontal"
+        }
+      },
+      "recipe_sha256": "3162d4ab397f705c746b83c2a1f2f41ca5717a47dc166bac127f4d2ecda9cd58",
+      "required_fallback": false,
+      "sequence_id": "development-same_palette_different_layout-1220",
+      "source_content_id": "development-content-1220",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1221",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1221/frame_00.png",
+          "sha256": "2f2d0feb68d443f55dc1519d9c39074199655d8ba3108b2f26c7aa9a6934a8ad",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1221-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1221/frame_01.png",
+          "sha256": "ab03972d328d9d279e3e092437c584d43ff7b47ab7ad8df69912763ab027b685",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1221-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-same_palette_different_layout-1221/frame_02.png",
+          "sha256": "ab03972d328d9d279e3e092437c584d43ff7b47ab7ad8df69912763ab027b685",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1221,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1221,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1221",
+        "transform_class": "same_palette_different_layout",
+        "transform_parameters": {
+          "transpose": "horizontal"
+        }
+      },
+      "recipe_sha256": "08828a4bd69ef4a652b98ef649c9cdec30fa141427df45de393b83c360da2376",
+      "required_fallback": false,
+      "sequence_id": "development-same_palette_different_layout-1221",
+      "source_content_id": "development-content-1221",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1230/frame_00.png",
+          "sha256": "99dd3a27516229003ee586f15d790d362221670e1a67c26a46bbdfa5bea03841",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1230/frame_01.png",
+          "sha256": "04c568ce67f64adb08d0f3a7f9c96a363c1e90d86d80d922cf18badb6e39027a",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1230/frame_02.png",
+          "sha256": "04c568ce67f64adb08d0f3a7f9c96a363c1e90d86d80d922cf18badb6e39027a",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1230,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1230,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1230",
+        "transform_class": "static_duplicate",
+        "transform_parameters": {
+          "dx": 16,
+          "dy": -8
+        }
+      },
+      "recipe_sha256": "15df23af63de9ce9603a2d203434ab217b0b9a0bd1b9a84adfc105a226802e8e",
+      "required_fallback": false,
+      "sequence_id": "development-static_duplicate-1230",
+      "source_content_id": "development-content-1230",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1231",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1231/frame_00.png",
+          "sha256": "4445ae5908c2a363b17431d7e3387a0c5337887793879cd6c2ae49ba1ee150fa",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1231",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1231/frame_01.png",
+          "sha256": "1626ac5036150c780e9fbd4d5ac5d550fe13b23eb5382284bb31161b219c3eee",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1231",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_duplicate-1231/frame_02.png",
+          "sha256": "1626ac5036150c780e9fbd4d5ac5d550fe13b23eb5382284bb31161b219c3eee",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1231,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1231,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1231",
+        "transform_class": "static_duplicate",
+        "transform_parameters": {
+          "nuisance_overlay": [
+            0,
+            0,
+            51,
+            49
+          ]
+        }
+      },
+      "recipe_sha256": "dca469e4e5a339925262ab13efdf52f23c67e5b86910ae7fd54a63ce5c5c950a",
+      "required_fallback": false,
+      "sequence_id": "development-static_duplicate-1231",
+      "source_content_id": "development-content-1231",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1240/frame_00.png",
+          "sha256": "62c8f7ab3e676a4133317bb8bebeaeaab6c7bfa9067ef47668db2579ddb961d4",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1240/frame_01.png",
+          "sha256": "6eef12898be1cb13725c15ea4435781a4b81e64c7b8a17b7a7988da94bf4cda4",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1240/frame_02.png",
+          "sha256": "6eef12898be1cb13725c15ea4435781a4b81e64c7b8a17b7a7988da94bf4cda4",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1240,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1240,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1240",
+        "transform_class": "static_shift",
+        "transform_parameters": {
+          "dx": 20,
+          "dy": -10
+        }
+      },
+      "recipe_sha256": "3ff777b0f557dd1c86a4523e828ecdcc46959ac604e8b6cabbd70a3afb8d5df8",
+      "required_fallback": false,
+      "sequence_id": "development-static_shift-1240",
+      "source_content_id": "development-content-1240",
+      "transform_class": "static_shift"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1241",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1241/frame_00.png",
+          "sha256": "c8f827f80f46d3a782447d8f5369721061c2c233c08c87bfde88efa0cd5a0efa",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1241",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1241/frame_01.png",
+          "sha256": "dcf52b4b9b4fe0d604f0ed3d8fe25eed4f559333635ad0a3e2d19f0b797afdac",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1241",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-static_shift-1241/frame_02.png",
+          "sha256": "dcf52b4b9b4fe0d604f0ed3d8fe25eed4f559333635ad0a3e2d19f0b797afdac",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1241,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 1241,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1241",
+        "transform_class": "static_shift",
+        "transform_parameters": {
+          "dx": 20,
+          "dy": -10
+        }
+      },
+      "recipe_sha256": "f57a324486fbf502274c9a2f4cbc3b257e360f1dd2b7ee881c124e13972580e5",
+      "required_fallback": false,
+      "sequence_id": "development-static_shift-1241",
+      "source_content_id": "development-content-1241",
+      "transform_class": "static_shift"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1250",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1250/frame_00.png",
+          "sha256": "b2632be0f7921a37561680892241157dada12886a137381f914882697cd37f8c",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1250-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1250/frame_01.png",
+          "sha256": "4fd57fb9d4ae793f915bf31eb81f34a40cccf1b2d6d027f90b2679bf9da42b64",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1250-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1250/frame_02.png",
+          "sha256": "4fd57fb9d4ae793f915bf31eb81f34a40cccf1b2d6d027f90b2679bf9da42b64",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1250,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1250,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1250",
+        "transform_class": "too_few_descriptors",
+        "transform_parameters": {
+          "background": "#eeeeee"
+        }
+      },
+      "recipe_sha256": "36fbd2af3027c1ac46baad872ba178936adc0ba00e6b75cb103d2ecec4ea181b",
+      "required_fallback": false,
+      "sequence_id": "development-too_few_descriptors-1250",
+      "source_content_id": "development-content-1250",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1251",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1251/frame_00.png",
+          "sha256": "a391cb80f06fe124bb8611a4d4421227410384e4825fe66537094e7dfec52b1d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1251-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1251/frame_01.png",
+          "sha256": "4fd57fb9d4ae793f915bf31eb81f34a40cccf1b2d6d027f90b2679bf9da42b64",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1251-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-too_few_descriptors-1251/frame_02.png",
+          "sha256": "4fd57fb9d4ae793f915bf31eb81f34a40cccf1b2d6d027f90b2679bf9da42b64",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1251,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1251,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1251",
+        "transform_class": "too_few_descriptors",
+        "transform_parameters": {
+          "background": "#eeeeee"
+        }
+      },
+      "recipe_sha256": "df9f49977803a486f5c6d46e5bdfe6d64294b25bb2fdd91709470b5b42182464",
+      "required_fallback": false,
+      "sequence_id": "development-too_few_descriptors-1251",
+      "source_content_id": "development-content-1251",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1260",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1260/frame_00.png",
+          "sha256": "fc5d6c3143cbe51134d9525ef413d6312bed90d56243f287c83c868e121bec9e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1260-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1260/frame_01.png",
+          "sha256": "3a6af0f3f4c3ad1e2401e5b85639f38dacf93d1ef33cf29b36be60cb807532e3",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1260-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1260/frame_02.png",
+          "sha256": "3a6af0f3f4c3ad1e2401e5b85639f38dacf93d1ef33cf29b36be60cb807532e3",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1260,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1260,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1260",
+        "transform_class": "true_transition",
+        "transform_parameters": {
+          "seed_offset": 701,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "90b460a79823e2ef06e5fe587aba97f25259c7c03d92b73805796ba56a356b10",
+      "required_fallback": false,
+      "sequence_id": "development-true_transition-1260",
+      "source_content_id": "development-content-1260",
+      "transform_class": "true_transition"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "development-content-1261",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1261/frame_00.png",
+          "sha256": "448d7947423595ea6d9149928c70508495a312951e59509b44d67eedb17305fc",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-content-1261-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1261/frame_01.png",
+          "sha256": "ad22b883d80ccab3970c0b6a900f27be1f7c4c52edf4778e7cd37db29f577626",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "development-content-1261-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/development/development-true_transition-1261/frame_02.png",
+          "sha256": "ad22b883d80ccab3970c0b6a900f27be1f7c4c52edf4778e7cd37db29f577626",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 1261,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 1261,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "development-content-1261",
+        "transform_class": "true_transition",
+        "transform_parameters": {
+          "seed_offset": 701,
+          "semantic_patch_offset": [
+            0,
+            0
+          ]
+        }
+      },
+      "recipe_sha256": "d4c30fcd080ea521f76bbb6c950d0fbf67d136eecadb0bbc28ebe4527a88e3fe",
+      "required_fallback": false,
+      "sequence_id": "development-true_transition-1261",
+      "source_content_id": "development-content-1261",
+      "transform_class": "true_transition"
+    }
+  ],
+  "generator_version": "issue-22-real-sequence-v26",
+  "held_out_replica_counts": {
+    "collinear_inliers": 1,
+    "high_residual": 1,
+    "incremental_build": 1,
+    "low_masked_ssim": 1,
+    "one_way_coverage": 1,
+    "out_of_scale": 1,
+    "outlier_heavy": 1,
+    "pan_zoom": 1,
+    "pan_zoom_incremental": 1,
+    "pan_zoom_reverse": 1,
+    "pan_zoom_shared_template": 1,
+    "ransac_failure": 1,
+    "same_palette_different_layout": 1,
+    "static_duplicate": 1,
+    "static_shift": 1,
+    "too_few_descriptors": 1,
+    "true_transition": 1
+  },
+  "held_out_sequences": [
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259100",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-collinear_inliers-259100/frame_00.png",
+          "sha256": "cdbc426dd8057397d5d9e600a44c288ad9f746bb7b19896ab2576a0e30053a22",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259100-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-collinear_inliers-259100/frame_01.png",
+          "sha256": "6abfa8fce656df9e7d2c7ae9200bbd4f707b38f2b7bfbe9075f55b5da0578e6a",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259100-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-collinear_inliers-259100/frame_02.png",
+          "sha256": "6abfa8fce656df9e7d2c7ae9200bbd4f707b38f2b7bfbe9075f55b5da0578e6a",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259100,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259100,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259100",
+        "transform_class": "collinear_inliers",
+        "transform_parameters": {
+          "line_y": 165
+        }
+      },
+      "recipe_sha256": "057aa7f3ad6b119a4020432ce33e5bf69d8117c0f19850a5d07c2132f67e850c",
+      "required_fallback": false,
+      "sequence_id": "held_out-collinear_inliers-259100",
+      "source_content_id": "held_out-content-259100",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259110",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-high_residual-259110/frame_00.png",
+          "sha256": "b3519023d782d74b6d90555e8a28808fe47549ed43f69c3ea744c0ef2e0a241b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259110-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-high_residual-259110/frame_01.png",
+          "sha256": "792378721c5b78814c08c10b9754f0ec19b461de518dcbed54b73c60c25fc20f",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259110-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-high_residual-259110/frame_02.png",
+          "sha256": "792378721c5b78814c08c10b9754f0ec19b461de518dcbed54b73c60c25fc20f",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259110,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259110,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259110",
+        "transform_class": "high_residual",
+        "transform_parameters": {
+          "dx": 38,
+          "dy": -30,
+          "scale": 1.2
+        }
+      },
+      "recipe_sha256": "02102851a5108d9a398970e50dbc03c1c775bc5327bfe4e7ca5303d2e6a31882",
+      "required_fallback": false,
+      "sequence_id": "held_out-high_residual-259110",
+      "source_content_id": "held_out-content-259110",
+      "transform_class": "high_residual"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259120",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-incremental_build-259120/frame_00.png",
+          "sha256": "89604ca9ce99802457ec75b8ecb310a7ca1d6c19e061e9adc565fcfcb7c726fb",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259120-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-incremental_build-259120/frame_01.png",
+          "sha256": "85088016ae311cbd997d86ff60c32267a8a6ed6ea6c92a577356eed5e6a55554",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259120-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-incremental_build-259120/frame_02.png",
+          "sha256": "85088016ae311cbd997d86ff60c32267a8a6ed6ea6c92a577356eed5e6a55554",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259120,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259120,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259120",
+        "transform_class": "incremental_build",
+        "transform_parameters": {
+          "semantic_patch_offset": [
+            -24,
+            -12
+          ]
+        }
+      },
+      "recipe_sha256": "0a993886dd4c2c293cb700597480acd6fa79d1cf8af284dec7cb52708e710db7",
+      "required_fallback": false,
+      "sequence_id": "held_out-incremental_build-259120",
+      "source_content_id": "held_out-content-259120",
+      "transform_class": "incremental_build"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259130",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-low_masked_ssim-259130/frame_00.png",
+          "sha256": "009251f7d013efaef46259f2a5e7441d4e92ac29fa58c1ea571742394e6a6bfe",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259130-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-low_masked_ssim-259130/frame_01.png",
+          "sha256": "e611cb819dba0174947e1eebb9249a3e249fa0b09fce5e409d8285f47987335f",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259130-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-low_masked_ssim-259130/frame_02.png",
+          "sha256": "e611cb819dba0174947e1eebb9249a3e249fa0b09fce5e409d8285f47987335f",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259130,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259130,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259130",
+        "transform_class": "low_masked_ssim",
+        "transform_parameters": {
+          "dx": 58,
+          "dy": 34
+        }
+      },
+      "recipe_sha256": "7026c6e9ceb9b6f02e88dbd5921db78b098c655c8d52f43bbd1751d1eb76b25b",
+      "required_fallback": false,
+      "sequence_id": "held_out-low_masked_ssim-259130",
+      "source_content_id": "held_out-content-259130",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259140",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-one_way_coverage-259140/frame_00.png",
+          "sha256": "ebeaf0d26c6382ee3cc8ddce4f6c92372413ecc1c1a216af4709dd7fa45bc250",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259140-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-one_way_coverage-259140/frame_01.png",
+          "sha256": "531e06b1e2c6bc89b11c5d9c35dbca265065a8fffda5152857ca0a210e40016f",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259140-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-one_way_coverage-259140/frame_02.png",
+          "sha256": "531e06b1e2c6bc89b11c5d9c35dbca265065a8fffda5152857ca0a210e40016f",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259140,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259140,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259140",
+        "transform_class": "one_way_coverage",
+        "transform_parameters": {
+          "dx": 95,
+          "dy": 40,
+          "scale": 1.22
+        }
+      },
+      "recipe_sha256": "ef3423a28f499362b635a0f0323983642185717056307e039207809e2cad8340",
+      "required_fallback": false,
+      "sequence_id": "held_out-one_way_coverage-259140",
+      "source_content_id": "held_out-content-259140",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259150",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-out_of_scale-259150/frame_00.png",
+          "sha256": "ba9039648fa486cc820df32698a47cb819cf3ee7845ef3bc4def742c2f04a7f7",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259150-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-out_of_scale-259150/frame_01.png",
+          "sha256": "5b74be02d83dd8f2664b2c8df081cdb97f57dd6f02b20475e98de92b2de23d6d",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259150-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-out_of_scale-259150/frame_02.png",
+          "sha256": "5b74be02d83dd8f2664b2c8df081cdb97f57dd6f02b20475e98de92b2de23d6d",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259150,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259150,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259150",
+        "transform_class": "out_of_scale",
+        "transform_parameters": {
+          "scale": 1.38
+        }
+      },
+      "recipe_sha256": "f82c98c9a4c7e994233f095ff7de7c60b5d264130404fc87d54f1f20a53cb333",
+      "required_fallback": false,
+      "sequence_id": "held_out-out_of_scale-259150",
+      "source_content_id": "held_out-content-259150",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259160",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-outlier_heavy-259160/frame_00.png",
+          "sha256": "d0c4fdcd1338f79d543bac9ed4967ba3f73b0b169cb81f573b7da3ff11b5f826",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259160-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-outlier_heavy-259160/frame_01.png",
+          "sha256": "ec8e36acd20b238d2ce7af09d0551271dba07d88512053213898b8bc369668c9",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259160-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-outlier_heavy-259160/frame_02.png",
+          "sha256": "ec8e36acd20b238d2ce7af09d0551271dba07d88512053213898b8bc369668c9",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259160,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259160,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259160",
+        "transform_class": "outlier_heavy",
+        "transform_parameters": {
+          "seed_offset": 503,
+          "semantic_patch_offset": [
+            -24,
+            -12
+          ]
+        }
+      },
+      "recipe_sha256": "0ed108aad9b7feaa03d4b4b7f40f5a7cfd356c7ace34c783b0849ffcbbc700ae",
+      "required_fallback": false,
+      "sequence_id": "held_out-outlier_heavy-259160",
+      "source_content_id": "held_out-content-259160",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "fallback_direction": "zoom_in",
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom-259170/frame_00.png",
+          "sha256": "5a389db030eddd36a7b9ccd76c584209fd19117050877c83f089cd8c8c7dfc3d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom-259170/frame_01.png",
+          "sha256": "9d7bdd795dd180654dfe2d9a0d6793ae06b5fd15ca9f432d0f9edb2be0a022a2",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259170",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom-259170/frame_02.png",
+          "sha256": "9d7bdd795dd180654dfe2d9a0d6793ae06b5fd15ca9f432d0f9edb2be0a022a2",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259170,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_in",
+        "generator_seed": 259170,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "held_out-content-259170",
+        "transform_class": "pan_zoom",
+        "transform_parameters": {
+          "dx": 14,
+          "dy": -5,
+          "scale": 1.15
+        }
+      },
+      "recipe_sha256": "3cf00d19a0796d91c7508242194d9d11ba4cc02328a6dcd07201032943643742",
+      "required_fallback": true,
+      "sequence_id": "held_out-pan_zoom-259170",
+      "source_content_id": "held_out-content-259170",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "fallback_direction": "zoom_in",
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259180",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_incremental-259180/frame_00.png",
+          "sha256": "a5020db974e5db36fd5be17331433161ce36724fac82a66ee3614152de26a084",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259180-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_incremental-259180/frame_01.png",
+          "sha256": "4ace7a34ac474e03accfc5711d2f18692844f9a2875d89405c8888ba6c80c1dc",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259180-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_incremental-259180/frame_02.png",
+          "sha256": "4ace7a34ac474e03accfc5711d2f18692844f9a2875d89405c8888ba6c80c1dc",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259180,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": "zoom_in",
+        "generator_seed": 259180,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "held_out-content-259180",
+        "transform_class": "pan_zoom_incremental",
+        "transform_parameters": {
+          "dx": 20,
+          "dy": -8,
+          "scale": 1.15,
+          "semantic_patch_offset": [
+            -16,
+            -8
+          ]
+        }
+      },
+      "recipe_sha256": "14593e83f06cabe9a8cb71a8c3a13a40f0b0019d20a55d77bf376b3810991d58",
+      "required_fallback": true,
+      "sequence_id": "held_out-pan_zoom_incremental-259180",
+      "source_content_id": "held_out-content-259180",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "fallback_direction": "zoom_out",
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_reverse-259190/frame_00.png",
+          "sha256": "1953e78e7450fe53593e17f951b22fd78c06361ac4b52d5799b400ccc69c5d1b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_reverse-259190/frame_01.png",
+          "sha256": "f24dd9bd4a6c15deb7e0412e29f0047726a20cc6d0e03fe67db642abb0ec9fdf",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259190",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_reverse-259190/frame_02.png",
+          "sha256": "f24dd9bd4a6c15deb7e0412e29f0047726a20cc6d0e03fe67db642abb0ec9fdf",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259190,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": "zoom_out",
+        "generator_seed": 259190,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "held_out-content-259190",
+        "transform_class": "pan_zoom_reverse",
+        "transform_parameters": {
+          "dx": 32,
+          "dy": -16,
+          "scale": 0.87
+        }
+      },
+      "recipe_sha256": "43a72c87bc07dd672bf0941b8b6c4fae37677f02d7d2325fec2c954586c754b7",
+      "required_fallback": true,
+      "sequence_id": "held_out-pan_zoom_reverse-259190",
+      "source_content_id": "held_out-content-259190",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "fallback_direction": "zoom_out",
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259200",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_shared_template-259200/frame_00.png",
+          "sha256": "2d452b8189f3c97d41e0d84c0225ab5efed2f4915ee59855327ea2b840a0ea67",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259200-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_shared_template-259200/frame_01.png",
+          "sha256": "38f17651c891825ffc48f263c7e54be6cefde9dc320676e5aff105dad274936c",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259200-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-pan_zoom_shared_template-259200/frame_02.png",
+          "sha256": "38f17651c891825ffc48f263c7e54be6cefde9dc320676e5aff105dad274936c",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259200,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": "zoom_out",
+        "generator_seed": 259200,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": true,
+        "source_content_id": "held_out-content-259200",
+        "transform_class": "pan_zoom_shared_template",
+        "transform_parameters": {
+          "dx": 24,
+          "dy": -12,
+          "scale": 0.88,
+          "semantic_patch_offset": [
+            -16,
+            -8
+          ]
+        }
+      },
+      "recipe_sha256": "a120ce13696c16e32f4bb2595be650aef961e66fd1db8f126550818c1c35e399",
+      "required_fallback": true,
+      "sequence_id": "held_out-pan_zoom_shared_template-259200",
+      "source_content_id": "held_out-content-259200",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259210",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-ransac_failure-259210/frame_00.png",
+          "sha256": "26541e71da2695ecd9eb3e07e48d4885d3b3e3dbb5c10ea8d4f9bcb78ce196d9",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259210-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-ransac_failure-259210/frame_01.png",
+          "sha256": "4286ed19eef664a3e662d81b43597707be6158b6e3c7e0ca55fc0c25d7840b5c",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259210-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-ransac_failure-259210/frame_02.png",
+          "sha256": "4286ed19eef664a3e662d81b43597707be6158b6e3c7e0ca55fc0c25d7840b5c",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259210,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259210,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259210",
+        "transform_class": "ransac_failure",
+        "transform_parameters": {
+          "dx": 110,
+          "dy": 15
+        }
+      },
+      "recipe_sha256": "079d5a4cf04de86cc7cdfcd991506d0fe934a7f24d1fa3c64df2ac3c437e4361",
+      "required_fallback": false,
+      "sequence_id": "held_out-ransac_failure-259210",
+      "source_content_id": "held_out-content-259210",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259220",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-same_palette_different_layout-259220/frame_00.png",
+          "sha256": "30f610fb6b3bb460a0c0e6ec3d762f2ea1643f956580dea313694255e1211b70",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259220-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-same_palette_different_layout-259220/frame_01.png",
+          "sha256": "48c9ed066037271dfff9a8a5079f8730e8986b84be2a3d69c4269719293cbd87",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259220-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-same_palette_different_layout-259220/frame_02.png",
+          "sha256": "48c9ed066037271dfff9a8a5079f8730e8986b84be2a3d69c4269719293cbd87",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259220,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259220,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259220",
+        "transform_class": "same_palette_different_layout",
+        "transform_parameters": {
+          "transpose": "vertical"
+        }
+      },
+      "recipe_sha256": "7ec3f042b88f54c9d0bf7df5ae0b09b60156d23644ebe7db84c0a903a06c55d3",
+      "required_fallback": false,
+      "sequence_id": "held_out-same_palette_different_layout-259220",
+      "source_content_id": "held_out-content-259220",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_duplicate-259230/frame_00.png",
+          "sha256": "d1abf5429bc3f91c6e1f24fc2e348e23e255ab11c685d4522d5f4e4d020d1dd4",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_duplicate-259230/frame_01.png",
+          "sha256": "39006d299d7ef7793d99c61b3240fa4a83d819509fb576f33f9a266126d5aafd",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259230",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_duplicate-259230/frame_02.png",
+          "sha256": "39006d299d7ef7793d99c61b3240fa4a83d819509fb576f33f9a266126d5aafd",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259230,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 259230,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259230",
+        "transform_class": "static_duplicate",
+        "transform_parameters": {
+          "dx": 32,
+          "dy": -16
+        }
+      },
+      "recipe_sha256": "860ed3f684de7a3a3c121e510f5506ce6b007f72792116ee66f20dbcbf72a34b",
+      "required_fallback": false,
+      "sequence_id": "held_out-static_duplicate-259230",
+      "source_content_id": "held_out-content-259230",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_shift-259240/frame_00.png",
+          "sha256": "c38e6c045da4395c11a2b6862b37e7dcf1c7e134e726f0a68a36793cc3212b45",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_shift-259240/frame_01.png",
+          "sha256": "280181fac128f59fe5dddc39d61cea916c98a11b3f5c5fc78a5f5da2883ad96c",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259240",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-static_shift-259240/frame_02.png",
+          "sha256": "280181fac128f59fe5dddc39d61cea916c98a11b3f5c5fc78a5f5da2883ad96c",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259240,
+      "recipe": {
+        "expected_label": "same",
+        "fallback_direction": null,
+        "generator_seed": 259240,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259240",
+        "transform_class": "static_shift",
+        "transform_parameters": {
+          "dx": 26,
+          "dy": -13
+        }
+      },
+      "recipe_sha256": "d874fa980bd10d9a81fede59bd63bdc463ff0e3fad8640c609600379e1dda763",
+      "required_fallback": false,
+      "sequence_id": "held_out-static_shift-259240",
+      "source_content_id": "held_out-content-259240",
+      "transform_class": "static_shift"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259250",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-too_few_descriptors-259250/frame_00.png",
+          "sha256": "175351a14e75bae95655806ef5373c7b24d1a442948c90c287f7840eee295e2c",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259250-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-too_few_descriptors-259250/frame_01.png",
+          "sha256": "1f1381dc85f25055efb5c1a829d9767cd03326781fef4f67c6a7f2b2641b6246",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259250-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-too_few_descriptors-259250/frame_02.png",
+          "sha256": "1f1381dc85f25055efb5c1a829d9767cd03326781fef4f67c6a7f2b2641b6246",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259250,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259250,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259250",
+        "transform_class": "too_few_descriptors",
+        "transform_parameters": {
+          "background": "#ededed"
+        }
+      },
+      "recipe_sha256": "29408211f41d4bdf3bd80583a7a5d40c058b7434f2d4245c01f86c5a5b435711",
+      "required_fallback": false,
+      "sequence_id": "held_out-too_few_descriptors-259250",
+      "source_content_id": "held_out-content-259250",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "fallback_direction": null,
+      "frames": [
+        {
+          "expected_visual_id": "held_out-content-259260",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-true_transition-259260/frame_00.png",
+          "sha256": "97bd05b450836130a52027b59c9d72f697f280fb74383049bf33801d1e70573e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259260-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-true_transition-259260/frame_01.png",
+          "sha256": "922b15bacffa2b2a00ac80ee4c30d21ec15cc35839c2648ec992bcace89284cc",
+          "timestamp": 1.0
+        },
+        {
+          "expected_visual_id": "held_out-content-259260-different",
+          "path": "tests/fixtures/visual_alignment/real_sequence_v1/held_out/held_out-true_transition-259260/frame_02.png",
+          "sha256": "922b15bacffa2b2a00ac80ee4c30d21ec15cc35839c2648ec992bcace89284cc",
+          "timestamp": 2.0
+        }
+      ],
+      "generator_seed": 259260,
+      "recipe": {
+        "expected_label": "different",
+        "fallback_direction": null,
+        "generator_seed": 259260,
+        "generator_version": "issue-22-real-sequence-v26",
+        "required_fallback": false,
+        "source_content_id": "held_out-content-259260",
+        "transform_class": "true_transition",
+        "transform_parameters": {
+          "seed_offset": 901,
+          "semantic_patch_offset": [
+            -24,
+            -12
+          ]
+        }
+      },
+      "recipe_sha256": "4e7ebd80ad908b347bad260ead24a48b0be1d72c384292af8aed84b22f795cdf",
+      "required_fallback": false,
+      "sequence_id": "held_out-true_transition-259260",
+      "source_content_id": "held_out-content-259260",
+      "transform_class": "true_transition"
+    }
+  ],
+  "lineage": {
+    "development_protocol": "frozen-before-final-held-out-generation",
+    "held_out_protocol": "fresh-after-generator-and-search-protocol-freeze"
+  },
+  "manifest_version": 3,
+  "retired_holdouts": [
+    {
+      "generator_version": "issue-22-real-sequence-v1",
+      "held_out_seed_start": 9100,
+      "manifest_sha256": "619379c53bdbd88e4eebfd9a7f4e6692a5ac0e26764e7c83fd28f6966dc56fe5",
+      "reason": "observed before corpus remediation"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v1-remediation-draft",
+      "held_out_seed_start": 9100,
+      "manifest_sha256": "2ff3ff0a86c012d111c2740f0c1b3ba61891b5c6457a3c37eac38b207fa21ffd",
+      "reason": "consumed while validating final branch coverage"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v2",
+      "held_out_seed_start": 19100,
+      "manifest_sha256": "3cc92a9b74f76a4443efa2bf4b29f8520539140253df8a194d00ec67b3484bff",
+      "reason": "consumed before held-out transform independence review"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v3",
+      "held_out_seed_start": 29100,
+      "manifest_sha256": "93384a0648e384527f054449b9b495f2930e2b6385bbf060fc050a13a3560dc2",
+      "reason": "consumed by first independent-transform validation"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v4",
+      "held_out_seed_start": 39100,
+      "manifest_sha256": "eb1c01b8081ce8b252f1bb1bc9d075b86f7849e5dd4bcb3df81c316d6b7fe809",
+      "reason": "consumed by second independent-transform validation"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v5",
+      "held_out_seed_start": 49100,
+      "manifest_sha256": "2dd21ea3febbb13961a4e79689823c15a7da8f81290c93bc9bf53196838b8bf7",
+      "reason": "consumed by residual and persistence validation"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v6",
+      "held_out_seed_start": 59100,
+      "manifest_sha256": "9ded9355d168daea669dec9ca6ff6c801f4e2f77311f7efd31513b45bf1c120c",
+      "reason": "consumed by ratio and reverse-persistence validation"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v7",
+      "held_out_seed_start": 69100,
+      "manifest_sha256": "d17c2e514f19e66240b42dbff9289c8af179cba5b20c8a9e437cb8d7e28e9d17",
+      "reason": "consumed before broadening development alignment-fit coverage"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v8",
+      "held_out_seed_start": 79100,
+      "manifest_sha256": "19949f95bb4567286320bd80f2b080a7781be1b751b4c8b5bd557e5ddd895159",
+      "reason": "superseded before held-out observation by broader development coverage"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v9",
+      "held_out_seed_start": 89100,
+      "manifest_sha256": "f4af923d505b6df6333a5d31e1f36e179f8d112d08fe75714936ff5fcbb687e7",
+      "reason": "superseded before held-out observation by final development envelope"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v10",
+      "held_out_seed_start": 99100,
+      "manifest_sha256": "0bf6accb1690603f1581232574cdb894a1a84657f7e1b6fb682db2627cb6c136",
+      "reason": "consumed before broadening low-feature development positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v11",
+      "held_out_seed_start": 109100,
+      "manifest_sha256": "b7fe3b35f96c5ce90976c8d31bbcdfb92d76f85eace8dbf3f10c6a5bd9b5b18c",
+      "reason": "superseded before held-out observation by expanded development sampling"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v12",
+      "held_out_seed_start": 119100,
+      "manifest_sha256": "1449888152824c20eb7e3eaabe6eceda0bbab58c81758695ff0e7b0ce51572d0",
+      "reason": "superseded before held-out observation by independent fallback replicas"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v13",
+      "held_out_seed_start": 129100,
+      "manifest_sha256": "80db87013d5d3ab2816dfd95987abed136d55c22f43cc82b1604d7c8b9821829",
+      "reason": "superseded before held-out observation by separable semantic patches"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v14",
+      "held_out_seed_start": 139100,
+      "manifest_sha256": "3b4877e37e091a7c64101abae5fe0c3522f29da676b3ffca99580da32f3450c6",
+      "reason": "superseded before held-out observation by sparse semantic negatives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v15",
+      "held_out_seed_start": 149100,
+      "manifest_sha256": "9b6fd290fb2d950a101d3aa08244410d4ea2566640b507d1860f458af7221580",
+      "reason": "superseded before held-out observation by low-feature alignment-fit positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v16",
+      "held_out_seed_start": 159100,
+      "manifest_sha256": "d15137e5812592094e47bc3cb60572624e5658ce50a2e17574a94fa45da0d47e",
+      "reason": "superseded before held-out observation by direct-false edge-fit positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v17",
+      "held_out_seed_start": 169100,
+      "manifest_sha256": "756d8fc14f31597a508ff429967fbebf0b7092677911c4f35a6264d14145d783",
+      "reason": "superseded before held-out observation by photometric alignment-fit positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v18",
+      "held_out_seed_start": 179100,
+      "manifest_sha256": "a3774cb46be846d5a4059d2b86c16f423976e9ede538a9a2f660654c3c518be1",
+      "reason": "superseded before held-out observation by histogram-distinct fit positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v19",
+      "held_out_seed_start": 189100,
+      "manifest_sha256": "a3c2cf783cd33947ec37d7fd4dc10742308e40f4a02adcaf9863436122757fff",
+      "reason": "superseded before held-out observation by luminance-preserving fit positives"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v20",
+      "held_out_seed_start": 199100,
+      "manifest_sha256": "b37f1fadc6e62d6c46456183994ec9da5ab91ad5db47b2428e21204f6a3dc73f",
+      "reason": "superseded before held-out observation by non-rigid fit coverage"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v21",
+      "held_out_seed_start": 209100,
+      "manifest_sha256": "5f94c9e4a584d41204d9b61b1fe551ee25306870713eda80a4d48a48b90d0d2e",
+      "reason": "superseded before held-out observation by wider non-rigid fit coverage"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v22",
+      "held_out_seed_start": 219100,
+      "manifest_sha256": "ffd398a9b04eafa2d5cc0fa1f710618b4f5cd268f52679b494ed847086a5a62b",
+      "reason": "consumed before adding the predeclared nuisance-overlay regression"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v23",
+      "held_out_seed_start": 229100,
+      "manifest_sha256": "45a812a093184d4ffc0ab614636e89e1fd073d52013089d4f39d9def1d89364e",
+      "reason": "superseded before held-out observation by the full nuisance-overlay extent"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v24",
+      "held_out_seed_start": 239100,
+      "manifest_sha256": "f5b4d43a0b131912bc6b6d0a90647a09715c9ddb399f10f7928b8cdf0f2d79a5",
+      "reason": "consumed by a calibration invalidated when worker metadata source changed mid-run"
+    },
+    {
+      "generator_version": "issue-22-real-sequence-v25",
+      "held_out_seed_start": 249100,
+      "manifest_sha256": "9db007648be4e2ef95b71bf1c60f1f8245dc51b6b2a8e87b2c118770d3b88900",
+      "reason": "consumed before calibrating the exact production OpenCV provider set"
+    }
+  ]
+}

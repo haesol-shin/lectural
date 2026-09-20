@@ -27,7 +27,15 @@
         "kind": {"enum": ["youtube", "local_video", "local_audio"]},
         "argument": {"type": "string"},
         "has_video": {"type": "boolean"},
-        "citation": {"type": "object"}
+        "citation": {"type": "object"},
+        "resolution": {
+          "type": "object",
+          "properties": {
+            "width": {"type": ["integer", "null"], "minimum": 1},
+            "height": {"type": ["integer", "null"], "minimum": 1}
+          },
+          "additionalProperties": true
+        }
       },
       "additionalProperties": true
     },
@@ -95,13 +103,16 @@
       "properties": {
         "timestamp_sec": {"type": "number", "minimum": 0},
         "path": {"type": "string"},
+        "width": {"type": ["integer", "null"], "minimum": 1},
+        "height": {"type": ["integer", "null"], "minimum": 1},
         "ocr": {
           "type": "object",
           "required": ["status", "text", "is_slide"],
           "properties": {
             "status": {"enum": ["skipped", "text", "no-text", "failed"]},
             "text": {"type": ["string", "null"]},
-            "is_slide": {"type": "boolean"}
+            "is_slide": {"type": "boolean"},
+            "reliable": {"type": ["boolean", "null"]}
           },
           "additionalProperties": true
         }
