@@ -20,8 +20,17 @@ NEAR_DUPLICATE = FIXTURE_DIR / "slide_02_near_dup.png"
 TRANSITION = FIXTURE_DIR / "slide_00_title.png"
 
 
+def _require_calibrated_opencv():
+    cv2 = pytest.importorskip("cv2")
+    from lectural.alignment import opencv_provenance
+
+    if not opencv_provenance(cv2)["distribution_supported"]:
+        pytest.skip("exact calibrated OpenCV provider set is not installed")
+    return cv2
+
+
 def test_alignment_worker_is_one_batch_and_returns_plain_metadata():
-    pytest.importorskip("cv2")
+    _require_calibrated_opencv()
     results = run_alignment_batch(
         [(str(REFERENCE), str(NEAR_DUPLICATE)), (str(REFERENCE), str(TRANSITION))],
         {"ssim_min": 0.90},
@@ -38,7 +47,7 @@ def test_alignment_worker_is_one_batch_and_returns_plain_metadata():
 
 
 def test_alignment_worker_session_reuses_one_process_for_serial_candidates():
-    pytest.importorskip("cv2")
+    _require_calibrated_opencv()
     worker = AlignmentWorker({"ssim_min": 0.90})
     try:
         worker_pid = worker._process.pid
@@ -51,7 +60,7 @@ def test_alignment_worker_session_reuses_one_process_for_serial_candidates():
 
 
 def test_alignment_worker_timeout_terminates_session_and_drops_late_response(monkeypatch):
-    pytest.importorskip("cv2")
+    _require_calibrated_opencv()
     worker = AlignmentWorker({"ssim_min": 0.90}, timeout_sec=30.0)
     try:
         monkeypatch.setattr(type(worker._parent), "poll", lambda _self, _timeout: False)
@@ -70,7 +79,7 @@ def test_alignment_worker_timeout_terminates_session_and_drops_late_response(mon
 
 
 def test_alignment_gate_order_reports_first_failed_gate():
-    pytest.importorskip("cv2")
+    _require_calibrated_opencv()
     results = run_alignment_batch(
         [(str(REFERENCE), str(NEAR_DUPLICATE))],
         {"ratio_matches_min": 10_000},
@@ -84,13 +93,14 @@ def test_alignment_gate_order_reports_first_failed_gate():
 
 
 def test_alignment_fails_closed_for_missing_path():
+    _require_calibrated_opencv()
     results = run_alignment_batch([("missing-reference.png", str(NEAR_DUPLICATE))])
     assert results[0]["result"] == "unavailable"
     assert results[0]["first_failed_gate"] == "decode"
 
 
 def test_alignment_normalizes_unequal_dimensions_for_identity_content(tmp_path):
-    cv2 = pytest.importorskip("cv2")
+    cv2 = _require_calibrated_opencv()
     reference = cv2.imread(str(REFERENCE))
     resized_path = tmp_path / "resized-reference.png"
     resized = cv2.resize(reference, (reference.shape[1] // 2, reference.shape[0] // 2))

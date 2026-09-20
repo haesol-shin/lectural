@@ -11677,7 +11677,7 @@
     "development_protocol": "frozen-before-final-held-out-generation",
     "held_out_protocol": "fresh-after-generator-and-search-protocol-freeze"
   },
-  "manifest_sha256": "37aee9204daaa00cf8e60ab1ecc82b000b5a50b37ac6a8e3f0bd2b71505a2388",
+  "manifest_sha256": "945fda123d8145f1e7f0f8c62c1de447f24d0e758642bdb60f7f431a24128af4",
   "promoted_baseline_hashes": {
     "canonical_payload": "6ee846070c9b0cd9992d7a9506d951477561afbe7eb4c79b38880188bce0d4c0",
     "ordered_decisions": "11a043a3c9165f063132d00063177bb124bede0ef0a7bbe5a62b010192c7c090",

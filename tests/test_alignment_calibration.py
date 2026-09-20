@@ -18,6 +18,14 @@ if str(REPO_ROOT) not in sys.path:
 from scripts import calibrate_alignment as calibration
 
 
+def _require_calibrated_opencv():
+    cv2 = pytest.importorskip("cv2")
+    from lectural.alignment import opencv_provenance
+
+    if not opencv_provenance(cv2)["distribution_supported"]:
+        pytest.skip("exact calibrated OpenCV provider set is not installed")
+
+
 def _measurement(label: str, *, version: str = "4.6.0", coverage=(0.95, 0.95), ssim=(0.95, 0.95)) -> dict:
     same = label == "same"
     ratio_matches = 100 if same else 1
@@ -440,6 +448,7 @@ def test_real_image_sequence_manifest_has_immutable_paths_and_disjoint_splits():
 
 def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
     """Actual image bytes, not cache or authored trace, form the payload."""
+    _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
     digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
@@ -636,6 +645,7 @@ def test_worker_mutated_staged_candidate_blocks_worker_measurement(monkeypatch, 
 
 
 def test_full_decoded_pipeline_has_exact_worker_pid_topology():
+    _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
     digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
@@ -884,7 +894,7 @@ def test_runtime_thresholds_are_bound_to_promoted_report():
     )
 
     report_path = REPO_ROOT / ALIGNMENT_CALIBRATION_REPORT
-    report_bytes = report_path.read_bytes()
+    report_bytes = report_path.read_bytes().replace(b"\r\n", b"\n")
     report = json.loads(report_bytes)
     assert __import__("hashlib").sha256(report_bytes).hexdigest() == ALIGNMENT_CALIBRATION_REPORT_SHA256
     assert report["frozen"] is True
@@ -892,5 +902,6 @@ def test_runtime_thresholds_are_bound_to_promoted_report():
     assert report["thresholds"] == ALIGNMENT_THRESHOLDS
 
     manifest_path = REPO_ROOT / "tests/fixtures/visual_alignment/real_sequence_v1/manifest.json"
-    manifest_sha256 = __import__("hashlib").sha256(manifest_path.read_bytes()).hexdigest()
+    manifest_bytes = manifest_path.read_bytes().replace(b"\r\n", b"\n")
+    manifest_sha256 = __import__("hashlib").sha256(manifest_bytes).hexdigest()
     assert report["manifest_sha256"] == manifest_sha256

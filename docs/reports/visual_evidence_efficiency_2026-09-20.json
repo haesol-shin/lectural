@@ -1924,8 +1924,8 @@
   },
   "calibration": {
     "report": "docs/reports/alignment_thresholds_2026-09-20.json",
-    "sha256": "679cdfa4acfb92ef8e8575ba6bf6d47967a4e24cc9399e001c6f06c6d61bf9a9",
-    "manifest_sha256": "37aee9204daaa00cf8e60ab1ecc82b000b5a50b37ac6a8e3f0bd2b71505a2388",
+    "sha256": "6166600cd1bdb2a2c73c6e6fcee87351eaa153697f516a62b846824ff3fe04d1",
+    "manifest_sha256": "945fda123d8145f1e7f0f8c62c1de447f24d0e758642bdb60f7f431a24128af4",
     "generator_version": "issue-22-real-sequence-v26",
     "dev_confusion": {
       "tp": 12,

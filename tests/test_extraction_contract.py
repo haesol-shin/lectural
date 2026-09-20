@@ -224,6 +224,7 @@ def test_pipeline_ocr_failure_keeps_representative_frame(monkeypatch, tmp_path: 
 
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
     monkeypatch.setattr(media, "resolve_video", lambda _source, _output: str(source_path))
+    monkeypatch.setattr(media, "probe_video_resolution", lambda _video: (1280, 720))
 
     def fake_extract(_video, frames_dir):
         frame_path = Path(frames_dir) / "frame_00001.png"

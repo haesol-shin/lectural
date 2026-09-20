@@ -22,7 +22,16 @@ BENCHMARK_DIR = Path(__file__).parent / "fixtures" / "benchmark"
 FIXTURE_IDS = ["en_terms_01", "ko_terms_01", "mixed_terms_01"]
 
 
+def _require_calibrated_opencv():
+    cv2 = pytest.importorskip("cv2")
+    from lectural.alignment import opencv_provenance
+
+    if not opencv_provenance(cv2)["distribution_supported"]:
+        pytest.skip("exact calibrated OpenCV provider set is not installed")
+
+
 def test_static_visual_duplicate_fixture_collapses_despite_ocr_noise_signature():
+    _require_calibrated_opencv()
     fixture = BENCHMARK_DIR / "visual_static_duplicate_01" / "slides"
     frames = [
         Frame(timestamp=index / 2, image_path=str(fixture / f"static_article_{index:02d}.png"))
