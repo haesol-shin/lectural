@@ -68,7 +68,7 @@ Per fixture set, one independent review pass compared the **rendered audio/video
 | `timestamp_error` | Cue-timestamp median/P95 | **Cue-level only.** Word-level P95 is out of reach because `lectural/speech.py` sets `word_timestamps=False`; this benchmark does not change that. |
 | `voiced_recall_and_gap` | Voiced-speech recall / max untranscribed gap | Scored against the fixture's authored `speech_spans`, never against `lectural.vad`'s own output on the same audio (that would be circular). |
 | `frame_recall_and_duplicate_rate` | Frame recall / duplicate rate / near-dup dropped / incremental retained | Scores `visual.extract_candidate_frames` + `visual.dedupe_frames`'s **output** against `slide_change_timestamps`, near-duplicate timestamps, and incremental build timestamps; production dedupe logic itself is never modified or reimplemented. |
-| `ocr_quality` | OCR CER / key-field recall (exact + fuzzy) / usable | `Levenshtein` when installed; `difflib.SequenceMatcher` fallback otherwise. CER is computed against authored slide reference text (`slides_text`); `key_fields` is dedicated to exact and fuzzy key-field recall. Exercised against the visually-degraded slide variants. |
+| `ocr_quality` / `accepted_ocr_quality` | OCR CER / key-field recall (exact + fuzzy) / usable | `ocr_quality` scores all selected frames. `accepted_ocr_quality` applies the production reliability threshold first, reports reliable/rejected frame counts, then scores only accepted OCR so a low-confidence duplicate cannot inflate apparent evidence quality. `Levenshtein` is used when installed, with `difflib.SequenceMatcher` as fallback. |
 
 Normalization rules: English text is lowercased, punctuation-stripped, and whitespace-collapsed via `whisper_normalizer` when available. Korean text is normalized by stripping punctuation/whitespace while preserving Hangul syllables, digits (e.g. 1956, 256), and ASCII letters, and computing CER space-insensitively (Korean word segmentation is not meaningful for a character-error-rate comparison the way it is for English WER).
 
@@ -88,6 +88,15 @@ Normalization rules: English text is lowercased, punctuation-stripped, and white
 `--media-variant clean` (default) uses the fixture's clean TTS audio and 720p video. `--media-variant degraded` uses `audio_degraded.wav` (noise/silence-injected) and `video_360p.mp4` instead, falling back to the clean asset when a degraded one is absent for a given fixture — this is what actually exercises the injected failure modes end to end, rather than leaving `audio_degraded.wav`/`video_360p.mp4` as committed but unused sidecars. Independent of this flag, every run also scores OCR against the fixture's standalone visually-degraded slide images (`slide_degraded_l1.png`, `slide_degraded_l2.png`) under `quality_metrics.degraded_slide_ocr`, since the assembled video itself is always built from clean slides.
 
 Frame selection (`extract_candidate_frames` + `dedupe_frames`) always runs when the fixture has video — it is not a separate axis. OCR preprocessing-effect attribution (raw vs. `ocr.ocr_image`'s built-in ROI+upscale+Otsu preprocessing) is **explicitly out of reach** for this harness: production `ocr_image` always preprocesses and `lectural/ocr.py` is never modified by this benchmark, so the issue's "preprocessing ... where measurable" acceptance criterion is knowingly scoped to the resolution (360p vs. 720p source) and STT model-size (`small` vs. `medium`) factorials instead of silently dropped.
+
+### OCR reliability calibration
+
+`OCR_RELIABLE_CONFIDENCE_THRESHOLD` is `0.95`. PaddleOCR's mean line score on
+the three committed L1 slides was 0.994 (EN), 0.963 (KO), and 0.994 (mixed);
+the corresponding severe-L2 values were 0.928, 0.841, and 0.875. This cleanly
+separates the Issue #21 CER anchors (L1: 0.027–0.185; L2: 0.676–0.870) while
+leaving raw OCR text visible in evidence. Tesseract TSV confidence is normalized
+from 0–100 to 0–1 before applying the same threshold.
 
 ### Caption/fallback injection mechanism
 
@@ -113,7 +122,7 @@ No profile is a product default from this issue — non-goal: "Production optimi
 uv run --with pytest --with numpy pytest tests/test_bench_metrics.py tests/test_benchmark_harness.py tests/test_fixtures_smoke.py -q
 
 # Real benchmark run (opt-in, requires the `bench` extra and lectural's `[run]` extra)
-uv run --with pytest python scripts/benchmark.py \
+uv run --extra run --extra bench python scripts/benchmark.py \
   --fixtures-dir tests/fixtures/benchmark \
   --out output/benchmark \
   --platform-label x86_64 \
@@ -126,6 +135,9 @@ uv run --with pytest python scripts/benchmark.py \
 ```
 
 Each report row records its exact `config` (fixtures dir, cache mode, reps, `skip_ocr`, model), the host `machine` spec and `dependency_versions`, and every per-repetition raw measurement under `runs`, per the issue's "exact commands, fixture identifiers, environment, raw measurements" acceptance criterion.
+The `bench` extra includes `psutil`; without it CPU/RSS samples are unavailable rather than meaningful zero measurements. CPU core-seconds in the Issue #22 comparison are derived as `sum(stage cpu_pct_avg * stage wall_time_sec / 100)`, and the report preserves every raw sample-derived stage measurement.
+
+Each controlled run also emits `alignment_observability` from the metadata already produced by `dedupe_frames`; the benchmark does not decode frames again. It records host decode count/pixels, persistent pHash candidates, worker invocations and decode pixels, alignment attempts, bidirectional warp count/pixels, evaluator outcomes and first-failed gates, raw keypoint/match/inlier/coverage/SSIM distributions, and the observed OpenCV version/build/provider plus requested thread/seed settings. The same object is preserved on every raw repetition and copied from the first deterministic repetition to the fixture summary; per-stage CPU/RSS/wall-time remains under `stages.visual_dedupe`.
 
 ## Report schema
 
@@ -138,3 +150,32 @@ See [`docs/contracts/benchmark.schema.json`](contracts/benchmark.schema.json) (v
 - `audiomentations` was not verified on `pi-server` aarch64; the `ffmpeg`
 fallback is used unconditionally until that is checked.
 
+### Issue #22 transform-aware alignment calibration
+
+`scripts/calibrate_alignment.py` accepts only a sequence manifest whose decoded-frame paths and SHA-256 values are revalidated; legacy pair manifests remain diagnostic-only and cannot freeze. Regenerate the checked-in corpus with `uv run python scripts/generate_alignment_real_corpus.py`, then calibrate outside the normal `[run]` environment:
+
+```bash
+uv run --isolated --extra alignment python scripts/calibrate_alignment.py \
+  --manifest tests/fixtures/visual_alignment/real_sequence_v1/manifest.json \
+  --out .tmp/alignment-real-calibration-v26.json
+```
+
+The promoted artifact is [`docs/reports/alignment_thresholds_2026-09-20.json`](reports/alignment_thresholds_2026-09-20.json), SHA-256 `679cdfa4acfb92ef8e8575ba6bf6d47967a4e24cc9399e001c6f06c6d61bf9a9`, from manifest SHA-256 `37aee9204daaa00cf8e60ab1ecc82b000b5a50b37ac6a8e3f0bd2b71505a2388` (`issue-22-real-sequence-v26`). It froze with zero development errors (12 TP, 25 TN) and zero fresh held-out errors (4 TP, 13 TN) under the exact production provider set `opencv-contrib-python==4.6.0.66`, `opencv-python==4.6.0.66`, and `opencv-python-headless==4.6.0.66`, importing `cv2==4.6.0`. Ten same-session and two fresh-worker repetitions produced identical threshold-vector, ordered-decision, and full canonical-payload hashes. `lectural.config.ALIGNMENT_THRESHOLDS` is the runtime copy of that artifact's threshold vector; its adjacent report path and SHA-256 bind the copy to this evidence.
+
+The generated held-out split controls threshold-search contamination but is not independent real-world ground truth: development and held-out recipes share the same generator. The pre-existing static-article regression fixture and separately captured YouTube sequence are therefore required external behavior checks after promotion; they are not used to fit the vector. Calibration retires every observed or superseded held-out seed in the manifest rather than reusing it.
+
+### Issue #22 measured efficiency and behavior
+
+[`docs/reports/visual_evidence_efficiency_2026-09-20.json`](reports/visual_evidence_efficiency_2026-09-20.json) preserves the exact commands, environment, source-report hashes, all raw repetitions, derived comparisons, calibration reference, real-sequence decisions, and public-CLI smoke result. On the same x86_64 Windows host, three warm repetitions for each of the English, Korean, and mixed fixtures produced these aggregate gates:
+
+| Gate | Before | After | Change | Limit | Result |
+|---|---:|---:|---:|---:|---|
+| Mean fixture median wall time | 10.5582 s | 9.7628 s | -7.53% | no more than +5% | pass |
+| Mean fixture median derived CPU core-seconds | 29.0445 | 26.1965 | -9.81% | no more than +5% | pass |
+| Maximum fixture median run-peak RSS | 879.8 MB | 954.3 MB | +8.47% | no more than +10% | pass |
+| Mean fixture median storage delta | 2,379,484.7 bytes | 2,379,484.7 bytes | 0.00% | no more than +10% | pass |
+| Pre-existing comparable quality fields | exact match | exact match | no regression | no regression | pass |
+
+The OCR-disabled control has zero production OCR-stage time and a mean fixture median wall time of 6.0869 seconds. The OCR-enabled after-run reduced the OCR stage from 5.27–5.62 seconds to 3.44–3.83 seconds by reusing one engine. Transform-aware dedupe raised its stage from 0.30–0.36 seconds to 1.27–1.32 seconds; each synthetic fixture produced one persistent pHash candidate and one worker invocation, rejected before warping at `ratio_matches`. Storage was unchanged.
+
+The separately captured 555-second sequence exercised the positive alignment path rather than only early rejection: 1,110 raw candidates reduced to 70 representatives; candidates from 437.0 through 444.0 seconds were classified as structural duplicates of the 432.5-second representative, while the content change at 445.0 seconds failed `ratio_matches` and remained distinct. A public `lectural extract --json` smoke on `en_terms_01/video.mp4` passed and emitted two timestamp-addressable 1280×720 representative frames with reliable OCR plus the matching 1280×720 source resolution.

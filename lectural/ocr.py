@@ -13,6 +13,8 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import csv
+import io
 import warnings
 from .config import INCREMENTAL_SLIDE_MIN_GROWTH, SLIDE_MIN_TEXT_CHARS
 from .visual import Frame
@@ -208,8 +210,10 @@ def _preprocess_image_for_ocr(image_path: str) -> str:
 
 # --- Engine-backed OCR (lazy) ----------------------------------------------
 
-def ocr_image(image_path: str, prefer: str = "paddle", lang: str = "korean") -> tuple[str, str]:
-    """Return (text, engine_used). Tries PaddleOCR, falls back to Tesseract."""
+def ocr_image(
+    image_path: str, prefer: str = "paddle", lang: str = "korean", paddle_engine=None,
+) -> tuple[str, str, float | None]:
+    """Return (text, engine_used, confidence). Tries Paddle then Tesseract."""
     ocr_path = image_path
     derived_path = ""
 
@@ -226,7 +230,12 @@ def ocr_image(image_path: str, prefer: str = "paddle", lang: str = "korean") -> 
 
         if prefer == "paddle":
             try:
-                return _ocr_paddle(ocr_path, lang), "paddleocr"
+                result = (
+                    _ocr_paddle(ocr_path, lang, engine=paddle_engine)
+                    if paddle_engine is not None else _ocr_paddle(ocr_path, lang)
+                )
+                text, confidence = result if isinstance(result, tuple) else (result, None)
+                return text, "paddleocr", confidence
             except Exception as exc:  # noqa: BLE001
                 warnings.warn(
                     f"PaddleOCR unavailable or unsupported ({exc}); "
@@ -234,7 +243,9 @@ def ocr_image(image_path: str, prefer: str = "paddle", lang: str = "korean") -> 
                     RuntimeWarning,
                     stacklevel=2,
                 )
-        return _ocr_tesseract(ocr_path), "tesseract"
+        result = _ocr_tesseract(ocr_path)
+        text, confidence = result if isinstance(result, tuple) else (result, None)
+        return text, "tesseract", confidence
     finally:
         if derived_path and derived_path != image_path:
             try:
@@ -306,30 +317,49 @@ def _paddleocr_2x_lang(lang: str) -> str:
     )
 
 
-def _ocr_paddle(image_path: str, lang: str) -> str:
+def _create_paddle_engine(lang: str):
     import paddleocr as paddleocr_module  # lazy
 
     _ensure_paddleocr_2x(paddleocr_module)
-    engine = paddleocr_module.PaddleOCR(
+    return paddleocr_module.PaddleOCR(
         use_angle_cls=True,
         lang=_paddleocr_2x_lang(lang),
         show_log=False,
     )
+def _ocr_paddle(image_path: str, lang: str, *, engine=None) -> tuple[str, float | None]:
+    engine = engine or _create_paddle_engine(lang)
     result = engine.ocr(image_path, cls=True)
     lines: list[str] = []
+    scores: list[float] = []
     for block in result or []:
         for line in block or []:
             if line and len(line) >= 2 and line[1]:
                 lines.append(str(line[1][0]))
-    return "\n".join(lines)
+                try:
+                    scores.append(float(line[1][1]))
+                except (IndexError, TypeError, ValueError):
+                    pass
+    return "\n".join(lines), (sum(scores) / len(scores) if scores else None)
 
 
-def _ocr_tesseract(image_path: str) -> str:
+def _ocr_tesseract(image_path: str) -> tuple[str, float | None]:
     import pytesseract  # lazy
     from PIL import Image  # lazy
 
     with Image.open(image_path) as image:
-        return pytesseract.image_to_string(image, lang="kor+eng")
+        result = pytesseract.run_and_get_multiple_output(
+            image, extensions=["txt", "tsv"], lang="kor+eng",
+        )
+    text, tsv = result[0], result[1]
+    scores: list[float] = []
+    for row in csv.DictReader(io.StringIO(tsv), delimiter="\t"):
+        try:
+            confidence = float(row.get("conf", "-1"))
+        except (TypeError, ValueError):
+            continue
+        if confidence >= 0:
+            scores.append(confidence / 100.0)
+    return text, (sum(scores) / len(scores) if scores else None)
 
 
 def ocr_frames(frames: list[Frame], prefer: str = "paddle") -> tuple[list[Frame], str]:
@@ -339,16 +369,41 @@ def ocr_frames(frames: list[Frame], prefer: str = "paddle") -> tuple[list[Frame]
     """
     engine_used = "none"
     texts: list[str] = []
+    paddle_engine = None
+    if prefer == "paddle":
+        try:
+            paddle_engine = _create_paddle_engine("korean")
+        except Exception as exc:  # noqa: BLE001
+            warnings.warn(f"PaddleOCR unavailable or unsupported ({exc}); falling back to Tesseract (degraded OCR quality).", RuntimeWarning, stacklevel=2)
+            prefer = "tesseract"
     for f in frames:
-        text, engine = ocr_image(f.image_path, prefer=prefer)
+        text, engine, confidence = ocr_image(f.image_path, prefer=prefer, paddle_engine=paddle_engine)
         f.ocr_text = _norm(text)
+        f.ocr_confidence = confidence
         f.is_slide = is_slide(f.ocr_text)
         texts.append(f.ocr_text if f.is_slide else "")
         if engine != "none":
             engine_used = engine
 
-    slide_frames = [f for f in frames if f.is_slide]
-    slide_texts = [f.ocr_text for f in slide_frames]
-    keep_idx = set(dedupe_incremental_texts(slide_texts))
-    kept = [f for i, f in enumerate(slide_frames) if i in keep_idx]
+    kept: list[Frame] = []
+    for frame in (candidate for candidate in frames if candidate.is_slide):
+        if not kept:
+            kept.append(frame)
+            continue
+        transition = classify_slide_transition(kept[-1].ocr_text, frame.ocr_text)
+        if transition == "duplicate":
+            previous_confidence = (
+                kept[-1].ocr_confidence
+                if kept[-1].ocr_confidence is not None
+                else float("-inf")
+            )
+            current_confidence = (
+                frame.ocr_confidence
+                if frame.ocr_confidence is not None
+                else float("-inf")
+            )
+            if current_confidence > previous_confidence:
+                kept[-1] = frame
+        else:
+            kept.append(frame)
     return kept, engine_used

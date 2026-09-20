@@ -188,8 +188,9 @@ def test_python_status_cv2_accepts_multiple_constrained_providers_when_expected_
 
 def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert "opencv-contrib-python<=4.6.0.66" in pyproject
-    assert "opencv-python-headless<=4.6.0.66" in pyproject
+    assert "alignment = [" in pyproject
+    assert "opencv-contrib-python<=4.6.0.66" not in pyproject
+    assert "opencv-python-headless<=4.6.0.66" not in pyproject
     assert "onnxruntime<1.24" in pyproject
     assert '"setuptools>=68,<81"' in pyproject
 

@@ -14,17 +14,29 @@ run = [
     "yt-dlp>=2024.1.0",
     "youtube-transcript-api>=0.6.2",
     "faster-whisper>=1.0.0",
-    "opencv-python>=4.5,<=4.6.0.66",
+    "opencv-python==4.6.0.66",
+    "opencv-contrib-python==4.6.0.66",
+    "opencv-python-headless==4.6.0.66",
     "numpy>=1.24,<2",
     "paddleocr>=2.7,<3",
     "paddlepaddle>=2.6,<3",
-    "pytesseract>=0.3.10",
+    "pytesseract>=0.3.13",
     "Pillow>=10.0.0",
     "webrtcvad>=2.0.10",
     # webrtcvad imports pkg_resources at runtime on current wheels.
     "setuptools>=68,<81",
 ]
 test = ["pytest>=7.0", "numpy>=1.24"]
+# Calibration uses the exact overlapping provider set resolved by `[run]`.
+# OpenCV packages share the `cv2` namespace, so every provider and version is
+# pinned and provenance-checked before a worker may discard a frame.
+alignment = [
+    "opencv-python==4.6.0.66",
+    "opencv-contrib-python==4.6.0.66",
+    "opencv-python-headless==4.6.0.66",
+    "numpy>=1.24,<2",
+    "Pillow>=10.0.0",
+]
 # Dev/maintainer-only: Issue #21 evidence-quality/resource benchmark
 # (scripts/benchmark.py). Never required by `[run]` or the offline gate;
 # scripts/benchmark.py imports all of these lazily inside functions so it
@@ -33,13 +45,12 @@ bench = [
     "jiwer>=3.0",
     "whisper-normalizer>=0.1",
     "Levenshtein>=0.20",
+    "psutil>=5.9",
 ]
-# Keep transitive runtime providers inside the approved WU-1 matrix without
-# making alternate cv2 providers part of LecturAL's direct runtime contract.
+# Keep the remaining transitive runtime dependencies inside the approved
+# compatibility matrix.
 [tool.uv]
 constraint-dependencies = [
-    "opencv-contrib-python<=4.6.0.66",
-    "opencv-python-headless<=4.6.0.66",
     "onnxruntime<1.24",
 ]
 

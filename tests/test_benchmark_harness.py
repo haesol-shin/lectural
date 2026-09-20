@@ -38,6 +38,7 @@ from scripts.benchmark import (
     measure_directory_bytes,
     measure_fixture_run,
     run_fixture_repetitions,
+    summarize_alignment_observability,
     slide_cer_reference,
 )
 
@@ -281,8 +282,70 @@ def test_measure_fixture_run_computes_rtf_and_storage(tmp_path: Path) -> None:
     stages = res["stages"]
     assert "acquisition" in stages
     assert "vad" in stages
+    assert res["alignment_observability"]["counts"]["host_decode_count"] == 0
     assert stages["acquisition"]["wall_time_sec"] >= 0
 
+
+def test_alignment_observability_records_work_and_runtime_without_decoding() -> None:
+    metrics = {
+        "decoded_shapes": {"reference": [640, 360], "candidate": [640, 360]},
+        "working_shapes": {"reference": [640, 360], "candidate": [640, 360]},
+        "alignment_warp_count": 4,
+        "alignment_warp_pixels": 921600,
+        "keypoint_counts": {"reference": 80, "candidate": 70},
+        "ratio_match_count": 60,
+        "ratio_matches": 42,
+        "inlier_count": 30,
+        "inlier_ratio": 30 / 42,
+        "forward_coverage": 0.9,
+        "reverse_coverage": 0.8,
+        "direct_metrics": {"ssim": 0.7},
+        "forward_ssim": 0.96,
+        "reverse_ssim": 0.95,
+        "opencv_version": "4.6.0",
+        "opencv_build": "4.6.0|threads=1",
+        "requested_threads": 1,
+        "requested_seed": 1337,
+        "opencv_provenance": {"provider_exact": True},
+    }
+    frames = [
+        MagicMock(meta={"width": 640, "height": 360}),
+        MagicMock(
+            meta={
+                "width": 640,
+                "height": 360,
+                "alignment_worker_invoked": True,
+                "alignment_attempted": True,
+                "alignment_result": "not_same",
+                "alignment_first_failed_gate": "coverage",
+                "alignment_metrics": metrics,
+            }
+        ),
+    ]
+
+    summary = summarize_alignment_observability(frames)
+
+    assert summary["counts"] == {
+        "host_decode_count": 2,
+        "host_decode_pixels": 460800,
+        "phash_persistent_candidates": 1,
+        "alignment_worker_invocations": 1,
+        "alignment_worker_decode_count": 2,
+        "alignment_worker_decode_pixels": 460800,
+        "alignment_attempts": 1,
+        "warp_count": 4,
+        "warp_pixels": 921600,
+    }
+    assert summary["outcomes"] == {"not_same": 1}
+    assert summary["failure_gates"] == {"coverage": 1}
+    assert summary["distributions"]["keypoints_reference"] == [80.0]
+    assert summary["distributions"]["ratio_matches"] == [42.0]
+    assert summary["distributions"]["inlier_count"] == [30.0]
+    assert summary["distributions"]["forward_coverage"] == [0.9]
+    assert summary["distributions"]["forward_ssim"] == [0.96]
+    assert summary["opencv_runtime"]["opencv_versions"] == ["4.6.0"]
+    assert summary["opencv_runtime"]["requested_threads"] == [1]
+    assert summary["opencv_runtime"]["requested_seeds"] == [1337]
 
 def test_run_fixture_repetitions_aggregates_median_and_variance(tmp_path: Path) -> None:
     """Verify run_fixture_repetitions produces aggregate statistics across repetitions."""
@@ -316,6 +379,7 @@ def test_run_fixture_repetitions_aggregates_median_and_variance(tmp_path: Path) 
     assert "rtf" in agg
     assert "total_storage_delta_bytes" in agg
     assert "stages" in agg
+    assert rep_res["alignment_observability"]["counts"]["host_decode_count"] == 0
 
 
 # ============================================================================
@@ -414,7 +478,7 @@ def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
         "usable_ocr_threshold_chars": 12,
     }
 
-    mock_ocr = ("Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05", "paddle")
+    mock_ocr = ("Hyperparameter Settings\nBatch Iterations: 128\nLearning Rate: 0.05", "paddle", 0.95)
     with patch("lectural.ocr.ocr_image", return_value=mock_ocr):
         res = evaluate_degraded_slide_ocr(gt, [img_path])
 
@@ -423,6 +487,32 @@ def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
     assert entry["engine_used"] == "paddle"
     assert math.isclose(entry["cer"], 0.0, rel_tol=1e-5)
     assert entry["key_field_recall_exact"] == 1.0
+    assert entry["reliable"] is True
+    assert math.isclose(
+        entry["accepted_ocr_quality"]["cer"],
+        0.0,
+        rel_tol=1e-5,
+    )
+
+def test_degraded_slide_ocr_scores_rejected_text_separately(tmp_path: Path) -> None:
+    from scripts.benchmark import evaluate_degraded_slide_ocr
+
+    image = tmp_path / "slide_degraded_l2.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n")
+    gt = {
+        "key_fields": {"learning_rate": "0.05"},
+        "slides_text": {"slide_04_inc_ext": "Learning Rate: 0.05"},
+        "usable_ocr_threshold_chars": 8,
+    }
+    with patch(
+        "lectural.ocr.ocr_image",
+        return_value=("Learning Rate: 0.05", "paddle", 0.94),
+    ):
+        entry = evaluate_degraded_slide_ocr(gt, [image])["slide_degraded_l2"]
+
+    assert entry["cer"] == 0.0
+    assert entry["reliable"] is False
+    assert entry["accepted_ocr_quality"]["usable"] is False
 
 
 def test_harness_records_explicit_speech_source(tmp_path: Path) -> None:
@@ -526,4 +616,3 @@ def test_measure_fixture_run_vad_runtime_error_is_not_swallowed(tmp_path: Path) 
                 out_dir=tmp_path / "vad_runtime_out",
                 audio_path=audio_file,
             )
-

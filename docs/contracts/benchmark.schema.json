@@ -78,10 +78,17 @@
           "type": "object",
           "description": "wer_cer, terminology_recall, timestamp_error, voiced_recall_and_gap, frame_recall_and_duplicate_rate, ocr_quality from lectural_bench.metrics, scored against the fixture's committed ground truth (never against the tool's own output)."
         },
+        "alignment_observability": {"$ref": "#/$defs/alignmentObservability"},
         "runs": {
           "type": "array",
           "description": "Raw per-repetition measurements underlying the aggregate median/variance.",
-          "items": {"type": "object"}
+          "items": {
+            "type": "object",
+            "properties": {
+              "alignment_observability": {"$ref": "#/$defs/alignmentObservability"}
+            },
+            "additionalProperties": true
+          }
         }
       }
     },
@@ -101,6 +108,38 @@
         "stage_wall_seconds": {"type": "object"},
         "stage_resource_usage": {"type": "object"},
         "raw_source_path": {"type": "string"}
+      }
+    },
+    "alignmentObservability": {
+      "type": "object",
+      "required": ["counts", "outcomes", "failure_gates", "distributions", "opencv_runtime"],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": ["host_decode_count", "host_decode_pixels", "phash_persistent_candidates", "alignment_worker_invocations", "alignment_worker_decode_count", "alignment_worker_decode_pixels", "alignment_attempts", "warp_count", "warp_pixels"],
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "outcomes": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "failure_gates": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "distributions": {
+          "type": "object",
+          "required": ["keypoints_reference", "keypoints_candidate", "ratio_match_rows", "ratio_matches", "inlier_count", "inlier_ratio", "forward_coverage", "reverse_coverage", "direct_ssim", "forward_ssim", "reverse_ssim"],
+          "additionalProperties": {
+            "type": "array",
+            "items": {"type": "number"}
+          }
+        },
+        "opencv_runtime": {
+          "type": "object",
+          "required": ["opencv_versions", "opencv_builds", "requested_threads", "requested_seeds", "provenance"],
+          "properties": {
+            "opencv_versions": {"type": "array", "items": {"type": "string"}},
+            "opencv_builds": {"type": "array", "items": {"type": "string"}},
+            "requested_threads": {"type": "array", "items": {"type": "integer"}},
+            "requested_seeds": {"type": "array", "items": {"type": "integer"}},
+            "provenance": {"type": "array", "items": {"type": "object"}}
+          }
+        }
       }
     },
     "medianVariance": {

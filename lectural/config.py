@@ -24,6 +24,28 @@ EXTRACTION_SCHEMA_VERSION: int = 1
 DEDUP_HIST_THRESHOLD: float = 0.90
 DEDUP_SSIM_THRESHOLD: float = 0.92
 
+# Frozen by docs/reports/alignment_thresholds_2026-09-20.json
+# (SHA-256 679cdfa4acfb92ef8e8575ba6bf6d47967a4e24cc9399e001c6f06c6d61bf9a9)
+# under the exactly pinned production OpenCV provider set.
+ALIGNMENT_THRESHOLDS: dict[str, float | int] = {
+    "ratio_matches_min": 99.0,
+    "inlier_count_min": 21.0,
+    "inlier_ratio_min": 0.21212121212121213,
+    "residual_median_max": 1.5995843197185864,
+    "residual_p95_max": 2.9175036754910693,
+    "eigenvalue_ratio_min": 0.1070834419521966,
+    "hull_support_min": 0.08312218425795385,
+    "coverage_min": 0.6722005208333334,
+    "ssim_min": 0.940433904949981,
+    "scale_min": 0.8,
+    "scale_max": 1.25,
+    "pixel_delta": 64,
+    "changed_fraction_max": 0.011284722222222222,
+    "largest_changed_component_fraction_max": 0.011284722222222222,
+}
+ALIGNMENT_CALIBRATION_REPORT = "docs/reports/alignment_thresholds_2026-09-20.json"
+ALIGNMENT_CALIBRATION_REPORT_SHA256 = "679cdfa4acfb92ef8e8575ba6bf6d47967a4e24cc9399e001c6f06c6d61bf9a9"
+
 # --- Speech-gap coverage ---------------------------------------------------
 # A completeness FAIL occurs when there is a contiguous span of *speech*
 # (per the VAD/silence mask) longer than this many seconds that has no
@@ -62,6 +84,8 @@ STT_LONG_VIDEO_WARN_SEC: float = 45 * 60.0
 # A frame is classified as a "slide" (and therefore expected to contain OCR
 # text) when its OCR text has at least this many non-whitespace characters.
 SLIDE_MIN_TEXT_CHARS: int = 12
+# Engine-native OCR scores are normalized to 0..1 before this gate.
+OCR_RELIABLE_CONFIDENCE_THRESHOLD: float = 0.95
 
 # --- Incremental-slide re-split --------------------------------------------
 # When a frame's OCR text is a superset of the previous frame's text and adds

@@ -20,6 +20,7 @@ from lectural.ocr import (
     ocr_roi_box,
     ocr_upscaled_size,
 )
+from lectural.visual import Frame
 
 
 def test_is_slide_threshold():
@@ -174,18 +175,19 @@ def test_ocr_image_feeds_preprocessed_temp_path_and_cleans_up(monkeypatch, tmp_p
         seen["preprocess_input"] = path
         return str(derived)
 
-    def fake_paddle(path: str, lang: str) -> str:
+    def fake_paddle(path: str, lang: str):
         seen["engine_path"] = path
         seen["lang"] = lang
         assert os.path.exists(path)
-        return "preprocessed text"
+        return "preprocessed text", 0.91
 
     monkeypatch.setattr(ocr, "_preprocess_image_for_ocr", fake_preprocess)
     monkeypatch.setattr(ocr, "_ocr_paddle", fake_paddle)
 
-    text, engine = ocr_image(str(original), prefer="paddle", lang="korean")
+    text, engine, confidence = ocr_image(str(original), prefer="paddle", lang="korean")
 
     assert (text, engine) == ("preprocessed text", "paddleocr")
+    assert confidence == 0.91
     assert seen == {
         "preprocess_input": str(original),
         "engine_path": str(derived),
@@ -203,17 +205,18 @@ def test_ocr_image_warns_and_uses_original_when_preprocess_fails(monkeypatch, tm
     def fake_preprocess(path: str) -> str:
         raise RuntimeError(f"cannot preprocess {path}")
 
-    def fake_tesseract(path: str) -> str:
+    def fake_tesseract(path: str):
         seen["engine_path"] = path
-        return "fallback text"
+        return "fallback text", 0.42
 
     monkeypatch.setattr(ocr, "_preprocess_image_for_ocr", fake_preprocess)
     monkeypatch.setattr(ocr, "_ocr_tesseract", fake_tesseract)
 
     with pytest.warns(RuntimeWarning, match="OCR preprocessing failed"):
-        text, engine = ocr_image(str(original), prefer="tesseract")
+        text, engine, confidence = ocr_image(str(original), prefer="tesseract")
 
     assert (text, engine) == ("fallback text", "tesseract")
+    assert confidence == 0.42
     assert seen["engine_path"] == str(original)
     assert original.exists()
 
@@ -234,7 +237,7 @@ def test_paddleocr_2x_fake_module_uses_compatible_language(monkeypatch):
     fake_module.PaddleOCR = FakePaddleOCR
     monkeypatch.setitem(sys.modules, "paddleocr", fake_module)
 
-    assert _ocr_paddle("derived.png", "ko/en") == "안녕 Hello"
+    assert _ocr_paddle("derived.png", "ko/en") == ("안녕 Hello", 0.99)
     assert calls["kwargs"] == {"use_angle_cls": True, "lang": "korean", "show_log": False}
     assert calls["ocr"] == ("derived.png", True)
     assert _paddleocr_2x_lang("en") == "en"
@@ -248,3 +251,66 @@ def test_paddleocr_3x_is_rejected_before_api_use(monkeypatch):
 
     with pytest.raises(RuntimeError, match="PaddleOCR 3.0.0 detected"):
         _ocr_paddle("derived.png", "korean")
+
+
+def test_ocr_frames_constructs_one_paddle_engine_and_threads_confidence(monkeypatch):
+    created = []
+    engine = object()
+    monkeypatch.setattr(ocr, "_create_paddle_engine", lambda _lang: created.append(engine) or engine)
+    monkeypatch.setattr(
+        ocr, "ocr_image",
+        lambda _path, prefer="paddle", lang="korean", paddle_engine=None: ("Enough text for a slide", "paddleocr", 0.97),
+    )
+    frames = [Frame(0.0, "a.png"), Frame(1.0, "b.png")]
+    kept, used = ocr.ocr_frames(frames)
+    assert created == [engine]
+    assert used == "paddleocr"
+    assert all(frame.ocr_confidence == 0.97 for frame in kept)
+
+def test_ocr_frames_prefers_reliable_duplicate_text(monkeypatch):
+    engine = object()
+    monkeypatch.setattr(ocr, "_create_paddle_engine", lambda _lang: engine)
+    confidence_by_path = {"low.png": 0.40, "reliable.png": 0.98}
+    monkeypatch.setattr(
+        ocr,
+        "ocr_image",
+        lambda path, **_kwargs: (
+            "Enough duplicate text for a slide",
+            "paddleocr",
+            confidence_by_path[path],
+        ),
+    )
+    frames = [Frame(0.0, "low.png"), Frame(1.0, "reliable.png")]
+
+    kept, used = ocr.ocr_frames(frames)
+
+    assert used == "paddleocr"
+    assert kept == [frames[1]]
+    assert kept[0].ocr_confidence == 0.98
+
+
+def test_tesseract_multiple_output_normalizes_tsv_confidence(monkeypatch):
+    class FakeImage:
+        def __enter__(self):
+            return self
+        def __exit__(self, *_args):
+            return False
+
+    image_module = types.ModuleType("PIL.Image")
+    image_module.open = lambda _path: FakeImage()
+    pil_module = types.ModuleType("PIL")
+    pil_module.Image = image_module
+    tesseract_module = types.ModuleType("pytesseract")
+    calls = {}
+
+    def output(image, *, extensions, lang):
+        calls.update({"image": image, "extensions": extensions, "lang": lang})
+        return ["raw text", "level\tconf\ttext\n5\t96\tword\n5\t-1\tnoise\n"]
+
+    tesseract_module.run_and_get_multiple_output = output
+    monkeypatch.setitem(sys.modules, "PIL", pil_module)
+    monkeypatch.setitem(sys.modules, "PIL.Image", image_module)
+    monkeypatch.setitem(sys.modules, "pytesseract", tesseract_module)
+    assert ocr._ocr_tesseract("frame.png") == ("raw text", 0.96)
+    assert calls["extensions"] == ["txt", "tsv"]
+    assert calls["lang"] == "kor+eng"

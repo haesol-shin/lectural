@@ -1,9 +1,9 @@
 """Visual track: extract keyframes and dedupe near-identical slides.
 
 ffmpeg extracts candidate frames (I-frames + scene changes, downsampled);
-perceptual hashes select stable slide changes. Legacy histogram/SSIM helpers
-remain pure and unit-testable, but production dedupe routes through pHash so
-small render noise collapses while real slide changes survive.
+perceptual hashes select stable slide changes. Persistent candidates route
+through the frozen transform-aware evaluator so render drift collapses while
+real slide changes survive.
 """
 
 from __future__ import annotations
@@ -13,8 +13,10 @@ import os
 import re
 import shutil
 from pathlib import Path
+from typing import Callable
 
-from .config import DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
+from .alignment import AlignmentWorker, evaluate_visual_candidate, visual_metadata_from_worker_result
+from .config import ALIGNMENT_THRESHOLDS, DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
 
 
 PHASH_HAMMING_THRESHOLD = 12
@@ -30,6 +32,7 @@ class Frame:
     timestamp: float
     image_path: str
     ocr_text: str = ""
+    ocr_confidence: float | None = None
     is_slide: bool = False
     meta: dict = field(default_factory=dict)
 
@@ -72,6 +75,70 @@ def is_same_phash(
 ) -> bool:
     """Two pHashes represent the same slide when distance is within threshold."""
     return phash_hamming_distance(hash_a, hash_b) <= threshold
+
+
+def initial_dedupe_state(first_hash: int | str | bytes) -> dict:
+    """Create the serial pHash state shared by production and sequence replay."""
+    return {
+        "kept_index": 0,
+        "kept_hash": first_hash,
+        "previous_hash": first_hash,
+        "candidate_start_index": None,
+        "candidate_hash": None,
+        "candidate_count": 0,
+    }
+
+
+def advance_dedupe_state(
+    state: dict,
+    index: int,
+    hash_value: int | str | bytes,
+    *,
+    evaluate: Callable[[int, int], str] | None = None,
+    threshold: int = PHASH_HAMMING_THRESHOLD,
+    persistence: int = PHASH_CHANGE_PERSISTENCE,
+) -> tuple[dict, dict]:
+    """Advance one sampled frame through the canonical persistence machine.
+
+    ``evaluate`` receives ``(kept_index, candidate_start_index)`` exactly once
+    when a pHash change becomes persistent and returns ``same`` or
+    ``not_same``.  Omitting it is fail-closed: the persistent candidate is
+    retained.  The returned trace is deliberately data-only for calibration
+    sequence replay and production observability.
+    """
+    next_state = dict(state)
+    trace = {
+        "frame_index": index,
+        "kept_index_before": next_state["kept_index"],
+        "candidate_start_index_before": next_state["candidate_start_index"],
+        "candidate_count_before": next_state["candidate_count"],
+        "phash_hamming_from_previous": phash_hamming_distance(next_state["previous_hash"], hash_value),
+        "phash_hamming_from_kept": phash_hamming_distance(next_state["kept_hash"], hash_value),
+    }
+    next_state["previous_hash"] = hash_value
+    if is_same_phash(next_state["kept_hash"], hash_value, threshold):
+        next_state.update(candidate_start_index=None, candidate_hash=None, candidate_count=0)
+        trace["event"] = "phash_duplicate"
+    elif next_state["candidate_hash"] is None or not is_same_phash(next_state["candidate_hash"], hash_value, threshold):
+        next_state.update(candidate_start_index=index, candidate_hash=hash_value, candidate_count=1)
+        trace["event"] = "phash_change_pending"
+    else:
+        next_state["candidate_count"] += 1
+        trace["event"] = "phash_change_pending"
+
+    if next_state["candidate_count"] >= max(1, int(persistence)):
+        candidate_index = next_state["candidate_start_index"]
+        decision = evaluate(next_state["kept_index"], candidate_index) if evaluate else "not_same"
+        if decision not in {"same", "not_same"}:
+            decision = "not_same"
+        trace.update(event="persistent_candidate", evaluator_result=decision, candidate_start_index=candidate_index)
+        if decision == "not_same":
+            next_state["kept_index"] = candidate_index
+            next_state["kept_hash"] = next_state["candidate_hash"]
+        next_state.update(candidate_start_index=None, candidate_hash=None, candidate_count=0)
+    trace["kept_index_after"] = next_state["kept_index"]
+    trace["candidate_count_after"] = next_state["candidate_count"]
+    return next_state, trace
 
 
 def select_phash_keyframe_indices(
@@ -387,20 +454,145 @@ def _image_phash(image_path: str) -> int:
     resized = cv2.resize(cropped, (32, 32), interpolation=cv2.INTER_AREA)
     return _phash_from_32x32(resized, np)
 
+
+def _decode_image(image_path: str):
+    """Decode one frame once for pHash and structural comparison."""
+    import cv2  # lazy
+    import numpy as np  # lazy
+
+    image = _cv2_imread_unicode(image_path, cv2.IMREAD_COLOR, cv2, np)
+    if image is None:
+        raise ValueError(f"Unable to read image for dedupe: {image_path}")
+    return image, cv2, np
+
+
+def _image_phash_from_array(image, cv2, np) -> int:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    crop_h = max(1, int(round(gray.shape[0] * 0.60)))
+    resized = cv2.resize(gray[:crop_h, :], (32, 32), interpolation=cv2.INTER_AREA)
+    return _phash_from_32x32(resized, np)
+
+
+def _array_pair_metrics(a, b, cv2, np) -> tuple[float, float]:
+    """Return visual similarity for two already-resident frame arrays."""
+    if a.shape != b.shape:
+        b = cv2.resize(b, (a.shape[1], a.shape[0]))
+    ha = cv2.calcHist([a], [0, 1, 2], None, [8, 8, 8], [0, 256] * 3)
+    hb = cv2.calcHist([b], [0, 1, 2], None, [8, 8, 8], [0, 256] * 3)
+    cv2.normalize(ha, ha)
+    cv2.normalize(hb, hb)
+    hist_corr = float(cv2.compareHist(ha, hb, cv2.HISTCMP_CORREL))
+    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY).astype(np.float64)
+    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY).astype(np.float64)
+    return hist_corr, _ssim(ga, gb, np)
+
+
 def dedupe_frames(frames: list[Frame]) -> list[Frame]:
-    """Compute perceptual hashes and keep stable distinct slides."""
-    if len(frames) <= 1:
-        return list(frames)
+    """Keep stable distinct slides with one lazy alignment worker per call."""
+    if not frames:
+        return []
 
-    hashes = [_image_phash(frame.image_path) for frame in frames]
-    for i, (frame, hash_value) in enumerate(zip(frames, hashes)):
-        frame.meta["phash"] = f"{hash_value:016x}"
-        frame.meta["phash_hamming_threshold"] = PHASH_HAMMING_THRESHOLD
-        if i > 0:
-            frame.meta["phash_hamming_from_previous"] = phash_hamming_distance(
-                hashes[i - 1],
-                hash_value,
-            )
+    first_image, cv2, np = _decode_image(frames[0].image_path)
+    kept_hash = _image_phash_from_array(first_image, cv2, np)
+    frames[0].meta.update({
+        "phash": f"{kept_hash:016x}",
+        "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
+        "width": int(first_image.shape[1]), "height": int(first_image.shape[0]),
+        "dedupe_decision": "kept_initial",
+    })
+    first_image = None
+    kept = [frames[0]]
+    state = initial_dedupe_state(kept_hash)
+    worker: AlignmentWorker | None = None
+    worker_start_error: str | None = None
 
-    keep = set(select_phash_keyframe_indices(hashes))
-    return [frame for i, frame in enumerate(frames) if i in keep]
+    try:
+        for index, frame in enumerate(frames[1:], start=1):
+            image, _cv2, _np = _decode_image(frame.image_path)
+            hash_value = _image_phash_from_array(image, cv2, np)
+            frame.meta.update({
+                "phash": f"{hash_value:016x}",
+                "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
+                "width": int(image.shape[1]), "height": int(image.shape[0]),
+            })
+            image = None
+
+            def evaluate(kept_index: int, candidate_index: int) -> str:
+                nonlocal worker, worker_start_error
+                candidate = frames[candidate_index]
+                result: dict
+                if worker_start_error is None and worker is None:
+                    try:
+                        worker = AlignmentWorker(ALIGNMENT_THRESHOLDS)
+                    except (OSError, RuntimeError) as exc:
+                        worker_start_error = f"{type(exc).__name__}: {exc}"
+                if worker is None:
+                    result = {
+                        "result": "unavailable",
+                        "first_failed_gate": "worker",
+                        "error": worker_start_error or "alignment worker unavailable",
+                    }
+                    decision = {
+                        "result": "unavailable",
+                        "first_failed_gate": "worker",
+                        "path": "unavailable",
+                        "alignment_required": True,
+                    }
+                    worker_invoked = False
+                else:
+                    result = worker.compare(
+                        frames[kept_index].image_path,
+                        candidate.image_path,
+                    )
+                    metadata = visual_metadata_from_worker_result(
+                        result,
+                        ALIGNMENT_THRESHOLDS,
+                    )
+                    decision = evaluate_visual_candidate(
+                        metadata,
+                        ALIGNMENT_THRESHOLDS,
+                        complete=True,
+                    )
+                    worker_invoked = True
+
+                direct_metrics = result.get("direct_metrics")
+                if isinstance(direct_metrics, dict):
+                    candidate.meta.update({
+                        "hist_corr": direct_metrics.get("hist_corr"),
+                        "ssim": direct_metrics.get("ssim"),
+                    })
+                candidate.meta.update({
+                    "alignment_worker_invoked": worker_invoked,
+                    "alignment_attempted": bool(decision.get("alignment_required")),
+                    "alignment_result": decision.get("result"),
+                    "alignment_path": decision.get("path"),
+                    "alignment_first_failed_gate": decision.get("first_failed_gate"),
+                    "alignment_worker_first_failed_gate": result.get("first_failed_gate"),
+                    "alignment_metrics": {
+                        key: value
+                        for key, value in result.items()
+                        if key not in {"reference_path", "candidate_path"}
+                    },
+                })
+                if decision.get("result") == "same":
+                    candidate.meta["dedupe_decision"] = "structural_duplicate"
+                    return "same"
+                candidate.meta["dedupe_decision"] = "kept_distinct"
+                kept.append(candidate)
+                return "not_same"
+
+            state, trace = advance_dedupe_state(state, index, hash_value, evaluate=evaluate)
+            frame.meta.update({
+                "phash_hamming_from_previous": trace["phash_hamming_from_previous"],
+                "phash_hamming_from_kept": trace["phash_hamming_from_kept"],
+            })
+            if trace["event"] == "phash_duplicate":
+                frame.meta["dedupe_decision"] = "phash_duplicate"
+            elif trace["event"] == "phash_change_pending":
+                frame.meta["dedupe_decision"] = "phash_change_pending"
+            kept_hash = state["kept_hash"]
+    finally:
+        if worker is not None:
+            worker.close()
+
+    return kept

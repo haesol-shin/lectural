@@ -9,10 +9,13 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - `--skip-ocr` to keep scene frames while skipping OCR and the slide-text coverage check.
 - Source-aware citations: local notes use relative `transcript.md#tHHMMSS[-n]` anchors instead of `youtu.be` links.
 - Versioned `lectural --version --json` and `lectural extract ... --json` evidence responses with safe paths, completeness, timestamp integrity, representative frames, and explicit OCR states.
+- Transform-aware slide deduplication for shifted, panned, and zoomed frames, with fail-closed OpenCV provenance checks and calibrated thresholds.
+- Confidence-aware OCR representative selection plus source/frame dimensions and OCR reliability in JSON evidence.
 
 ### Fixed
 - Sequential sources no longer overwrite an existing or already-reserved output slug; collisions use `-2`, `-3`, and later suffixes.
 - Video visual timeline coverage now fails closed when duration is missing, zero, negative, or non-finite; local audio remains visual not-applicable.
+- OCR now reuses one engine per frame batch instead of rebuilding it for every representative frame.
 
 ## [0.1.2] - 2026-06-14
 

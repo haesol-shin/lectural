@@ -68,6 +68,7 @@ def _fake_result(output_dir: Path, *, ocr_status: str = "skipped", overall_pass:
             "argument": "lecture.mp4",
             "has_video": True,
             "citation": {"kind": "transcript"},
+            "resolution": {"width": 1280, "height": 720},
         },
         "source_kind": "local_video",
         "coverage": _coverage(output_dir, overall_pass=overall_pass, ocr_failed=failed),
@@ -77,6 +78,9 @@ def _fake_result(output_dir: Path, *, ocr_status: str = "skipped", overall_pass:
             "path": str(frame),
             "ocr_text": "Slide title" if has_text else "",
             "is_slide": has_text,
+            "reliable": True if has_text else None,
+            "width": 1280,
+            "height": 720,
         }],
         "frames_dir": str(frames),
         "ocr_status": ocr_status,
@@ -132,6 +136,7 @@ def test_extract_reports_all_ocr_states_and_retains_frame(
     assert Path(manifest["artifacts"]["evidence"]).is_file()
     assert "code_scene" not in json.dumps(payload)
     assert "build_eligibility" not in json.dumps(payload)
+    assert "resolution" in manifest["source"]
 
 
 def test_extract_warns_on_incomplete_coverage_and_keeps_stdout_json(monkeypatch, tmp_path: Path, capsys):
@@ -150,6 +155,16 @@ def test_extract_warns_on_incomplete_coverage_and_keeps_stdout_json(monkeypatch,
     assert payload["status"] == "partial"
     assert payload["result"]["status"] == "warn"
     assert any(error["code"] == "SPEECH_INCOMPLETE" for error in payload["errors"])
+
+
+def test_safe_source_preserves_only_nullable_resolution():
+    source = evidence._safe_source({
+        "kind": "local_video", "argument": "C:/private/deck.mp4", "has_video": True,
+        "citation": {"kind": "transcript"},
+        "resolution": {"width": 1280, "height": 720, "secret": "discard"},
+    })
+    assert source["resolution"] == {"width": 1280, "height": 720}
+    assert evidence._safe_source({"kind": "local_audio", "resolution": {"width": 0}})["resolution"] == {"width": None, "height": None}
 
 
 def test_existing_output_is_rejected_as_bounded_json_failure(tmp_path: Path, capsys):

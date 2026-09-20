@@ -1,0 +1,1489 @@
+{
+  "development_sequences": [
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11000",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11000/frame_000.png",
+          "phash": 12639995249441227062,
+          "sha256": "37d3d93bad76bfe481c16c7b4e91b6e21b2876f320c08bcb26ffb2844fa58c45",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11000-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11000/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11000-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11000/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11000,
+      "sequence_id": "development-collinear_inliers-11000",
+      "source_content_id": "development-authored-canvas-11000",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11001",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11001/frame_000.png",
+          "phash": 12639995249441227062,
+          "sha256": "9b62fcab885348e6b1c94bee47424eccb20afb03f201b47184ae9013929d7d94",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11001-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11001/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11001-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-collinear_inliers-11001/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11001,
+      "sequence_id": "development-collinear_inliers-11001",
+      "source_content_id": "development-authored-canvas-11001",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11010",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11010/frame_000.png",
+          "phash": 12639995112002277686,
+          "sha256": "36fed18915e545e3e892739fe46776f46365f985581ae6901424ced0585ccc11",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11010-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11010/frame_001.png",
+          "phash": 12552178356366723248,
+          "sha256": "5e39c039a58e6b97af6cd099e69c679c21fbc21da413744a5419eb4ee859612c",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11010-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11010/frame_001.png",
+          "phash": 12552178356366723248,
+          "sha256": "5e39c039a58e6b97af6cd099e69c679c21fbc21da413744a5419eb4ee859612c",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11010,
+      "sequence_id": "development-high_residual-11010",
+      "source_content_id": "development-authored-canvas-11010",
+      "transform_class": "high_residual"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11011",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11011/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "615adfe81462bf6dc9c025a51f6c836565d6691edc4987c8931940dfef8485b9",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11011-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11011/frame_001.png",
+          "phash": 12552178356366723248,
+          "sha256": "15b310fb32a6b25171e308e5f0369d02c0731476a9632507a44492bb2b5fdb6a",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11011-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-high_residual-11011/frame_001.png",
+          "phash": 12552178356366723248,
+          "sha256": "15b310fb32a6b25171e308e5f0369d02c0731476a9632507a44492bb2b5fdb6a",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11011,
+      "sequence_id": "development-high_residual-11011",
+      "source_content_id": "development-authored-canvas-11011",
+      "transform_class": "high_residual"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11020",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11020/frame_000.png",
+          "phash": 12639995112002277686,
+          "sha256": "9bbea1aed57ad5e31baee804bd2324acfeddc932612b4052714287a43d78c5cf",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11020-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11020/frame_001.png",
+          "phash": 17166394212201121975,
+          "sha256": "c81a4f3322d75e28532ec22d16f74fdd7be1397f224642cac26aae149419385b",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11020-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11020/frame_001.png",
+          "phash": 17166394212201121975,
+          "sha256": "c81a4f3322d75e28532ec22d16f74fdd7be1397f224642cac26aae149419385b",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11020,
+      "sequence_id": "development-incremental_build-11020",
+      "source_content_id": "development-authored-canvas-11020",
+      "transform_class": "incremental_build"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11021",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11021/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "115aa4d0b266ea874a45d3a521008d2904f4515894acea440aeab008fbd2b9a2",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11021-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11021/frame_001.png",
+          "phash": 17166394211932686519,
+          "sha256": "62f42f111c9619c1c6bb6bd1ca4025f2c10537353d2d358ced1a9d5b4697e2f4",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11021-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-incremental_build-11021/frame_001.png",
+          "phash": 17166394211932686519,
+          "sha256": "62f42f111c9619c1c6bb6bd1ca4025f2c10537353d2d358ced1a9d5b4697e2f4",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11021,
+      "sequence_id": "development-incremental_build-11021",
+      "source_content_id": "development-authored-canvas-11021",
+      "transform_class": "incremental_build"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11030",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11030/frame_000.png",
+          "phash": 12639997310488662326,
+          "sha256": "b10adc4b4142d92934002d7e5489c0e00a80cdc78d6619cb618b34ea3ba023ef",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11030-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11030/frame_001.png",
+          "phash": 11910133606966794930,
+          "sha256": "361f81f074d8d4d66c18b19678dfa610439d010b05e24d491188c98b5037f3a9",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11030-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11030/frame_001.png",
+          "phash": 11910133606966794930,
+          "sha256": "361f81f074d8d4d66c18b19678dfa610439d010b05e24d491188c98b5037f3a9",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11030,
+      "sequence_id": "development-low_masked_ssim-11030",
+      "source_content_id": "development-authored-canvas-11030",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11031",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11031/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "03ba43aa8313a81e124b8bf4ceed284b27d9b10dffead45f85e58ebd83066d88",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11031-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11031/frame_001.png",
+          "phash": 11909852131990084530,
+          "sha256": "b520a10aaa47a35605c46be9310365f9e4af584f7b4562919adddbb5139f6402",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11031-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-low_masked_ssim-11031/frame_001.png",
+          "phash": 11909852131990084530,
+          "sha256": "b520a10aaa47a35605c46be9310365f9e4af584f7b4562919adddbb5139f6402",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11031,
+      "sequence_id": "development-low_masked_ssim-11031",
+      "source_content_id": "development-authored-canvas-11031",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11040",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11040/frame_000.png",
+          "phash": 12639995249441227062,
+          "sha256": "6dddfa251b1f3388f47f932da1efb0b6619b2433070dbbca10e222f333b638ab",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11040-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11040/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "4306e4c9346b92c91a74c9da6c2b30e0ae4d2a3675220336e5a11eab94476cde",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11040-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11040/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "4306e4c9346b92c91a74c9da6c2b30e0ae4d2a3675220336e5a11eab94476cde",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11040,
+      "sequence_id": "development-one_way_coverage-11040",
+      "source_content_id": "development-authored-canvas-11040",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11041",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11041/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "10bf9199578312461325566d7a125dd4b3005e6333dad0b08de87c1846f6692b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11041-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11041/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "c83225b66845e38b59e0330bd6d948f32bc3722f1912c358c579139903e1d801",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11041-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-one_way_coverage-11041/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "c83225b66845e38b59e0330bd6d948f32bc3722f1912c358c579139903e1d801",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11041,
+      "sequence_id": "development-one_way_coverage-11041",
+      "source_content_id": "development-authored-canvas-11041",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11050",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11050/frame_000.png",
+          "phash": 12639995249441227062,
+          "sha256": "ffa517fcdd119742f35662ce9e1c06c2a23d895920146dc9a78ab90217fc3dd8",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11050-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11050/frame_001.png",
+          "phash": 11910151067861896154,
+          "sha256": "541175a53a3554588453e940f64a5c9f3f54d30ede409a9374dcd08afc7bd4ad",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11050-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11050/frame_001.png",
+          "phash": 11910151067861896154,
+          "sha256": "541175a53a3554588453e940f64a5c9f3f54d30ede409a9374dcd08afc7bd4ad",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11050,
+      "sequence_id": "development-out_of_scale-11050",
+      "source_content_id": "development-authored-canvas-11050",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11051",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11051/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "f12f1b385adff731b76f37f257e52f02b50b82e5f5f14f11542eedadb6c50369",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11051-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11051/frame_001.png",
+          "phash": 11910133476753787858,
+          "sha256": "f4774457639357dc159a9ed65eceeaf077fe8762abf2583385bfa2801741263b",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11051-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-out_of_scale-11051/frame_001.png",
+          "phash": 11910133476753787858,
+          "sha256": "f4774457639357dc159a9ed65eceeaf077fe8762abf2583385bfa2801741263b",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11051,
+      "sequence_id": "development-out_of_scale-11051",
+      "source_content_id": "development-authored-canvas-11051",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11060",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11060/frame_000.png",
+          "phash": 12639997310488662326,
+          "sha256": "eb57168c3b90665074cde70154dc48d5651127951e4758fa5dd314bd24339141",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11060-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11060/frame_001.png",
+          "phash": 17164989174249802038,
+          "sha256": "e73d8f0ed8a70e172b5092e1846fcf0ea6304175994cbe8af60179216d97fb79",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11060-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11060/frame_001.png",
+          "phash": 17164989174249802038,
+          "sha256": "e73d8f0ed8a70e172b5092e1846fcf0ea6304175994cbe8af60179216d97fb79",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11060,
+      "sequence_id": "development-outlier_heavy-11060",
+      "source_content_id": "development-authored-canvas-11060",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11061",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11061/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "d1eb33972f85773cd02143b7df6849629ef3c8778f7601e8fa9bdc15e77a8a39",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11061-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11061/frame_001.png",
+          "phash": 17164989174249802038,
+          "sha256": "2261840662fc75d7aa0afacb06b7b539ac500900a4ee2d5876c1b044acd10291",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11061-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-outlier_heavy-11061/frame_001.png",
+          "phash": 17164989174249802038,
+          "sha256": "2261840662fc75d7aa0afacb06b7b539ac500900a4ee2d5876c1b044acd10291",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11061,
+      "sequence_id": "development-outlier_heavy-11061",
+      "source_content_id": "development-authored-canvas-11061",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11070/frame_000.png",
+          "phash": 12568078392891654454,
+          "sha256": "657e06e059f69b3c0bb1a152e24167420b30ca12870fabd44cf6f925b236da82",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11070/frame_001.png",
+          "phash": 11910432740399569810,
+          "sha256": "5a9def80819ed6f5994f779e264dd051a98bb432b16845abcedf57f50163ae2f",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11070/frame_001.png",
+          "phash": 11910432740399569810,
+          "sha256": "5a9def80819ed6f5994f779e264dd051a98bb432b16845abcedf57f50163ae2f",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11070,
+      "sequence_id": "development-pan_zoom-11070",
+      "source_content_id": "development-authored-canvas-11070",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11071",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11071/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "42df37dfe991350ee99dcdd22c42e1d967ccb70d5f299bf29b9ef0e6f10ea110",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11071",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11071/frame_001.png",
+          "phash": 11910432740400077714,
+          "sha256": "2d8339b0790666d1c827230dfcba330f6d45a2144b9f7b441a1c1c07e7e74be7",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11071",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom-11071/frame_001.png",
+          "phash": 11910432740400077714,
+          "sha256": "2d8339b0790666d1c827230dfcba330f6d45a2144b9f7b441a1c1c07e7e74be7",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11071,
+      "sequence_id": "development-pan_zoom-11071",
+      "source_content_id": "development-authored-canvas-11071",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11080",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11080/frame_000.png",
+          "phash": 12639995249441227062,
+          "sha256": "660b3e17e578ad2318e70f5c58ab0ddcd9fc3e4e0a15ba6a1bb9488d38dd2df0",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11080-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11080/frame_001.png",
+          "phash": 17100811768842869170,
+          "sha256": "e43cb9a17b314aade386aa0d40960ff81cd6f58938183d0701ba8f7a6a8e4083",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11080-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11080/frame_001.png",
+          "phash": 17100811768842869170,
+          "sha256": "e43cb9a17b314aade386aa0d40960ff81cd6f58938183d0701ba8f7a6a8e4083",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11080,
+      "sequence_id": "development-pan_zoom_incremental-11080",
+      "source_content_id": "development-authored-canvas-11080",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11081",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11081/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "d36c957c17e5558b5b75dd7a560589b4676063956a280e7c0fe76ab2644601b8",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11081-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11081/frame_001.png",
+          "phash": 16524351018686929330,
+          "sha256": "a8aa5661325fb0a6ae1e80582cee73d20b12f2639a47c15268f70cf38ce91489",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11081-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_incremental-11081/frame_001.png",
+          "phash": 16524351018686929330,
+          "sha256": "a8aa5661325fb0a6ae1e80582cee73d20b12f2639a47c15268f70cf38ce91489",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11081,
+      "sequence_id": "development-pan_zoom_incremental-11081",
+      "source_content_id": "development-authored-canvas-11081",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11090/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "fe29bc2729b7ea166a7104687c43e0f0f6086d4c60d5a494d6190bde31b5ed36",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11090/frame_001.png",
+          "phash": 12568369621214259758,
+          "sha256": "b1e02e98ce3d18fba6d2be7f63379aeea9401ea34d31fd3430dc04ee1eaef1c4",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11090/frame_001.png",
+          "phash": 12568369621214259758,
+          "sha256": "b1e02e98ce3d18fba6d2be7f63379aeea9401ea34d31fd3430dc04ee1eaef1c4",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11090,
+      "sequence_id": "development-pan_zoom_reverse-11090",
+      "source_content_id": "development-authored-canvas-11090",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11091",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11091/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "f3ec1c3c24e439b7b7fa1f087025451f7667e27a9a7f2c07cca06cd552c073c4",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11091",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11091/frame_001.png",
+          "phash": 12568369621214259758,
+          "sha256": "9b90a9f2bd7a21a9cd07c54ea64f3116bf14840c77b3d4bbe42a47e15ac2984a",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11091",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_reverse-11091/frame_001.png",
+          "phash": 12568369621214259758,
+          "sha256": "9b90a9f2bd7a21a9cd07c54ea64f3116bf14840c77b3d4bbe42a47e15ac2984a",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11091,
+      "sequence_id": "development-pan_zoom_reverse-11091",
+      "source_content_id": "development-authored-canvas-11091",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11100",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11100/frame_000.png",
+          "phash": 12639997310488662326,
+          "sha256": "7a6d98f9d3cda902fdc17e6f1379b876f0824b6925e7321bcb43ce8e177e416b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11100-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11100/frame_001.png",
+          "phash": 16876898298769795646,
+          "sha256": "13441abc8d3316df63701b118221676fc0daf98e4e7a3e1d4596d837a58eacec",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11100-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11100/frame_001.png",
+          "phash": 16876898298769795646,
+          "sha256": "13441abc8d3316df63701b118221676fc0daf98e4e7a3e1d4596d837a58eacec",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11100,
+      "sequence_id": "development-pan_zoom_shared_template-11100",
+      "source_content_id": "development-authored-canvas-11100",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11101",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11101/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "5d3a2d63dc869bbd9059655044d7bf7c8212d3be86c83e9da934811257f83a02",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11101-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11101/frame_001.png",
+          "phash": 16867891099532094006,
+          "sha256": "1950f4f2e2b8ea881030aa64cccec929ac18f3ffdcc3f8a9d0dae8d83de59b3c",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11101-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-pan_zoom_shared_template-11101/frame_001.png",
+          "phash": 16867891099532094006,
+          "sha256": "1950f4f2e2b8ea881030aa64cccec929ac18f3ffdcc3f8a9d0dae8d83de59b3c",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11101,
+      "sequence_id": "development-pan_zoom_shared_template-11101",
+      "source_content_id": "development-authored-canvas-11101",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11110",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11110/frame_000.png",
+          "phash": 12631128787674841398,
+          "sha256": "f0125ba6237a8e088fb95aa7c2a173184e413a16497a2b5546ad945f158119c7",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11110-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11110/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "f05275c2614125edcaa9c12cc8ef9f1ab9ae75711aa1657c24dca0968ace60c7",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11110-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11110/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "f05275c2614125edcaa9c12cc8ef9f1ab9ae75711aa1657c24dca0968ace60c7",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11110,
+      "sequence_id": "development-ransac_failure-11110",
+      "source_content_id": "development-authored-canvas-11110",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11111",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11111/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "3eeeae4a35f2724a5e0ee268ff35500d1b9b10efc4a02bd2d4f0b8e4201d4724",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11111-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11111/frame_001.png",
+          "phash": 17164989173192837430,
+          "sha256": "4d9b95c3b380cdddc9b32049405f324f51af1aa8962a958231213961608295d3",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11111-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-ransac_failure-11111/frame_001.png",
+          "phash": 17164989173192837430,
+          "sha256": "4d9b95c3b380cdddc9b32049405f324f51af1aa8962a958231213961608295d3",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11111,
+      "sequence_id": "development-ransac_failure-11111",
+      "source_content_id": "development-authored-canvas-11111",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11120",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11120/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "eb1d2ba94e810c0a4182a456d5df50ff61f169e271786b67da9617d5e6ad3734",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11120-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11120/frame_001.png",
+          "phash": 16584004910196179941,
+          "sha256": "119bf9b81bbf5e46920fa0a7cbc769884bfbf85d9ff541b2be276c5ae47ac625",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11120-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11120/frame_001.png",
+          "phash": 16584004910196179941,
+          "sha256": "119bf9b81bbf5e46920fa0a7cbc769884bfbf85d9ff541b2be276c5ae47ac625",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11120,
+      "sequence_id": "development-same_palette_different_layout-11120",
+      "source_content_id": "development-authored-canvas-11120",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11121",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11121/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "26910e33db34c664aa0292a45183b50d43a1bf588a961e1b58b24967f118a01b",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11121-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11121/frame_001.png",
+          "phash": 16951396031366486155,
+          "sha256": "1634858981be8f13a1abd71bba717f3cbbcf4945d80b3b6eb3bd8d5574d3d6e9",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11121-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-same_palette_different_layout-11121/frame_001.png",
+          "phash": 16951396031366486155,
+          "sha256": "1634858981be8f13a1abd71bba717f3cbbcf4945d80b3b6eb3bd8d5574d3d6e9",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11121,
+      "sequence_id": "development-same_palette_different_layout-11121",
+      "source_content_id": "development-authored-canvas-11121",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11130/frame_000.png",
+          "phash": 12639997310488662326,
+          "sha256": "b57000f92e97566dc285580c966e45bc227f842afa423f3f944141d04840031d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11130/frame_001.png",
+          "phash": 12558930456165325238,
+          "sha256": "eba9fa6546bebf506b89233c80ab8870fc1270092497443431eeb6f636377105",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11130/frame_001.png",
+          "phash": 12558930456165325238,
+          "sha256": "eba9fa6546bebf506b89233c80ab8870fc1270092497443431eeb6f636377105",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11130,
+      "sequence_id": "development-static_duplicate-11130",
+      "source_content_id": "development-authored-canvas-11130",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11131",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11131/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "0a024447f9d5b935196a68c577ed88b95c2952323ddb227faf6e2401611573db",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11131",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11131/frame_001.png",
+          "phash": 12558930456148564402,
+          "sha256": "e66df8d94d919bb7746ea0f12454bd3e295857f5112c29ad2139b47f14ca541e",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11131",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_duplicate-11131/frame_001.png",
+          "phash": 12558930456148564402,
+          "sha256": "e66df8d94d919bb7746ea0f12454bd3e295857f5112c29ad2139b47f14ca541e",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11131,
+      "sequence_id": "development-static_duplicate-11131",
+      "source_content_id": "development-authored-canvas-11131",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11140/frame_000.png",
+          "phash": 12631128787674841398,
+          "sha256": "a584a0be87c4fc5b96c6c15c126111ee2e1d1eaddcee8519bddaec8efee39c42",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11140/frame_001.png",
+          "phash": 12630988050203204018,
+          "sha256": "e75dd3cf29bb93f51c8b9ead2b797b86d4006a7044be030227f757e83d8cfd35",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11140/frame_001.png",
+          "phash": 12630988050203204018,
+          "sha256": "e75dd3cf29bb93f51c8b9ead2b797b86d4006a7044be030227f757e83d8cfd35",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11140,
+      "sequence_id": "development-static_shift-11140",
+      "source_content_id": "development-authored-canvas-11140",
+      "transform_class": "static_shift"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11141",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11141/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "b62ca0202f805d5851213c8449c01c28d67d0e46715f7d0d6d788babe0a0c1a6",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11141",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11141/frame_001.png",
+          "phash": 12558930456148548022,
+          "sha256": "6602133f5d1d882c83f553eff33254b1c23642cc734775a50598aba39a220444",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11141",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-static_shift-11141/frame_001.png",
+          "phash": 12558930456148548022,
+          "sha256": "6602133f5d1d882c83f553eff33254b1c23642cc734775a50598aba39a220444",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11141,
+      "sequence_id": "development-static_shift-11141",
+      "source_content_id": "development-authored-canvas-11141",
+      "transform_class": "static_shift"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11150",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11150/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "8fae30941e2a3dd0e32cdffb444ff4f6e3f7a9554d4407a7937be19dca11c7c6",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11150-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11150/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11150-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11150/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11150,
+      "sequence_id": "development-too_few_descriptors-11150",
+      "source_content_id": "development-authored-canvas-11150",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11151",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11151/frame_000.png",
+          "phash": 12568078392891654454,
+          "sha256": "fd0c0e43bd4ebbfd15a940f18bfefe03cc79901bdb33715dc8d32ab3ce523985",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11151-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11151/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11151-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-too_few_descriptors-11151/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11151,
+      "sequence_id": "development-too_few_descriptors-11151",
+      "source_content_id": "development-authored-canvas-11151",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11160",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11160/frame_000.png",
+          "phash": 12639997310488662326,
+          "sha256": "b455a962977ed94724d6c18dd7dcbcd5b3c5f2a37dae49c68a7ba1d925ee855e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11160-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11160/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "13fd22e72868d24eb8bb9f865e9836f6ec40803cb8e07eccd48383851ecb5390",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11160-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11160/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "13fd22e72868d24eb8bb9f865e9836f6ec40803cb8e07eccd48383851ecb5390",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11160,
+      "sequence_id": "development-true_transition-11160",
+      "source_content_id": "development-authored-canvas-11160",
+      "transform_class": "true_transition"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "development-authored-canvas-11161",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11161/frame_000.png",
+          "phash": 12567939716450734454,
+          "sha256": "8a03f2b280d13ba490ab28f43f0c9d7fbd548e8eac3359d3f46b68580a9e8778",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11161-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11161/frame_001.png",
+          "phash": 17164986975360764214,
+          "sha256": "bffba0db90a0df92081ced576d8f28f209730cdae82648fd84b0c4aa888a1380",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "development-authored-canvas-11161-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/development/development-true_transition-11161/frame_001.png",
+          "phash": 17164986975360764214,
+          "sha256": "bffba0db90a0df92081ced576d8f28f209730cdae82648fd84b0c4aa888a1380",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 11161,
+      "sequence_id": "development-true_transition-11161",
+      "source_content_id": "development-authored-canvas-11161",
+      "transform_class": "true_transition"
+    }
+  ],
+  "generator_version": "issue-22-real-image-sequence-v1",
+  "held_out_sequences": [
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21000",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-collinear_inliers-21000/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "d0b3eba52154d192dd85226fe7f0cfc27db6a10530b7f8715c5568bbffa1f26d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21000-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-collinear_inliers-21000/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21000-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-collinear_inliers-21000/frame_001.png",
+          "phash": 18410854367067340927,
+          "sha256": "a4717886f68b34afe00172d085a8467cc4e3e777e8bdeb02d4d13f1cdba77a3f",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21000,
+      "sequence_id": "held_out-collinear_inliers-21000",
+      "source_content_id": "held_out-authored-canvas-21000",
+      "transform_class": "collinear_inliers"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21010",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-high_residual-21010/frame_000.png",
+          "phash": 12631128787674841398,
+          "sha256": "9f148e83039b00ac9481506eec65477ae9de7238dad2d654bff4c20308620dd6",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21010-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-high_residual-21010/frame_001.png",
+          "phash": 12552178355829852592,
+          "sha256": "51bcf58dec07585094fe823e6a9a7a5a4b1574f6e62cbdcccba0b8a2516684d3",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21010-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-high_residual-21010/frame_001.png",
+          "phash": 12552178355829852592,
+          "sha256": "51bcf58dec07585094fe823e6a9a7a5a4b1574f6e62cbdcccba0b8a2516684d3",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21010,
+      "sequence_id": "held_out-high_residual-21010",
+      "source_content_id": "held_out-authored-canvas-21010",
+      "transform_class": "high_residual"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21020",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-incremental_build-21020/frame_000.png",
+          "phash": 12567937655403303222,
+          "sha256": "c73528b51a7b82f28e91633c976620a81241d13f1924a1564bc8d4b8b1a30a41",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21020-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-incremental_build-21020/frame_001.png",
+          "phash": 17166394212201121975,
+          "sha256": "cf8ed9756f4e1a1fe13906b313313d5126465810c1a073eb982b917d6e48059a",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21020-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-incremental_build-21020/frame_001.png",
+          "phash": 17166394212201121975,
+          "sha256": "cf8ed9756f4e1a1fe13906b313313d5126465810c1a073eb982b917d6e48059a",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21020,
+      "sequence_id": "held_out-incremental_build-21020",
+      "source_content_id": "held_out-authored-canvas-21020",
+      "transform_class": "incremental_build"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21030",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-low_masked_ssim-21030/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "0a4adc6e3fd44c8dc57b166f5ff19ba9efc0509e7b88f2154160b827c52ad41d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21030-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-low_masked_ssim-21030/frame_001.png",
+          "phash": 11909852131990084530,
+          "sha256": "83d0a55add10419c461eb613865b5181667f4fac247b559fa626ff210a5d9350",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21030-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-low_masked_ssim-21030/frame_001.png",
+          "phash": 11909852131990084530,
+          "sha256": "83d0a55add10419c461eb613865b5181667f4fac247b559fa626ff210a5d9350",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21030,
+      "sequence_id": "held_out-low_masked_ssim-21030",
+      "source_content_id": "held_out-authored-canvas-21030",
+      "transform_class": "low_masked_ssim"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21040",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-one_way_coverage-21040/frame_000.png",
+          "phash": 12567937655403303222,
+          "sha256": "dd96901c2a140fb080b1423241d1b77dc66de216b0041014dd55f749b0e3ed5d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21040-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-one_way_coverage-21040/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "7585d4f4ca4b204b50213b3b80efbcaf8502fd022f343b4559e48e7b3f0f0819",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21040-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-one_way_coverage-21040/frame_001.png",
+          "phash": 13130906934427989558,
+          "sha256": "7585d4f4ca4b204b50213b3b80efbcaf8502fd022f343b4559e48e7b3f0f0819",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21040,
+      "sequence_id": "held_out-one_way_coverage-21040",
+      "source_content_id": "held_out-authored-canvas-21040",
+      "transform_class": "one_way_coverage"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21050",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-out_of_scale-21050/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "6daf3ea08421f891a035b1c30d9835ee354ef6c60fabe548372189cabd4f1ab7",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21050-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-out_of_scale-21050/frame_001.png",
+          "phash": 12486594227983469522,
+          "sha256": "22fcca565983da85c95dab2b2bab2083cf0d630fb8095a5a1137974c223237b8",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21050-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-out_of_scale-21050/frame_001.png",
+          "phash": 12486594227983469522,
+          "sha256": "22fcca565983da85c95dab2b2bab2083cf0d630fb8095a5a1137974c223237b8",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21050,
+      "sequence_id": "held_out-out_of_scale-21050",
+      "source_content_id": "held_out-authored-canvas-21050",
+      "transform_class": "out_of_scale"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21060",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-outlier_heavy-21060/frame_000.png",
+          "phash": 12567937655403303222,
+          "sha256": "2a1e01f00d6a03f7fe8f5d87ac4ed6cd001129883cc08aec5187a10b8c216a4d",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21060-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-outlier_heavy-21060/frame_001.png",
+          "phash": 16876758798232308022,
+          "sha256": "d28f63b2694dbd7f4d0e2776e26bab4ef11e1b24d791df6a93291bb7ac61186a",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21060-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-outlier_heavy-21060/frame_001.png",
+          "phash": 16876758798232308022,
+          "sha256": "d28f63b2694dbd7f4d0e2776e26bab4ef11e1b24d791df6a93291bb7ac61186a",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21060,
+      "sequence_id": "held_out-outlier_heavy-21060",
+      "source_content_id": "held_out-authored-canvas-21060",
+      "transform_class": "outlier_heavy"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom-21070/frame_000.png",
+          "phash": 12567937655403303222,
+          "sha256": "c1f2b0e9b4b7cb0b33b404c7ba5853ad4b8f2fb214ce63de47fb121740a25481",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom-21070/frame_001.png",
+          "phash": 11910432671680093106,
+          "sha256": "f519508afb4d2632b6d9c288cc48b5f386ae64404aad585003d9c8c796e557ac",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21070",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom-21070/frame_001.png",
+          "phash": 11910432671680093106,
+          "sha256": "f519508afb4d2632b6d9c288cc48b5f386ae64404aad585003d9c8c796e557ac",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21070,
+      "sequence_id": "held_out-pan_zoom-21070",
+      "source_content_id": "held_out-authored-canvas-21070",
+      "transform_class": "pan_zoom"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21080",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_incremental-21080/frame_000.png",
+          "phash": 12559071193670467894,
+          "sha256": "aa21514cc09a6663a5e8f54ee21408a4cdf3411715a1a6ae372d6fbbc9b250b7",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21080-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_incremental-21080/frame_001.png",
+          "phash": 12489125750415546802,
+          "sha256": "05d829308514d6bfa269c80f2094279acc1e9f62a2d744e8135acc66d3d0fac6",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21080-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_incremental-21080/frame_001.png",
+          "phash": 12489125750415546802,
+          "sha256": "05d829308514d6bfa269c80f2094279acc1e9f62a2d744e8135acc66d3d0fac6",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21080,
+      "sequence_id": "held_out-pan_zoom_incremental-21080",
+      "source_content_id": "held_out-authored-canvas-21080",
+      "transform_class": "pan_zoom_incremental"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_reverse-21090/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "dfc32e7a6dab29672d41ed4609bcc387c6144d70325857ddc9132fa4515d70cb",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_reverse-21090/frame_001.png",
+          "phash": 12568088150532516398,
+          "sha256": "bb9fe1b4b847e13614c238abec2dc6b515ded7bc298c1aae99645de849776cc2",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21090",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_reverse-21090/frame_001.png",
+          "phash": 12568088150532516398,
+          "sha256": "bb9fe1b4b847e13614c238abec2dc6b515ded7bc298c1aae99645de849776cc2",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21090,
+      "sequence_id": "held_out-pan_zoom_reverse-21090",
+      "source_content_id": "held_out-authored-canvas-21090",
+      "transform_class": "pan_zoom_reverse"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21100",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_shared_template-21100/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "bdd8966c9ee78fba58f2a709b5eec70ea41b6bd91909cdedbe86e106a25929bc",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21100-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_shared_template-21100/frame_001.png",
+          "phash": 16876898298770057782,
+          "sha256": "203743dd4aa9347d9c961e3c8c90a0226d06323e5d41c63e8182fe8c3a9f5123",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21100-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-pan_zoom_shared_template-21100/frame_001.png",
+          "phash": 16876898298770057782,
+          "sha256": "203743dd4aa9347d9c961e3c8c90a0226d06323e5d41c63e8182fe8c3a9f5123",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21100,
+      "sequence_id": "held_out-pan_zoom_shared_template-21100",
+      "source_content_id": "held_out-authored-canvas-21100",
+      "transform_class": "pan_zoom_shared_template"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21110",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-ransac_failure-21110/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "ce2da1106d508489fb13ccfac9bd29a0df1f8d2a8c3afce4693acfc16b42a5ae",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21110-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-ransac_failure-21110/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "27f23590fb1327f4234012d1600ad5a2b540b1d435b574a7f43ef0f2d43d6b9a",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21110-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-ransac_failure-21110/frame_001.png",
+          "phash": 17164989174384019510,
+          "sha256": "27f23590fb1327f4234012d1600ad5a2b540b1d435b574a7f43ef0f2d43d6b9a",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21110,
+      "sequence_id": "held_out-ransac_failure-21110",
+      "source_content_id": "held_out-authored-canvas-21110",
+      "transform_class": "ransac_failure"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21120",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-same_palette_different_layout-21120/frame_000.png",
+          "phash": 12631128787674841398,
+          "sha256": "3a14383678142b53515801de7a74aa0622486f1a5aa93eafc5df6f20c0c88050",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21120-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-same_palette_different_layout-21120/frame_001.png",
+          "phash": 16874001351028359625,
+          "sha256": "c56d3718a9f503d2166cb7b2201b289c5943142d738585ece107027779917459",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21120-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-same_palette_different_layout-21120/frame_001.png",
+          "phash": 16874001351028359625,
+          "sha256": "c56d3718a9f503d2166cb7b2201b289c5943142d738585ece107027779917459",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21120,
+      "sequence_id": "held_out-same_palette_different_layout-21120",
+      "source_content_id": "held_out-authored-canvas-21120",
+      "transform_class": "same_palette_different_layout"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_duplicate-21130/frame_000.png",
+          "phash": 12567940815962362166,
+          "sha256": "937e99b81828b5b02d7a800c2bc297081d19046a195db9400800bf089cdd3581",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_duplicate-21130/frame_001.png",
+          "phash": 12558930456182100406,
+          "sha256": "5c88b67b894475f49dee8504f3ed502bbc3cbc4532094eb8243ce7167ddd95be",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21130",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_duplicate-21130/frame_001.png",
+          "phash": 12558930456182100406,
+          "sha256": "5c88b67b894475f49dee8504f3ed502bbc3cbc4532094eb8243ce7167ddd95be",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21130,
+      "sequence_id": "held_out-static_duplicate-21130",
+      "source_content_id": "held_out-authored-canvas-21130",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_shift-21140/frame_000.png",
+          "phash": 12567939716987605302,
+          "sha256": "4fc21ffd4c9b6ac7c7e5a9ee59938cc9811cb8aad2f71f420435285d917db21e",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_shift-21140/frame_001.png",
+          "phash": 12558930456165341618,
+          "sha256": "6f859d357b531d0683939702248b1ee0891070dad6e522a95f8d372d59f60447",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21140",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-static_shift-21140/frame_001.png",
+          "phash": 12558930456165341618,
+          "sha256": "6f859d357b531d0683939702248b1ee0891070dad6e522a95f8d372d59f60447",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21140,
+      "sequence_id": "held_out-static_shift-21140",
+      "source_content_id": "held_out-authored-canvas-21140",
+      "transform_class": "static_shift"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21150",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-too_few_descriptors-21150/frame_000.png",
+          "phash": 12631128787674841398,
+          "sha256": "b678cfd08003bb745b12d1f1e8c82f573c138d76ee6d9421a99378d66683a245",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21150-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-too_few_descriptors-21150/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21150-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-too_few_descriptors-21150/frame_001.png",
+          "phash": 15476120259920827961,
+          "sha256": "66ed22a8499624a4b13f8c9bec78209e3de6c37d2707b6ed2a10a0d49edbe9b3",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21150,
+      "sequence_id": "held_out-too_few_descriptors-21150",
+      "source_content_id": "held_out-authored-canvas-21150",
+      "transform_class": "too_few_descriptors"
+    },
+    {
+      "frames": [
+        {
+          "expected_visual_id": "held_out-authored-canvas-21160",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-true_transition-21160/frame_000.png",
+          "phash": 12567937655403303222,
+          "sha256": "78e2f93b254302848c63fbfdc12f8d04c626a9f8c29388e679dc8b2702cddd7a",
+          "timestamp": 0.0
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21160-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-true_transition-21160/frame_001.png",
+          "phash": 17165268450337474614,
+          "sha256": "05866ea37732deceb083994fb114739e43fc3260aca146cee4b3d1d22d0a314d",
+          "timestamp": 0.5
+        },
+        {
+          "expected_visual_id": "held_out-authored-canvas-21160-changed",
+          "path": "tests/fixtures/visual_alignment/corpus_v1/held_out/held_out-true_transition-21160/frame_001.png",
+          "phash": 17165268450337474614,
+          "sha256": "05866ea37732deceb083994fb114739e43fc3260aca146cee4b3d1d22d0a314d",
+          "timestamp": 1.0
+        }
+      ],
+      "generator_seed": 21160,
+      "sequence_id": "held_out-true_transition-21160",
+      "source_content_id": "held_out-authored-canvas-21160",
+      "transform_class": "true_transition"
+    }
+  ],
+  "labels": "Authored before ORB/RANSAC measurement; held_out seeds and source_content_id values are disjoint from development.",
+  "manifest_version": 3,
+  "retired_holdouts": []
+}

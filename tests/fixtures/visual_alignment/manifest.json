@@ -1,0 +1,56 @@
+{
+  "manifest_version": 1,
+  "generator_version": "issue-22-alignment-manual-v1",
+  "development": [
+    {
+      "id": "dev_near_duplicate",
+      "generator_seed": 101,
+      "reference": "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png",
+      "candidate": "tests/fixtures/benchmark/en_terms_01/slides/slide_02_near_dup.png",
+      "expected_label": "same",
+      "transform_class": "static_shift"
+    },
+    {
+      "id": "dev_static_duplicate",
+      "generator_seed": 102,
+      "reference": "tests/fixtures/benchmark/visual_static_duplicate_01/slides/static_article_00.png",
+      "candidate": "tests/fixtures/benchmark/visual_static_duplicate_01/slides/static_article_01.png",
+      "expected_label": "same",
+      "transform_class": "static_duplicate"
+    },
+    {
+      "id": "dev_true_transition",
+      "generator_seed": 103,
+      "reference": "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png",
+      "candidate": "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png",
+      "expected_label": "different",
+      "transform_class": "true_transition"
+    },
+    {
+      "id": "dev_incremental_build",
+      "generator_seed": 104,
+      "reference": "tests/fixtures/benchmark/en_terms_01/slides/slide_03_inc_base.png",
+      "candidate": "tests/fixtures/benchmark/en_terms_01/slides/slide_04_inc_ext.png",
+      "expected_label": "different",
+      "transform_class": "incremental_build"
+    }
+  ],
+  "held_out": [
+    {
+      "id": "holdout_near_duplicate",
+      "generator_seed": 201,
+      "reference": "tests/fixtures/benchmark/ko_terms_01/slides/slide_01_concept.png",
+      "candidate": "tests/fixtures/benchmark/ko_terms_01/slides/slide_02_near_dup.png",
+      "expected_label": "same",
+      "transform_class": "static_shift"
+    },
+    {
+      "id": "holdout_true_transition",
+      "generator_seed": 202,
+      "reference": "tests/fixtures/benchmark/ko_terms_01/slides/slide_01_concept.png",
+      "candidate": "tests/fixtures/benchmark/ko_terms_01/slides/slide_00_title.png",
+      "expected_label": "different",
+      "transform_class": "true_transition"
+    }
+  ]
+}

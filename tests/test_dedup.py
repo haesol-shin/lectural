@@ -6,7 +6,9 @@ from lectural import visual
 from lectural.visual import (
     PHASH_HAMMING_THRESHOLD,
     Frame,
+    advance_dedupe_state,
     cleanup_raw_frames,
+    initial_dedupe_state,
     is_same_phash,
     is_same_slide,
     parse_frame_timestamp_from_filename,
@@ -80,6 +82,26 @@ def test_phash_candidate_requires_two_consecutive_changed_samples():
     assert select_phash_keyframe_indices([slide_a, transient, slide_b, slide_b]) == [0, 2]
 
 
+def test_advance_dedupe_state_replays_persistence_and_fails_closed_without_evaluator():
+    state = initial_dedupe_state(0)
+    changed = (1 << 17) - 1
+    state, pending = advance_dedupe_state(state, 1, changed)
+    assert pending["event"] == "phash_change_pending"
+    state, terminal = advance_dedupe_state(state, 2, changed)
+    assert terminal["event"] == "persistent_candidate"
+    assert terminal["evaluator_result"] == "not_same"
+    assert state["kept_index"] == 1
+
+
+def test_advance_dedupe_state_keeps_reference_when_shared_evaluator_accepts():
+    state = initial_dedupe_state(0)
+    changed = (1 << 17) - 1
+    state, _ = advance_dedupe_state(state, 1, changed)
+    state, terminal = advance_dedupe_state(state, 2, changed, evaluate=lambda *_: "same")
+    assert terminal["evaluator_result"] == "same"
+    assert state["kept_index"] == 0
+
+
 def test_frame_timestamp_parsing_from_extracted_names():
     assert parse_frame_timestamp_from_filename("frames/frame_00042.png", fps=2.0) == (
         21.0,
@@ -95,22 +117,94 @@ def test_frame_timestamp_parsing_from_extracted_names():
     )
 
 
-def test_dedupe_frames_routes_through_phash_with_metadata(monkeypatch):
-    slide_a = 0
-    slide_b = (1 << 17) - 1
-    hashes = {"a.png": slide_a, "b1.png": slide_b, "b2.png": slide_b}
-    frames = [
-        Frame(timestamp=0.0, image_path="a.png"),
-        Frame(timestamp=10.0, image_path="b1.png"),
-        Frame(timestamp=10.5, image_path="b2.png"),
-    ]
-
-    monkeypatch.setattr(visual, "_image_phash", lambda path: hashes[path])
+def test_dedupe_frames_confirms_persistent_change_with_bounded_decodes(tmp_path):
+    Image = pytest.importorskip("PIL.Image")
+    base = Image.new("RGB", (80, 40), "white")
+    changed = Image.new("RGB", (80, 40), "black")
+    paths = [tmp_path / name for name in ("a.png", "b1.png", "b2.png")]
+    base.save(paths[0]); changed.save(paths[1]); changed.save(paths[2])
+    frames = [Frame(float(index), str(path)) for index, path in enumerate(paths)]
 
     assert visual.dedupe_frames(frames) == [frames[0], frames[1]]
-    assert frames[1].meta["phash"] == f"{slide_b:016x}"
-    assert frames[1].meta["phash_hamming_from_previous"] == 17
-    assert frames[1].meta["phash_hamming_threshold"] == PHASH_HAMMING_THRESHOLD
+    assert frames[1].meta["dedupe_decision"] == "kept_distinct"
+    assert frames[1].meta["width"] == 80
+    assert frames[1].meta["height"] == 40
+    assert "hist_corr" in frames[1].meta and "ssim" in frames[1].meta
+
+
+def test_structural_duplicate_decodes_each_host_frame_once(tmp_path, monkeypatch):
+    Image = pytest.importorskip("PIL.Image")
+    base = Image.new("RGB", (80, 40), "white")
+    drift = base.copy()
+    for x in range(15):
+        drift.putpixel((x, 0), (0, 0, 0))
+    paths = [tmp_path / f"{index}.png" for index in range(4)]
+    base.save(paths[0]); drift.save(paths[1]); drift.save(paths[2]); base.save(paths[3])
+    frames = [Frame(float(index), str(path)) for index, path in enumerate(paths)]
+    decoded = []
+    real_decode = visual._decode_image
+    monkeypatch.setattr(visual, "_decode_image", lambda path: decoded.append(path) or real_decode(path))
+
+    visual.dedupe_frames(frames)
+
+    assert decoded.count(str(paths[1])) == 1
+    assert frames[1].meta["dedupe_decision"] == "structural_duplicate"
+
+
+def test_phash_near_sequence_never_starts_alignment_worker(tmp_path, monkeypatch):
+    Image = pytest.importorskip("PIL.Image")
+    path = tmp_path / "same.png"
+    Image.new("RGB", (80, 40), "white").save(path)
+    frames = [Frame(float(index), str(path)) for index in range(3)]
+
+    def fail_worker(*_args, **_kwargs):
+        raise AssertionError("pHash-near frames must not start ORB")
+
+    monkeypatch.setattr(visual, "AlignmentWorker", fail_worker)
+
+    assert visual.dedupe_frames(frames) == [frames[0]]
+
+
+def test_dedupe_reuses_one_worker_and_fails_closed(tmp_path, monkeypatch):
+    Image = pytest.importorskip("PIL.Image")
+    path = tmp_path / "frame.png"
+    Image.new("RGB", (80, 40), "white").save(path)
+    frames = [Frame(float(index), str(path)) for index in range(5)]
+    hashes = iter([0, (1 << 17) - 1, (1 << 17) - 1, (1 << 34) - (1 << 17), (1 << 34) - (1 << 17)])
+    monkeypatch.setattr(visual, "_image_phash_from_array", lambda *_args: next(hashes))
+    instances = []
+
+    class FakeWorker:
+        def __init__(self, thresholds):
+            self.thresholds = thresholds
+            self.comparisons = []
+            self.closed = False
+            instances.append(self)
+
+        def compare(self, reference, candidate):
+            self.comparisons.append((reference, candidate))
+            return {
+                "result": "unavailable",
+                "first_failed_gate": "opencv",
+                "opencv_available": False,
+                "direct_same": False,
+                "direct_metrics": {"hist_corr": 0.0, "ssim": 0.0},
+                "source_phash": {"reference": 0, "candidate": 0},
+                "identity_content_change": {"by_pixel_delta": {"64": None}},
+                "aligned_content_change": {"by_pixel_delta": {"64": None}},
+            }
+
+        def close(self):
+            self.closed = True
+
+    monkeypatch.setattr(visual, "AlignmentWorker", FakeWorker)
+
+    assert visual.dedupe_frames(frames) == [frames[0], frames[1], frames[3]]
+    assert len(instances) == 1
+    assert len(instances[0].comparisons) == 2
+    assert instances[0].closed is True
+    assert frames[1].meta["alignment_result"] == "unavailable"
+    assert frames[3].meta["alignment_first_failed_gate"] == "opencv"
 
 
 def test_image_phash_reads_non_ascii_path(tmp_path):
@@ -173,4 +267,3 @@ def test_cleanup_raw_frames_keep_mode_archives_raw_and_keeps_final_links(tmp_pat
     ]
     assert (frames_dir / "raw" / "frame_00002.png").read_text(encoding="utf-8") == "frame_00002.png"
     assert result["raw_dir"] == str((frames_dir / "raw").resolve())
-

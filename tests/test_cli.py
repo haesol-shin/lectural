@@ -141,6 +141,7 @@ def _install_default_processor_fakes(
         )
 
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
+    monkeypatch.setattr(media, "probe_video_resolution", lambda _path: (1280, 720))
     if source_kind is not SourceKind.LOCAL_AUDIO:
         monkeypatch.setattr(media, "resolve_video", lambda source, out_dir: calls.append(("video", source, out_dir)) or source.locator)
 
@@ -200,6 +201,27 @@ def test_local_video_skip_ocr_keeps_deduplicated_frames_and_disables_only_ocr(mo
     assert notes.count("frames/frame_") >= 2
     assert all(path.exists() for path in (out / "frames").glob("frame_*.png"))
     assert source_path.read_bytes() == b"source"
+    assert calls[0][1].kind is SourceKind.LOCAL_VIDEO
+
+
+def test_reliability_gates_synthesis_but_preserves_evidence(monkeypatch, tmp_path):
+    calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO)
+    source_path = tmp_path / "deck.mp4"
+    source_path.write_bytes(b"source")
+
+    def fake_ocr(frames):
+        for frame in frames:
+            frame.ocr_text = "Low confidence slide text"
+            frame.ocr_confidence = 0.1
+            frame.is_slide = True
+        return frames, "paddleocr"
+
+    monkeypatch.setattr("lectural.ocr.ocr_frames", fake_ocr)
+    result = cli._default_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny")
+    handoff = json.loads((Path(result["output_dir"]) / "synthesis_input.json").read_text(encoding="utf-8"))
+    assert all(not slide["ocr_text"] for slide in handoff["slides"])
+    assert all(frame["reliable"] is False for frame in result["representative_frames"])
+    assert all(frame["ocr_text"] for frame in result["representative_frames"])
     assert calls[0][1].kind is SourceKind.LOCAL_VIDEO
 
 
@@ -345,6 +367,7 @@ def test_run_default_processor_suffixes_existing_and_reserved_mixed_sources(monk
         )
 
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
+    monkeypatch.setattr(media, "probe_video_resolution", lambda _path: (1280, 720))
     monkeypatch.setattr(media, "resolve_video", lambda source, out_dir: source.locator)
 
     def fake_extract(video, frames_dir):
