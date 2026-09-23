@@ -38,7 +38,7 @@ The JSON report retains `schema_version`, `items`, `overall_status`, and `exit_c
   "schema_version": 2,
   "contract_version": 2,
   "tool": "lectural",
-  "tool_version": "0.3.0",
+  "tool_version": "0.3.1",
   "status": "ok",
   "result": {},
   "errors": [],

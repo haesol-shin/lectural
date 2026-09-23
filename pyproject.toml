@@ -1,6 +1,6 @@
 [project]
 name = "lectural"
-version = "0.3.0"
+version = "0.3.1"
 description = "Turn video and audio into complete, deterministic, timestamp-addressable evidence that agents can verify and reuse."
 readme = "README.md"
 license = "MIT"

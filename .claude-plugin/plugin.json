@@ -1,6 +1,6 @@
 {
   "name": "lectural",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Turn YouTube and local media into timestamped, verifiable evidence: transcript segments, selected frames with OCR, and a completeness verdict. Study notes are optional. Includes /lectural:notes, /lectural:setup, and a completeness Stop hook.",
   "author": {
     "name": "Haesol Shin",
