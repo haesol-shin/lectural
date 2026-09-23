@@ -154,7 +154,9 @@ def render_inventory(result: dict[str, Any]) -> str:
         f"Extraction:      {extraction.get('status') or '-'} | reasons={','.join(extraction['reason_codes']) or 'none'}",
         f"Versions:        contract={versions.get('contract_version')} schema={versions.get('schema_version')} tool={versions.get('tool') or '-'} {versions.get('tool_version') or '-'}",
         f"Artifact sizes:  evidence={_display_value(artifacts['evidence_bytes'], ' B')} transcript={_display_value(artifacts['transcript_bytes'], ' B')} frames={_display_value(artifacts['frames_bytes'], ' B')}",
-        f"Resources:       wall={_display_value(resources.get('wall_sec'), 's')} | stages={resources['stages']} | peak_rss={_display_value(resources.get('peak_rss_mb'), ' MiB')}",
+        f"Resources:       wall={_display_value(resources.get('wall_sec'), 's')} | "
+        + ("stages=" + " ".join(f"{name}={float(value):.1f}s" for name, value in (resources.get("stages") or {}).items()) + " | " if resources.get("stages") else "")
+        + f"peak_rss={_display_value(resources.get('peak_rss_mb'), ' MiB')}",
     ]
     return "\n".join(lines)
 
