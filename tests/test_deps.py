@@ -91,6 +91,7 @@ def test_preflight_imports_and_version_checks_ocr_runtime_dependencies(monkeypat
             "paddle": "3.0.0",
             "cv2": "4.6.0",
             "webrtcvad": "2.0.10",
+            "psutil": "5.9.8",
         },
     )
     _fake_package_metadata(
@@ -101,6 +102,8 @@ def test_preflight_imports_and_version_checks_ocr_runtime_dependencies(monkeypat
 
     statuses = {status.name: status for status in deps.preflight(require_ocr=True)}
 
+    assert "psutil" in imported
+    assert statuses["psutil"].available is True
     assert {"numpy", "paddleocr", "paddle", "cv2"}.issubset(imported)
     assert statuses["numpy"].available is True
     assert statuses["paddleocr"].available is True
@@ -193,6 +196,7 @@ def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
     assert "opencv-python-headless<=4.6.0.66" not in pyproject
     assert "onnxruntime<1.24" in pyproject
     assert '"setuptools>=68,<81"' in pyproject
+    assert '"psutil>=5.9"' in pyproject
 
     lock = Path("uv.lock").read_text(encoding="utf-8")
     package_versions: dict[str, list[str]] = {}
@@ -207,6 +211,8 @@ def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
         assert all(
             deps._compare_versions(version, "4.6.0.66") <= 0 for version in package_versions.get(name, [])
         )
+    assert package_versions["psutil"]
+    assert '{ name = "psutil", marker = "extra == \'run\'", specifier = ">=5.9" }' in lock
     assert all(deps._compare_versions(version, "1.24") < 0 for version in package_versions.get("onnxruntime", []))
     assert "onnxruntime-1.23.2-cp310-cp310-win_amd64.whl" in lock
     assert '{ name = "setuptools", marker = "extra == \'run\'", specifier = ">=68,<81" }' in lock

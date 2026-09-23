@@ -38,6 +38,7 @@ run = [
     "webrtcvad>=2.0.10",
     # webrtcvad imports pkg_resources at runtime on current wheels.
     "setuptools>=68,<81",
+    "psutil>=5.9",
 ]
 test = ["pytest>=7.0", "numpy>=1.24"]
 # Calibration uses the exact overlapping provider set resolved by `[run]`.
@@ -51,9 +52,8 @@ alignment = [
     "Pillow>=10.0.0",
 ]
 # Dev/maintainer-only: Issue #21 evidence-quality/resource benchmark
-# (scripts/benchmark.py). Never required by `[run]` or the offline gate;
-# scripts/benchmark.py imports all of these lazily inside functions so it
-# stays parseable/testable with zero of them installed.
+# (scripts/benchmark.py). The psutil dependency is also part of `[run]` for
+# optional extraction process-tree resource measurements.
 bench = [
     "jiwer>=3.0",
     "whisper-normalizer>=0.1",
