@@ -17,12 +17,18 @@ jobs:
       - name: Validate tag version
         shell: bash
         run: |
-          plugin_version="$(jq -r '.version' .claude-plugin/plugin.json)"
           tag_version="${GITHUB_REF_NAME#v}"
-          if [ "$tag_version" != "$plugin_version" ]; then
-            echo "Tag version $tag_version does not match plugin.json version $plugin_version" >&2
-            exit 1
-          fi
+          plugin_version="$(jq -r '.version' .claude-plugin/plugin.json)"
+          pyproject_version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          module_version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' lectural/__init__.py)"
+          status=0
+          for pair in "plugin.json:$plugin_version" "pyproject.toml:$pyproject_version" "lectural/__init__.py:$module_version"; do
+            if [ "$tag_version" != "${pair#*:}" ]; then
+              echo "Tag version $tag_version does not match ${pair%%:*} version ${pair#*:}" >&2
+              status=1
+            fi
+          done
+          exit "$status"
 
       - name: Build release notes
         shell: bash

@@ -4,7 +4,7 @@ LecturAL releases are lightweight GitHub Releases driven by the annotated versio
 
 ## Steps
 
-1. Bump `.claude-plugin/plugin.json` to the next SemVer version.
+1. Bump the version to the next SemVer in all three sources — `.claude-plugin/plugin.json`, `pyproject.toml`, and `lectural/__init__.py` (`__version__`) — then run `uv lock` so `uv.lock` records the new `lectural` version. `lectural doctor` reports incompatible when the module and installed distribution versions disagree.
 2. Move `CHANGELOG.md` notes from `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD` and update the compare links.
 3. Ensure `main` is green:
    - `uv run --with pytest --with numpy pytest -q`
@@ -22,6 +22,6 @@ LecturAL releases are lightweight GitHub Releases driven by the annotated versio
    git push origin vX.Y.Z
    ```
 
-The release workflow checks the tag version against `.claude-plugin/plugin.json`, extracts the matching `## [X.Y.Z]` section from `CHANGELOG.md` as the GitHub Release body, and publishes the release. If the tag version and `plugin.json` disagree, or the `CHANGELOG.md` section is missing, the workflow fails — so the curated changelog entry is the release notes (write it before tagging; do not hand-author a separate release description).
+The release workflow checks the tag version against all three version sources, extracts the matching `## [X.Y.Z]` section from `CHANGELOG.md` as the GitHub Release body, and publishes the release. If the tag version disagrees with any source, or the `CHANGELOG.md` section is missing, the workflow fails — so the curated changelog entry is the release notes (write it before tagging; do not hand-author a separate release description). Include `Compatibility`, `Known limitations`, and `Rollback` subsections alongside the Keep a Changelog categories.
 
 Do not run a build, npm publish, or a separate QA readiness document for this project.

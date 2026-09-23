@@ -1,6 +1,6 @@
 {
   "name": "lectural",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene, as markdown notes or a versioned JSON contract. Ships a deterministic Python core, the /lectural:notes and /lectural:setup commands, and a completeness Stop hook.",
   "author": {
     "name": "Haesol Shin",

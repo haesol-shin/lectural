@@ -4,6 +4,8 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-23
+
 ### Added
 - Local lecture inputs: existing `.mp4`, `.webm`, `.mkv`, and `.wav` files alongside YouTube URLs/IDs.
 - `--skip-ocr` to keep scene frames while skipping OCR and the slide-text coverage check.
@@ -11,11 +13,27 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - Versioned `lectural --version --json` and `lectural extract ... --json` evidence responses with safe paths, completeness, timestamp integrity, representative frames, and explicit OCR states.
 - Transform-aware slide deduplication for shifted, panned, and zoomed frames, with fail-closed OpenCV provenance checks and calibrated thresholds.
 - Confidence-aware OCR representative selection plus source/frame dimensions and OCR reliability in JSON evidence.
+- Evidence quality and resource benchmark: EN/KO/mixed fixtures, `lectural_bench` metrics (WER/CER, terminology recall, timestamp error, voiced recall/max gap, frame recall/duplicate rate, OCR quality), `scripts/benchmark.py`, and the versioned `docs/contracts/benchmark.schema.json` report schema. Install with the new `[bench]` extra; it is never part of `[run]`.
+- Recorded multi-language STT/OCR baseline reports under `docs/reports/`.
+
+### Changed
+- `[run]` pins `opencv-python`, `opencv-contrib-python`, and `opencv-python-headless` to exactly `4.6.0.66` (previously `<=4.6.0.66`); transform-aware alignment refuses mismatched OpenCV providers instead of guessing. `pytesseract` now requires `>=0.3.13`.
 
 ### Fixed
 - Sequential sources no longer overwrite an existing or already-reserved output slug; collisions use `-2`, `-3`, and later suffixes.
 - Video visual timeline coverage now fails closed when duration is missing, zero, negative, or non-finite; local audio remains visual not-applicable.
 - OCR now reuses one engine per frame batch instead of rebuilding it for every representative frame.
+
+### Compatibility
+- New extraction JSON contract version 1 and schema version 1 (`docs/contracts/cli.md`); consumers should pin `v0.2.0` and check `supported_contract_versions`.
+- Transform-aware deduplication can keep fewer near-duplicate slide frames than v0.1.2 for the same video; existing output directories are never overwritten.
+
+### Known limitations
+- Only the YouTube caption path is validated end to end; local-media ASR, forced faster-whisper, and caption fallback remain unvalidated (#23).
+- `[run]` installs three overlapping OpenCV providers for the same `cv2` namespace (#29).
+
+### Rollback
+- Reinstall the previous release with `uvx --from "lectural[run] @ git+https://github.com/haesol-shin/lectural@v0.1.2" lectural`. v0.1.2 has no JSON contract, so JSON consumers must pin back as well.
 
 ## [0.1.2] - 2026-06-14
 
@@ -46,7 +64,8 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - `lectural doctor [--fix] [--json]` runtime check and bounded auto-repair.
 - Two-layer completeness gate: CLI exit code (structure) plus Stop hook (citations, enrichment, per-slide checks).
 
-[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/haesol-shin/lectural/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/haesol-shin/lectural/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/haesol-shin/lectural/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/haesol-shin/lectural/releases/tag/v0.1.0
