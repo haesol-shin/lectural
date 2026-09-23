@@ -286,7 +286,7 @@ def test_notes_from_evidence_is_byte_identical_to_legacy_notes_output(tmp_path):
             "status": "pass",
             "reasons": [],
             "speech_completeness": {"status": "pass", "pass": True, "speech_spans": [[0.0, 30.0]]},
-            "visual_completeness": {"status": "not-applicable", "pass": True, "visual_required": False, "ocr_required": False, "raw_sample_times": [], "notes_frame_ids": []},
+            "visual_completeness": {"status": "not-applicable", "pass": True, "visual_required": False, "ocr_required": False, "raw_sample_times": [], "slide_frame_ids": []},
             "timestamp_integrity": {"status": "pass", "pass": True},
             "ocr": {"status": "not_applicable", "engine": "not_applicable", "annotation_only": True},
         },

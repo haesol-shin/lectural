@@ -197,9 +197,14 @@ def acquire_speech(
                 )
             fallback_code = "captions_unusable"
             fallback_reason = f"captions present but unusable ({len(segs)} cues)"
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            # youtube-transcript-api raises several distinct types
+            # (NoTranscriptFound, TranscriptsDisabled, network errors) that
+            # cannot be imported without the optional dep, so we catch broadly.
+            # The detail stays in the stderr warning; JSON carries only the
+            # bounded fallback code.
             fallback_code = "captions_unavailable"
-            fallback_reason = "caption retrieval failed"
+            fallback_reason = f"caption fetch failed: {type(exc).__name__}: {exc}"
         warnings.warn(
             f"Captions unavailable; falling back to CPU STT. Reason: {fallback_reason}",
             RuntimeWarning,

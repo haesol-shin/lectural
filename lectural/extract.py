@@ -198,7 +198,7 @@ def _extract_source(
     raw_sample_times = [round(float(frame.timestamp), 3) for frame in raw_frames]
     visual_required = source.has_video
     ocr_required = visual_required and not skip_ocr
-    note_frame_ids = [frame_ids[os.path.normcase(os.path.abspath(frame.image_path))] for frame in slide_frames]
+    slide_frame_ids = [frame_ids[os.path.normcase(os.path.abspath(frame.image_path))] for frame in slide_frames]
     gap = gap_check(speech_spans, [float(segment.t) for segment in segments], duration)
     scene = scene_coverage(
         raw_sample_times, speech_spans, duration,
@@ -279,7 +279,7 @@ def _extract_source(
             "status": "not-applicable" if not visual_required else ("pass" if scene["timeline_pass"] else "fail"),
             "pass": not visual_required or scene["timeline_pass"],
             "raw_sample_times": raw_sample_times,
-            "notes_frame_ids": note_frame_ids,
+            "slide_frame_ids": slide_frame_ids,
         },
         timestamp_integrity_result=timestamp,
         ocr_status=ocr_status,

@@ -64,10 +64,10 @@ def generate_notes(bundle_dir: str) -> dict:
     if len(frames_by_id) != len(frame_items):
         raise evidence.ContractError("SOURCE_INVALID", "The evidence frame identifiers are invalid.")
     slides = []
-    for frame_id in visual_completeness.get("notes_frame_ids") or []:
+    for frame_id in visual_completeness.get("slide_frame_ids") or []:
         item = frames_by_id.get(frame_id)
         if item is None:
-            raise evidence.ContractError("SOURCE_INVALID", "A notes frame reference is invalid.")
+            raise evidence.ContractError("SOURCE_INVALID", "A slide frame reference is invalid.")
         frame_path = evidence.assert_contained(output_dir, item.get("path") or "")
         if not os.path.isfile(frame_path):
             raise evidence.ContractError("ARTIFACT_INCOMPLETE", "A referenced evidence frame is missing.")
