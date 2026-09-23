@@ -16,6 +16,7 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - Evidence manifests include source identity, speech provenance with bounded fallback codes, inline interval-bearing transcript segments, frame IDs and SHA-256 digests, extraction completeness details, and observational resource measurements.
 - Process-tree peak RSS uses `psutil>=5.9`; RSS is null when sampling is unavailable, while other resource metrics remain available.
 - Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing. The wheel no longer ships the `lectural_bench` benchmark package.
+- Read-only `lectural inspect` inventories evidence bundles; `lectural verify` checks schema, containment, artifacts, frame hashes, identifiers, timestamps, completeness, and optional source identity, including after bundles are moved.
 
 ## [0.2.0] - 2026-09-23
 
