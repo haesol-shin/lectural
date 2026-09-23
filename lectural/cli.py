@@ -5,7 +5,7 @@ Usage:
     lectural notes <input> [<input> ...] [--out ./output]
     lectural inspect <bundle> [--json]
     lectural verify <bundle> [--source <file-or-url>] [--json]
-    lectural doctor [--fix] [--json]
+    lectural doctor [--fix] [--plugin] [--json]
     lectural --version [--json]
 
 Extraction creates versioned evidence; inspect inventories bundles, verify
@@ -184,10 +184,11 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
 
     doctor_parser = commands.add_parser(
         "doctor",
-        help="Validate LecturAL runtime and plugin distribution",
-        description="Validate LecturAL runtime and plugin distribution",
+        help="Validate the LecturAL runtime; optionally validate plugin distribution files",
+        description="Validate the LecturAL runtime; use --plugin to check plugin distribution files.",
     )
     doctor_parser.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
+    doctor_parser.add_argument("--plugin", action="store_true", help="Also validate plugin files and manifests")
     doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
     return parser
 
@@ -471,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from . import doctor
 
-            report = doctor.run(fix=args.fix)
+            report = doctor.run(fix=args.fix, plugin=args.plugin)
             doctor.print_report(report, json_output=args.json)
             return int(report["exit_code"])
         except Exception as exc:  # noqa: BLE001 - surface a clean CLI error

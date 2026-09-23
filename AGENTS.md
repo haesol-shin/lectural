@@ -9,7 +9,7 @@ Product boundary and feature admission follow `docs/product-identity.md`: Lectur
 Before the first run in a checkout or plugin installation, run:
 
 ```bash
-lectural doctor --fix
+lectural doctor --fix --plugin
 ```
 
 Interpret the exit code exactly:
@@ -19,6 +19,8 @@ Interpret the exit code exactly:
 - `1`: report the internal/unfixable doctor output, then stop.
 
 `ffmpeg` must be on PATH. Python runtime deps are installed by the active uv/uvx environment; `doctor --fix` only makes safe bounded attempts for `yt-dlp` and obvious ffmpeg package-manager paths.
+
+The default `lectural doctor` checks only the Python runtime and external binaries; `--plugin` adds checks for the agent skill, references, hooks, and plugin manifests.
 
 ## Run
 
@@ -34,6 +36,7 @@ After a `/lectural:notes` run exits successfully, enrich the prose of `notes.md`
 Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. `--skip-ocr` does not relax speech, timeline, artifact, or citation gates. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
+For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media.
 See `README.md`, `docs/product-identity.md`, the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations

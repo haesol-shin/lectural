@@ -34,6 +34,10 @@ def _write_distribution(root: Path) -> None:
     (root / "skills/lectural/references/summary_prompt.md").write_text(prompt, encoding="utf-8")
     (root / "skills/lectural/references/pipeline.md").write_text(pipeline, encoding="utf-8")
     (root / "scripts/completeness_hook.py").write_text("print('ok')\n", encoding="utf-8")
+    (root / "skills/lectural/SKILL.md").write_text(
+        '---\nname: "lectural"\ndescription: "Use this skill for trusted video and audio evidence."\n---\n',
+        encoding="utf-8",
+    )
     (root / "hooks/hooks.json").write_text(json.dumps(VALID_HOOKS), encoding="utf-8")
     (root / ".claude-plugin/plugin.json").write_text(
         json.dumps({"name": "lectural"}),
@@ -77,12 +81,34 @@ def test_report_all_ok(tmp_path, monkeypatch):
     _write_distribution(tmp_path)
     _stub_runtime_ok(monkeypatch)
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     assert report["schema_version"] == doctor.SCHEMA_VERSION
     assert report["exit_code"] == 0
     assert report["overall_status"] == "ready"
     assert {item["status"] for item in report["items"]} == {"ok"}
+
+
+
+def test_runtime_report_does_not_require_plugin_distribution(tmp_path, monkeypatch):
+    _stub_runtime_ok(monkeypatch)
+
+    report = doctor.build_report(tmp_path)
+
+    assert report["exit_code"] == 0
+    assert report["overall_status"] == "ready"
+    assert not any(item["kind"] in {"file", "plugin"} for item in report["items"])
+
+
+def test_plugin_report_flags_missing_agent_skill_with_hint(tmp_path, monkeypatch):
+    _stub_runtime_ok(monkeypatch)
+
+    report = doctor.build_report(tmp_path, plugin=True)
+
+    item = _item(report, "skills/lectural/SKILL.md", "file")
+    assert report["exit_code"] == 2
+    assert item["status"] == "missing"
+    assert "Restore `skills/lectural/SKILL.md`" in item["hint"]
 
 
 def test_report_missing_binary_maps_to_user_action(tmp_path, monkeypatch):
@@ -213,7 +239,7 @@ def test_doctor_keeps_cv2_provider_mismatch_incompatible(tmp_path, monkeypatch):
 
 
 def test_doctor_runtime_failure_maps_to_unfixable(monkeypatch):
-    monkeypatch.setattr(doctor, "_items", lambda root: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(doctor, "_items", lambda root, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
 
     report = doctor.build_report(Path("."))
 
@@ -229,7 +255,7 @@ def test_plugin_manifest_validation_catches_marketplace_source(tmp_path, monkeyp
         encoding="utf-8",
     )
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     assert report["exit_code"] == 2
     item = next(item for item in report["items"] if item["name"] == ".claude-plugin/marketplace.json")
@@ -242,7 +268,7 @@ def test_hooks_manifest_empty_stop_is_incompatible(tmp_path, monkeypatch):
     _stub_runtime_ok(monkeypatch)
     (tmp_path / "hooks/hooks.json").write_text(json.dumps({"hooks": {}}), encoding="utf-8")
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -256,7 +282,7 @@ def test_hooks_manifest_malformed_json_is_incompatible(tmp_path, monkeypatch):
     _stub_runtime_ok(monkeypatch)
     (tmp_path / "hooks/hooks.json").write_text('{"hooks": ', encoding="utf-8")
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -273,7 +299,7 @@ def test_hooks_manifest_missing_command_hook_is_incompatible(tmp_path, monkeypat
         encoding="utf-8",
     )
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -289,7 +315,7 @@ def test_hooks_manifest_rejects_non_python_interpreter(tmp_path, monkeypatch):
     mutated["hooks"]["Stop"][0]["hooks"][0]["command"] = 'node "${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py"'
     (tmp_path / "hooks/hooks.json").write_text(json.dumps(mutated), encoding="utf-8")
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -304,7 +330,7 @@ def test_hooks_manifest_rejects_unquoted_plugin_root_script(tmp_path, monkeypatc
     mutated["hooks"]["Stop"][0]["hooks"][0]["command"] = "python ${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py"
     (tmp_path / "hooks/hooks.json").write_text(json.dumps(mutated), encoding="utf-8")
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -319,7 +345,7 @@ def test_hooks_manifest_rejects_missing_plugin_root_script_argument(tmp_path, mo
     mutated["hooks"]["Stop"][0]["hooks"][0]["command"] = 'python "scripts/completeness_hook.py"'
     (tmp_path / "hooks/hooks.json").write_text(json.dumps(mutated), encoding="utf-8")
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, "hooks/hooks.json", "file")
     assert report["exit_code"] == 2
@@ -337,7 +363,7 @@ def test_plugin_manifest_hooks_referencing_standard_file_is_incompatible(tmp_pat
         encoding="utf-8",
     )
 
-    report = doctor.build_report(tmp_path)
+    report = doctor.build_report(tmp_path, plugin=True)
 
     item = _item(report, ".claude-plugin/plugin.json", "plugin")
     assert report["exit_code"] == 2

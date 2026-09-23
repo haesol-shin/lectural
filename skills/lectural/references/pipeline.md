@@ -14,17 +14,14 @@ Module map (all heavy deps lazy-imported; deterministic logic is unit-tested off
 | `lectural/synthesis.py` | synthesis_input.json + transcript.md + notes.md skeleton | AC-7,8,12 |
 | `lectural/coverage.py` | coverage.json (gap/scene/artifact) + raw-samples contract | AC-13 |
 | `lectural/runstate.py` | active-run pointer for the Stop hook | AC-2 |
-| `lectural/cli.py` | extract, notes, and doctor subcommands; sequential batch, orchestration | AC-1,2,10,11 |
+| `lectural/cli.py` | extract, notes, inspect, verify, and doctor subcommands; sequential batch, orchestration | AC-1,2,10,11 |
 | `scripts/completeness_hook.py` | Stop hook: block done until coverage passes | AC-13 |
 
 ## Doctor component manifest
 
-Run `lectural doctor --fix` before the first lecture run in a checkout or Claude plugin installation. The doctor validates:
+Run `lectural doctor --fix` before a runtime-only CLI run. The doctor checks Python core import/version, runtime Python imports, and `ffmpeg`/`yt-dlp` on PATH. It does not require plugin files by default.
 
-- Python core import/version for `lectural` and runtime Python imports.
-- External binaries: `ffmpeg` and `yt-dlp` on PATH.
-- Agent-side files: `AGENTS.md`, `summary_prompt.md`, and `hooks/hooks.json`.
-- Claude plugin manifests: plugin name, marketplace plugin entry, exact marketplace `source` value `./`, and hook path existence.
+For a checkout or Claude plugin installation, use `lectural doctor --fix --plugin` to also validate `AGENTS.md`, the agent skill and references, hooks, plugin manifests, marketplace metadata, and hook script path.
 
 Doctor exit codes are `0` ready, `2` user action needed, and `1` internal or unfixable state. `--fix` is bounded and safe: it may attempt `uv tool install yt-dlp`, may use obvious Windows/macOS package managers for ffmpeg, and otherwise reports a one-line hint.
 

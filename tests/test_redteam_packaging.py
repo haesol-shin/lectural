@@ -12,19 +12,24 @@ import sys
 
 import pytest
 
+from lectural import cli
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
 MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 PIPELINE_REF = ROOT / "skills" / "lectural" / "references" / "pipeline.md"
+SKILL_MD = ROOT / "skills" / "lectural" / "SKILL.md"
 
 ENGLISH_ARTIFACTS = [
     PLUGIN_JSON,
     MARKETPLACE_JSON,
     HOOKS_JSON,
     PIPELINE_REF,
+    SKILL_MD,
 ]
+
 HANGUL_RE = re.compile(r"[\uac00-\ud7a3]")
 INTERPRETERS = {"python", "py"}
 
@@ -173,6 +178,31 @@ def test_hooks_json_rejects_comment_syntax_as_adversarial_mutation():
 
     with pytest.raises(json.JSONDecodeError):
         json.loads(raw + "\n// adversarial comment\n")
+
+
+def test_plugin_skill_has_yaml_frontmatter_and_only_cli_commands():
+    skill = _read_text(SKILL_MD)
+    assert skill.startswith("---\n")
+    raw_frontmatter, separator, _body = skill[4:].partition("\n---\n")
+    assert separator
+
+    frontmatter = {}
+    for line in raw_frontmatter.splitlines():
+        match = re.fullmatch(r'([a-z][a-z0-9-]*): ("(?:[^"\\]|\\.)*")', line)
+        assert match, f"invalid YAML frontmatter field: {line!r}"
+        key, value = match.groups()
+        assert key not in frontmatter
+        frontmatter[key] = json.loads(value)
+    assert set(frontmatter) == {"name", "description"}
+    assert frontmatter["name"] == "lectural"
+    assert frontmatter["description"]
+
+    documented = set(re.findall(r"\blectural\s+([a-z][a-z0-9-]*)\b", skill))
+    allowed = {"extract", "inspect", "verify", "notes", "doctor"}
+    assert documented <= allowed
+    parser = cli._cli_parser([])
+    command_action = next(action for action in parser._actions if action.dest == "command")
+    assert documented <= set(command_action.choices) | {"inspect", "verify"}
 
 
 if __name__ == "__main__":

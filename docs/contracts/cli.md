@@ -14,6 +14,7 @@ lectural extract <source> --out <new-directory> [--skip-ocr] --json
 lectural notes <input>... [--out <root>] [--force-stt] [--model <model>] [--skip-ocr] [--keep-frames]
 lectural inspect <bundle-directory-or-evidence.json> [--json]
 lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--json]
+lectural doctor [--fix] [--plugin] [--json]
 ```
 
 `<source>` is one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
@@ -22,9 +23,15 @@ Multiple `notes` inputs are processed sequentially. Each source reserves a uniqu
 
 The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The `notes` command creates those notes artifacts after extraction, or rebuilds them from a supplied evidence bundle. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind.
 
+## Doctor
+
+`lectural doctor [--fix] [--plugin] [--json]` checks the Python runtime and external binaries (`ffmpeg`, `yt-dlp`). Plugin files are not required by default; `--plugin` adds checks for the agent instructions, skill and references, hooks, plugin manifest, and marketplace manifest. Run it from the plugin root when requesting plugin checks.
+
+The JSON report retains `schema_version`, `items`, `overall_status`, and `exit_code`, with optional `actions` when `--fix` performs an action. Exit codes are `0` ready, `2` missing or incompatible components, and `1` internal or unfixable failure. `--fix` makes only the existing bounded attempts for `yt-dlp` and `ffmpeg`.
+
 ## Common JSON envelope
 
-`extract`, `inspect`, and `verify` emit one object with the common envelope:
+`extract`, `inspect`, `verify`, and `--version --json` emit one object with the common envelope:
 
 ```json
 {

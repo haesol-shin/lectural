@@ -40,8 +40,8 @@ def test_parse_args_notes_and_mixed_batch():
 
 
 def test_parse_args_doctor_command():
-    args = cli.parse_args(["doctor", "--fix", "--json"])
-    assert args.command == "doctor" and args.fix is True and args.json is True
+    args = cli.parse_args(["doctor", "--fix", "--plugin", "--json"])
+    assert args.command == "doctor" and args.fix is True and args.plugin is True and args.json is True
 
 
 def test_help_works_for_root_and_subcommands():
@@ -429,7 +429,13 @@ def test_run_default_processor_suffixes_existing_and_reserved_mixed_sources(monk
 
 def test_main_dispatches_doctor_json(monkeypatch, capsys):
     report = {"schema_version": 1, "items": [], "overall_status": "ready", "exit_code": 0}
-    monkeypatch.setattr(doctor, "run", lambda fix=False: report)
+    captured = {}
+    monkeypatch.setattr(
+        doctor,
+        "run",
+        lambda fix=False, plugin=False: captured.update(fix=fix, plugin=plugin) or report,
+    )
     monkeypatch.setattr(doctor, "print_report", lambda actual, json_output=False: print("json" if json_output else "text"))
-    assert cli.main(["doctor", "--json"]) == 0
+    assert cli.main(["doctor", "--fix", "--plugin", "--json"]) == 0
+    assert captured == {"fix": True, "plugin": True}
     assert capsys.readouterr().out.strip() == "json"

@@ -68,6 +68,12 @@ It installs the Python run dependencies → checks/repairs `ffmpeg` and `yt-dlp`
 
 > Manual setup: `uv pip install -e ".[run]"`, then install `ffmpeg` per OS (Windows `winget install --id Gyan.FFmpeg -e`, Linux `sudo apt-get install ffmpeg`, macOS `brew install ffmpeg`).
 
+### Coding-agent skill
+
+`skills/lectural/SKILL.md` is the short, host-neutral guide for routing evidence requests through LecturAL's public CLI and contract. Claude Code discovers plugin skills from the plugin-root `skills/<name>/SKILL.md` layout ([plugin documentation](https://code.claude.com/docs/en/plugins)); `AGENTS.md` points Codex and other coding agents to the same skill.
+
+A Python wheel or PyPI runtime install does not include plugin files. Accordingly, `lectural doctor` checks the runtime only by default; pass `--plugin` to validate plugin files and manifests.
+
 ## Quick start
 
 ```text
