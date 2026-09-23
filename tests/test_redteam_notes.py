@@ -433,8 +433,7 @@ def _invoke_hook(runstate_path: Path, runs: list[dict], *, malformed_runstate: b
 
 
 def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
-    artifact = REPO_ROOT / "artifacts" / "wu2-hook-smoke.txt"
-    artifact.parent.mkdir(exist_ok=True)
+    artifact = tmp_path / "wu2-hook-smoke.txt"
     transcript: list[str] = []
 
     def record(name: str, proc: subprocess.CompletedProcess[str], expected: int) -> None:

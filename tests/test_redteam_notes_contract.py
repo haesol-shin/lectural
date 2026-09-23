@@ -37,7 +37,6 @@ from lectural.synthesis import (
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _HOOK_PATH = _REPO_ROOT / "scripts" / "completeness_hook.py"
-_ARTIFACTS = _REPO_ROOT / "artifacts"
 
 
 def _video() -> dict:
@@ -304,8 +303,7 @@ def _run_hook(hook_path: Path, runstate_path: Path, *, cwd: Path | None = None, 
     )
 
 
-def _record_hook_matrix(records: list[tuple[str, subprocess.CompletedProcess[str]]]) -> None:
-    _ARTIFACTS.mkdir(exist_ok=True)
+def _record_hook_matrix(records: list[tuple[str, subprocess.CompletedProcess[str]]], artifact_path: Path) -> None:
     lines: list[str] = []
     for label, proc in records:
         lines.extend(
@@ -319,7 +317,7 @@ def _record_hook_matrix(records: list[tuple[str, subprocess.CompletedProcess[str
                 "",
             ]
         )
-    (_ARTIFACTS / "wu4-hook-smoke.txt").write_text("\n".join(lines), encoding="utf-8")
+    artifact_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def test_layer1_coverage_is_marker_agnostic_for_bare_skeleton():
@@ -552,4 +550,4 @@ def test_real_completeness_hook_subprocess_matrix(tmp_path):
     records.append(("import-error-no-runstate-noop", no_runstate_proc))
     assert no_runstate_proc.returncode == 0, no_runstate_proc.stderr or no_runstate_proc.stdout
 
-    _record_hook_matrix(records)
+    _record_hook_matrix(records, tmp_path / "wu4-hook-smoke.txt")
