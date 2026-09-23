@@ -1,8 +1,8 @@
 """LecturAL installation doctor.
 
-Validates the Python runtime, external binaries, plugin manifests, agent files,
-and agent files. The checker is intentionally deterministic
-and side-effect free unless ``fix=True`` is requested.
+Validates the Python runtime and external binaries by default. Plugin files and
+manifests are checked only when requested. The checker is deterministic and
+side-effect free unless ``fix=True`` is requested.
 """
 
 from __future__ import annotations
@@ -42,11 +42,12 @@ RUN_PYTHON_REQUIREMENTS: tuple[tuple[str, str | None, str | None], ...] = (
     ("psutil", "psutil", ">=5.9"),
 )
 
-AGENT_FILES = (
+PLUGIN_FILES = (
     "AGENTS.md",
+    "skills/lectural/SKILL.md",
     "skills/lectural/references/summary_prompt.md",
+    "skills/lectural/references/pipeline.md",
 )
-
 
 @dataclass(frozen=True)
 class DoctorItem:
@@ -349,14 +350,15 @@ def _marketplace_item(root: Path) -> DoctorItem:
     return ok(".claude-plugin/marketplace.json", "plugin", "marketplace entry points at ./")
 
 
-def _items(root: Path) -> list[DoctorItem]:
+def _items(root: Path, *, plugin: bool = False) -> list[DoctorItem]:
     items = [_python_core_item()]
     items.extend(_python_dep_item(module, package, specifier) for module, package, specifier in RUN_PYTHON_REQUIREMENTS)
     items.extend(_binary_item(name) for name in ("ffmpeg", "yt-dlp"))
-    items.extend(_file_item(root, relative) for relative in AGENT_FILES)
-    items.append(_hook_command_item(root))
-    items.append(_plugin_item(root))
-    items.append(_marketplace_item(root))
+    if plugin:
+        items.extend(_file_item(root, relative) for relative in PLUGIN_FILES)
+        items.append(_hook_command_item(root))
+        items.append(_plugin_item(root))
+        items.append(_marketplace_item(root))
     return items
 
 
@@ -377,9 +379,14 @@ def overall_status_for(exit_code: int) -> str:
     return "internal-unfixable"
 
 
-def build_report(root: str | Path | None = None, actions: list[FixAction] | None = None) -> dict:
+def build_report(
+    root: str | Path | None = None,
+    actions: list[FixAction] | None = None,
+    *,
+    plugin: bool = False,
+) -> dict:
     try:
-        items = _items(_root(root))
+        items = _items(_root(root), plugin=plugin)
     except Exception as exc:  # noqa: BLE001 - doctor runtime failure must become exit 1
         items = [unfixable("doctor", "internal", f"doctor runtime failure: {type(exc).__name__}: {exc}", "Report this LecturAL doctor bug with the traceback context.")]
     exit_code = exit_code_for(items)
@@ -446,12 +453,18 @@ def _attempt_ffmpeg() -> FixAction:
     )
 
 
-def run(fix: bool = False, root: str | Path | None = None, max_passes: int = 2) -> dict:
+def run(
+    fix: bool = False,
+    root: str | Path | None = None,
+    max_passes: int = 2,
+    *,
+    plugin: bool = False,
+) -> dict:
     actions: list[FixAction] = []
     attempted: set[str] = set()
     if fix:
         for _ in range(max_passes):
-            report = build_report(root, actions)
+            report = build_report(root, actions, plugin=plugin)
             if report["exit_code"] in (0, 1):
                 break
             if _item_status(report, "yt-dlp", "binary") == STATUS_MISSING and "yt-dlp" not in attempted:
@@ -463,7 +476,7 @@ def run(fix: bool = False, root: str | Path | None = None, max_passes: int = 2) 
                 attempted.add("ffmpeg")
                 continue
             break
-    return build_report(root, actions)
+    return build_report(root, actions, plugin=plugin)
 
 
 def print_report(report: dict, *, json_output: bool = False, stream=None) -> None:

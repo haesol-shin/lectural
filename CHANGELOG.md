@@ -11,8 +11,10 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - CLI status and failure messages are now in English; ffmpeg/ffprobe banners and progress are suppressed while errors remain visible.
 - Extraction no longer emits notes, synthesis-input, or notes coverage artifacts; `lectural notes` composes evidence extraction with notes generation.
 - `transcript.md` headings are English; timestamp anchors remain unchanged.
+- `lectural doctor` checks the Python runtime and external binaries by default; `--plugin` enables plugin distribution checks.
 
 ### Added
+- A thin host-neutral `skills/lectural/SKILL.md` routes agent requests through the public CLI and evidence contract.
 - Evidence manifests include source identity, speech provenance with bounded fallback codes, inline interval-bearing transcript segments, frame IDs and SHA-256 digests, extraction completeness details, and observational resource measurements.
 - Process-tree peak RSS uses `psutil>=5.9`; RSS is null when sampling is unavailable, while other resource metrics remain available.
 - Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing. The wheel no longer ships the `lectural_bench` benchmark package.
