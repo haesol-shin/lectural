@@ -5,13 +5,15 @@ description: "Use this skill when the user wants trustworthy, timestamped eviden
 
 # LecturAL
 
-Map the user's request to the public LecturAL CLI and contracts. Do not interpret media yourself. Read the [CLI and evidence contract](../../docs/contracts/cli.md); never read internal or undocumented files.
+Map the user's request to the public LecturAL CLI and contracts. Do not interpret media yourself. Read the [CLI and evidence contract](https://github.com/haesol-shin/lectural/blob/main/docs/contracts/cli.md); never read internal or undocumented files.
+
+On hosts other than the Claude Code plugin, install the CLI with the `[run]` extra as in the [README](https://github.com/haesol-shin/lectural/blob/main/README.md#install), then run the `lectural` commands below from `PATH`. The Claude Code plugin supplies its own locked runtime through `/lectural:setup`: replace the leading `lectural` in **every** command below, including `doctor`, with `uv run --project "${CLAUDE_PLUGIN_ROOT}" --directory "${CLAUDE_PLUGIN_ROOT}" --extra run lectural`.
 
 ## Extract evidence
 
 1. Preflight with `lectural doctor`. A non-zero exit is a failure: report it and stop.
-2. Run `lectural extract <source> --out <new-dir> --json`. The output directory must not already exist.
-3. Read `<new-dir>/evidence.json`. Cite transcript evidence by `transcript.segments[].id` and its `start`/`end`; cite frame evidence by `frames[].id` and its `start` timestamp. Use the recorded values exactly; never fabricate timestamps.
+2. Run `lectural extract <source> --out <new-dir> --json`. Choose a fresh output path if a previous bundle exists; do not overwrite it.
+3. Read `<new-dir>/evidence.json` and report the bundle path and extraction status. For content claims, cite transcript evidence by `transcript.segments[].id` and its `start`/`end`, or frame evidence by `frames[].id` and its `start` timestamp. Use the recorded values exactly; never fabricate timestamps.
 
 ## Check a bundle
 

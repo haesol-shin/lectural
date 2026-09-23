@@ -180,7 +180,7 @@ query → evidence context
 query ≠ answer
 ```
 
-Conceptually:
+The following is a future interface sketch, not an available CLI command. Today, search `transcript.segments[].text` and `frames[].ocr.text` in `evidence.json` and cite the recorded IDs and timestamps; see the [current CLI contract](contracts/cli.md#commands).
 
 ```console
 lectural query evidence.json \

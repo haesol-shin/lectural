@@ -4,6 +4,11 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+### Documentation
+- The README leads with the CLI and PyPI install, shows an `evidence.json` excerpt, and uses absolute links so it renders on PyPI.
+- New `docs/agents.md` covers Claude Code, Codex, and other skill-aware agents.
+- The shared skill links to the CLI contract and uses the plugin's locked runtime in Claude Code; plugin descriptions now lead with evidence rather than notes.
+
 ## [0.3.0] - 2026-09-23
 
 ### Added
