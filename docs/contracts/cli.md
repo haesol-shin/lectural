@@ -1,4 +1,4 @@
-# LecturAL extraction CLI contract
+# LecturAL CLI contract
 
 - Contract version: `2`
 - JSON Schema version: `2`
@@ -12,6 +12,8 @@ This is the public boundary for consumers such as `lecture-tools`. Consumers mus
 lectural --version [--json]
 lectural extract <source> --out <new-directory> [--skip-ocr] --json
 lectural notes <input>... [--out <root>] [--force-stt] [--model <model>] [--skip-ocr] [--keep-frames]
+lectural inspect <bundle-directory-or-evidence.json> [--json]
+lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--json]
 ```
 
 `<source>` is one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
@@ -22,7 +24,7 @@ The `extract` command rejects the requested output path when it already exists, 
 
 ## Common JSON envelope
 
-Both JSON commands return one object with:
+`extract`, `inspect`, and `verify` emit one object with the common envelope:
 
 ```json
 {
@@ -37,7 +39,7 @@ Both JSON commands return one object with:
 }
 ```
 
-Envelope `status` is `ok`, `partial`, or `error`. Error entries contain only a bounded `code` and safe `message`; they never contain an exception, source path, credential, token, cookie, environment value, or internal state path. The evidence manifest itself has no duplicate top-level status: use `result.extraction.status`.
+Extraction envelope `status` is `ok`, `partial`, or `error`; inspect and verify use `ok` or `error`. Error entries contain only a bounded `code` and safe `message`; they never contain an exception, source path, credential, token, cookie, environment value, or internal state path. The evidence manifest itself has no duplicate top-level status: use `result.extraction.status`.
 
 When no extraction manifest could be produced, `result` is a bounded failure result rather than an evidence manifest. Its `source` is null or a minimal safe descriptor; artifact paths are null when output creation did not occur. The failure-result shape is defined by `extract.schema.json`.
 
@@ -50,6 +52,41 @@ Exit codes for `extract` are:
 | `2` | invalid source or output requires user action; JSON response produced |
 
 Argument-parser failures before a command can be identified use argparse's stderr path. Normal responses and processable failures keep stdout as a single JSON document.
+
+## Inspect
+
+```console
+lectural inspect <bundle-directory-or-evidence.json> [--json]
+```
+
+`inspect` is read-only. Human output is a concise inventory of source identity and duration, speech provenance, transcript/frame counts and timestamps, OCR and completeness states, extraction reasons, versions, artifact sizes, and resource measurements. With `--json`, `result` contains those same inventory fields. Its response schema is [inspect.schema.json](inspect.schema.json).
+
+Exit codes:
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | The bundle was loaded and inventoried |
+| `2` | The bundle is unreadable, invalid JSON, or uses an unsupported contract/schema version |
+
+## Verify
+
+```console
+lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--json]
+```
+
+`verify` reports `schema`, `containment`, `artifacts`, `frame_hashes`, `identifiers`, `timestamps`, `completeness`, and `source` checks. Each check has a `name` and `status` (`pass`, `fail`, or `skipped`), with an optional bounded code and path-free detail. The source check is `skipped` unless `--source` is supplied; for a local file it compares a streamed SHA-256, and for YouTube it compares the video ID. `result` is `{ "valid": boolean, "checks": [...] }`; the common envelope status is `ok` for valid bundles and `error` otherwise. The response schema is [verify.schema.json](verify.schema.json).
+
+Exit codes:
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | Every applicable check passed |
+| `1` | The bundle loaded, but one or more checks failed |
+| `2` | The bundle is unreadable, invalid JSON, uses an unsupported contract/schema version, or command usage is invalid |
+
+Manifest paths are stored as absolute paths. For copied or moved bundles, `inspect` and `verify` preserve each artifact's path relative to the recorded `artifacts.output_dir`, then resolve it under the bundle's actual directory. A recorded path outside that original output directory fails `containment`; verification never follows it outside the bundle.
+
+`verify` checks structure, safe containment, required artifacts, frame hashes, stable identifiers, timestamp bounds/order, declared speech and visual completeness, and optional source identity. It does not re-extract media, assess transcript/OCR factual accuracy, determine assignment relevance, compare resource measurements, or certify that evidence is suitable for a particular task. It is a deterministic structural and completeness check, not a fact-check.
 
 ## Version negotiation
 
@@ -86,4 +123,4 @@ Contract v2 removes the v1 aliases `representative_frames`, `source_kind`, top-l
 
 LecturAL reports extraction completeness only. The contract intentionally has no assignment-relevance, code-scene, or project/build eligibility field.
 
-The normative JSON Schemas are [extract.schema.json](extract.schema.json), [evidence.schema.json](evidence.schema.json), and [version.schema.json](version.schema.json).
+The normative JSON Schemas are [extract.schema.json](extract.schema.json), [evidence.schema.json](evidence.schema.json), [inspect.schema.json](inspect.schema.json), [verify.schema.json](verify.schema.json), and [version.schema.json](version.schema.json).

@@ -3,10 +3,13 @@
 Usage:
     lectural extract <source> --out <directory> [--json]
     lectural notes <input> [<input> ...] [--out ./output]
+    lectural inspect <bundle> [--json]
+    lectural verify <bundle> [--source <file-or-url>] [--json]
     lectural doctor [--fix] [--json]
     lectural --version [--json]
 
-Extraction creates versioned evidence; notes are one consumer of that bundle.
+Extraction creates versioned evidence; inspect inventories bundles, verify
+checks their structural and completeness integrity, and notes consumes them.
 """
 
 from __future__ import annotations
@@ -161,6 +164,23 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
         default=None,
         help="Archive raw sampled frames for source inputs",
     )
+
+    inspect_parser = commands.add_parser(
+        "inspect",
+        help="Show a readable inventory of an evidence bundle",
+        description="Show a read-only inventory of an evidence bundle.",
+    )
+    inspect_parser.add_argument("bundle", help="Evidence bundle directory or evidence.json")
+    inspect_parser.add_argument("--json", action="store_true", help="Print a machine-readable inventory")
+
+    verify_parser = commands.add_parser(
+        "verify",
+        help="Check evidence bundle structure and completeness",
+        description="Check bundle structure, artifact integrity, identifiers, timestamps, and completeness.",
+    )
+    verify_parser.add_argument("bundle", help="Evidence bundle directory or evidence.json")
+    verify_parser.add_argument("--source", help="Optional original local file or YouTube URL/ID")
+    verify_parser.add_argument("--json", action="store_true", help="Print a machine-readable verification report")
 
     doctor_parser = commands.add_parser(
         "doctor",
@@ -397,6 +417,44 @@ def _extract_main(args: argparse.Namespace) -> int:
     _emit_json(evidence.build_extract_response(manifest))
     return 0 if manifest["extraction"]["status"] == "pass" else 1
 
+
+def _inspect_main(args: argparse.Namespace) -> int:
+    from . import inspect as inspect_command
+    from .bundle import BundleError
+
+    try:
+        result = inspect_command.inspect_bundle(args.bundle)
+    except BundleError as exc:
+        if args.json:
+            _emit_json(inspect_command.error_response(exc))
+        else:
+            print(f"lectural inspect: {exc.safe_message}", file=sys.stderr)
+        return 2
+    if args.json:
+        _emit_json(inspect_command.response(result))
+    else:
+        print(inspect_command.render_inventory(result))
+    return 0
+
+
+def _verify_main(args: argparse.Namespace) -> int:
+    from . import verify as verify_command
+    from .bundle import BundleError
+
+    try:
+        result = verify_command.verify_bundle(args.bundle, source=args.source)
+    except BundleError as exc:
+        if args.json:
+            _emit_json(verify_command.error_response(exc))
+        else:
+            print(f"lectural verify: {exc.safe_message}", file=sys.stderr)
+        return 2
+    if args.json:
+        _emit_json(verify_command.response(result))
+    else:
+        print(verify_command.render_result(result))
+    return 0 if result["valid"] else 1
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     if args.command == "version":
@@ -405,6 +463,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(evidence.build_version_response()["tool_version"])
         return 0
+    if args.command == "inspect":
+        return _inspect_main(args)
+    if args.command == "verify":
+        return _verify_main(args)
     if args.command == "doctor":
         try:
             from . import doctor

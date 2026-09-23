@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/inspect.schema.json",
+  "title": "LecturAL inspect JSON response v2",
+  "type": "object",
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "status", "result", "errors", "generated_at"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "contract_version": {"const": 2},
+    "tool": {"const": "lectural"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ok", "error"]},
+    "result": {"anyOf": [{"$ref": "#/$defs/inventory"}, {"type": "null"}]},
+    "errors": {"type": "array", "items": {"$ref": "#/$defs/error"}},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "nullableNumber": {"type": ["number", "null"]},
+    "nullableInteger": {"type": ["integer", "null"]},
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "message": {"type": "string", "minLength": 1, "maxLength": 200}
+      },
+      "additionalProperties": false
+    },
+    "inventory": {
+      "type": "object",
+      "required": ["source", "speech", "segments", "frames", "completeness", "extraction", "versions", "artifacts", "resources"],
+      "properties": {
+        "source": {
+          "type": "object",
+          "required": ["kind", "title", "id", "duration_sec"],
+          "properties": {
+            "kind": {"$ref": "#/$defs/nullableString"},
+            "title": {"$ref": "#/$defs/nullableString"},
+            "id": {"$ref": "#/$defs/nullableString"},
+            "duration_sec": {"$ref": "#/$defs/nullableNumber"}
+          },
+          "additionalProperties": false
+        },
+        "speech": {
+          "type": "object",
+          "required": ["source", "language", "model", "fallback_code"],
+          "properties": {
+            "source": {"$ref": "#/$defs/nullableString"},
+            "language": {"$ref": "#/$defs/nullableString"},
+            "model": {"$ref": "#/$defs/nullableString"},
+            "fallback_code": {"$ref": "#/$defs/nullableString"}
+          },
+          "additionalProperties": false
+        },
+        "segments": {
+          "type": "object",
+          "required": ["count", "first_start_sec", "last_end_sec"],
+          "properties": {
+            "count": {"type": "integer", "minimum": 0},
+            "first_start_sec": {"$ref": "#/$defs/nullableNumber"},
+            "last_end_sec": {"$ref": "#/$defs/nullableNumber"}
+          },
+          "additionalProperties": false
+        },
+        "frames": {
+          "type": "object",
+          "required": ["count", "ocr_status", "ocr_engine"],
+          "properties": {
+            "count": {"type": "integer", "minimum": 0},
+            "ocr_status": {"$ref": "#/$defs/nullableString"},
+            "ocr_engine": {"$ref": "#/$defs/nullableString"}
+          },
+          "additionalProperties": false
+        },
+        "completeness": {
+          "type": "object",
+          "required": ["speech", "visual", "timestamps"],
+          "properties": {
+            "speech": {"$ref": "#/$defs/nullableString"},
+            "visual": {"$ref": "#/$defs/nullableString"},
+            "timestamps": {"$ref": "#/$defs/nullableString"}
+          },
+          "additionalProperties": false
+        },
+        "extraction": {
+          "type": "object",
+          "required": ["status", "reason_codes"],
+          "properties": {
+            "status": {"$ref": "#/$defs/nullableString"},
+            "reason_codes": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9_]+$"}}
+          },
+          "additionalProperties": false
+        },
+        "versions": {
+          "type": "object",
+          "required": ["contract_version", "schema_version", "tool", "tool_version"],
+          "properties": {
+            "contract_version": {"type": "integer"},
+            "schema_version": {"type": "integer"},
+            "tool": {"$ref": "#/$defs/nullableString"},
+            "tool_version": {"$ref": "#/$defs/nullableString"}
+          },
+          "additionalProperties": false
+        },
+        "artifacts": {
+          "type": "object",
+          "required": ["evidence_bytes", "transcript_bytes", "frames_bytes"],
+          "properties": {
+            "evidence_bytes": {"$ref": "#/$defs/nullableInteger"},
+            "transcript_bytes": {"$ref": "#/$defs/nullableInteger"},
+            "frames_bytes": {"$ref": "#/$defs/nullableInteger"}
+          },
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "required": ["wall_sec", "stages", "peak_rss_mb"],
+          "properties": {
+            "wall_sec": {"$ref": "#/$defs/nullableNumber"},
+            "stages": {
+              "type": "object",
+              "required": ["speech", "frames", "dedupe", "ocr"],
+              "properties": {
+                "speech": {"$ref": "#/$defs/nullableNumber"},
+                "frames": {"$ref": "#/$defs/nullableNumber"},
+                "dedupe": {"$ref": "#/$defs/nullableNumber"},
+                "ocr": {"$ref": "#/$defs/nullableNumber"}
+              },
+              "additionalProperties": false
+            },
+            "peak_rss_mb": {"$ref": "#/$defs/nullableNumber"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

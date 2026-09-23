@@ -100,6 +100,8 @@ See [`docs/contracts/cli.md`](docs/contracts/cli.md) for the public contract and
 | `/lectural:notes <source> [options]` | Turn a media source into evidence and complete markdown notes |
 | `lectural notes <input>... [options]` | Generate notes from sources or regenerate notes from evidence bundles |
 | `lectural extract <source> --out <dir> --json` | Extract a versioned evidence bundle without generating notes |
+| `lectural inspect <bundle> [--json]` | Inventory a bundle without modifying it |
+| `lectural verify <bundle> [--source <file-or-URL>] [--json]` | Verify bundle structure, artifact integrity, and completeness |
 
 For `notes`, `--out ./output` sets the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` apply only to sources and are rejected for evidence-bundle inputs. Bundles are regenerated in place. Source inputs and bundles can be processed sequentially.
 

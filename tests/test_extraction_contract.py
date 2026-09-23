@@ -426,3 +426,174 @@ def test_fallback_codes_are_bounded_and_local_sources_are_marked(monkeypatch, tm
     fallback = json.loads(stdout)["result"]["speech"]["fallback"]
     assert fallback == {"code": "local_source"}
     assert fallback["code"] in FALLBACK_CODES
+
+
+def _verify_report(bundle: Path, *options: str) -> tuple[int, dict]:
+    exit_code, stdout = _invoke_cli(["verify", str(bundle), *options, "--json"])
+    return exit_code, json.loads(stdout)
+
+
+def _bundle_manifest(bundle: Path) -> dict:
+    return json.loads((bundle / "evidence.json").read_text(encoding="utf-8"))
+
+
+def _write_bundle_manifest(bundle: Path, manifest: dict) -> None:
+    (bundle / "evidence.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+
+def test_verify_accepts_fresh_and_copied_bundles(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 0
+    assert report["result"]["valid"] is True
+    evidence_exit, evidence_report = _verify_report(bundle / "evidence.json")
+    assert evidence_exit == 0
+    assert evidence_report["result"]["valid"] is True
+    assert {item["name"]: item["status"] for item in report["result"]["checks"]} == {
+        "schema": "pass",
+        "containment": "pass",
+        "artifacts": "pass",
+        "frame_hashes": "pass",
+        "identifiers": "pass",
+        "timestamps": "pass",
+        "completeness": "pass",
+        "source": "skipped",
+    }
+
+    moved = tmp_path / "moved-bundle"
+    shutil.copytree(bundle, moved)
+    moved_exit, moved_report = _verify_report(moved)
+    assert moved_exit == 0
+    assert moved_report["result"]["valid"] is True
+
+
+def test_verify_detects_modified_frame_hash(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    frame = _bundle_manifest(bundle)["frames"][0]
+    frame_path = Path(frame["path"])
+    frame_path.write_bytes(frame_path.read_bytes() + b"x")
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 1
+    assert report["result"]["valid"] is False
+    assert next(item for item in report["result"]["checks"] if item["name"] == "frame_hashes")["status"] == "fail"
+
+
+def test_verify_rejects_artifact_path_outside_recorded_output(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    outside = tmp_path / "outside.png"
+    outside.write_bytes(b"outside")
+    manifest = _bundle_manifest(bundle)
+    manifest["frames"][0]["path"] = str(outside)
+    _write_bundle_manifest(bundle, manifest)
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 1
+    assert next(item for item in report["result"]["checks"] if item["name"] == "containment")["status"] == "fail"
+
+
+def test_verify_rejects_segment_end_before_start(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = _bundle_manifest(bundle)
+    manifest["transcript"]["segments"][0]["start"] = 3
+    manifest["transcript"]["segments"][0]["end"] = 2
+    _write_bundle_manifest(bundle, manifest)
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 1
+    assert next(item for item in report["result"]["checks"] if item["name"] == "timestamps")["status"] == "fail"
+
+
+def test_verify_recomputes_declared_speech_completeness(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = _bundle_manifest(bundle)
+    manifest["extraction"]["speech_completeness"]["pass"] = False
+    _write_bundle_manifest(bundle, manifest)
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 1
+    assert next(item for item in report["result"]["checks"] if item["name"] == "completeness")["status"] == "fail"
+
+
+def test_verify_rejects_dangling_slide_frame_identifier(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = _bundle_manifest(bundle)
+    manifest["extraction"]["visual_completeness"]["slide_frame_ids"] = ["f9999"]
+    _write_bundle_manifest(bundle, manifest)
+
+    exit_code, report = _verify_report(bundle)
+    assert exit_code == 1
+    assert next(item for item in report["result"]["checks"] if item["name"] == "identifiers")["status"] == "fail"
+
+
+def test_verify_source_matches_original_and_rejects_other_file(monkeypatch, tmp_path):
+    source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    assert _verify_report(bundle, "--source", str(source))[0] == 0
+    other_source = tmp_path / "other.mp4"
+    other_source.write_bytes(b"different media")
+    exit_code, report = _verify_report(bundle, "--source", str(other_source))
+    assert exit_code == 1
+    assert next(item for item in report["result"]["checks"] if item["name"] == "source")["status"] == "fail"
+
+
+def test_unsupported_contract_version_is_an_unloadable_bundle(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = _bundle_manifest(bundle)
+    manifest["contract_version"] = 3
+    _write_bundle_manifest(bundle, manifest)
+
+    exit_code, stdout = _invoke_cli(["verify", str(bundle), "--json"])
+    assert exit_code == 2
+    payload = json.loads(stdout)
+    assert payload["errors"][0]["code"] == "BUNDLE_VERSION_UNSUPPORTED"
+
+
+def test_inspect_json_reports_manifest_counts_without_writing(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, extracted = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = extracted["result"]
+    before = {
+        path.relative_to(bundle): path.read_bytes()
+        for path in bundle.rglob("*") if path.is_file()
+    }
+
+    exit_code, stdout = _invoke_cli(["inspect", str(bundle), "--json"])
+    assert exit_code == 0
+    payload = json.loads(stdout)
+    result = payload["result"]
+    assert result["segments"]["count"] == len(manifest["transcript"]["segments"])
+    assert result["frames"]["count"] == len(manifest["frames"])
+    assert result["frames"]["ocr_status"] == manifest["extraction"]["ocr"]["status"]
+    assert result["completeness"]["speech"] == manifest["extraction"]["speech_completeness"]["status"]
+    assert result["extraction"]["status"] == manifest["extraction"]["status"]
+    after = {
+        path.relative_to(bundle): path.read_bytes()
+        for path in bundle.rglob("*") if path.is_file()
+    }
+    assert after == before
+
+
+def test_verify_source_matches_youtube_url_and_id(monkeypatch, tmp_path):
+    _source, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path)
+    assert extract_exit == 0
+    manifest = _bundle_manifest(bundle)
+    video_id = "dQw4w9WgXcQ"
+    manifest["source"].update({
+        "id": f"youtube:{video_id}",
+        "kind": "youtube",
+        "argument": f"https://youtu.be/{video_id}",
+        "citation": {"kind": "youtube", "video_id": video_id},
+    })
+    _write_bundle_manifest(bundle, manifest)
+
+    assert _verify_report(bundle, "--source", f"https://youtu.be/{video_id}")[0] == 0
+    assert _verify_report(bundle, "--source", video_id)[0] == 0

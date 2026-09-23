@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/verify.schema.json",
+  "title": "LecturAL verify JSON response v2",
+  "type": "object",
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "status", "result", "errors", "generated_at"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "contract_version": {"const": 2},
+    "tool": {"const": "lectural"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ok", "error"]},
+    "result": {"$ref": "#/$defs/result"},
+    "errors": {"type": "array", "items": {"$ref": "#/$defs/error"}},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "message": {"type": "string", "minLength": 1, "maxLength": 200}
+      },
+      "additionalProperties": false
+    },
+    "check": {
+      "type": "object",
+      "required": ["name", "status"],
+      "properties": {
+        "name": {"enum": ["schema", "containment", "artifacts", "frame_hashes", "identifiers", "timestamps", "completeness", "source"]},
+        "status": {"enum": ["pass", "fail", "skipped"]},
+        "code": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "detail": {"type": "string", "maxLength": 200}
+      },
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "required": ["valid", "checks"],
+      "properties": {
+        "valid": {"type": "boolean"},
+        "checks": {"type": "array", "items": {"$ref": "#/$defs/check"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
