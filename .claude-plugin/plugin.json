@@ -1,7 +1,7 @@
 {
   "name": "lectural",
   "version": "0.3.0",
-  "description": "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene, as markdown notes or a versioned JSON contract. Ships a deterministic Python core, the /lectural:notes and /lectural:setup commands, and a completeness Stop hook.",
+  "description": "Turn YouTube and local media into timestamped, verifiable evidence: transcript segments, selected frames with OCR, and a completeness verdict. Study notes are optional. Includes /lectural:notes, /lectural:setup, and a completeness Stop hook.",
   "author": {
     "name": "Haesol Shin",
     "url": "https://github.com/haesol-shin"

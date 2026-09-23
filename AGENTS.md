@@ -3,13 +3,11 @@
 ## Purpose
 Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: markdown notes (`/lectural:notes`) or a versioned JSON contract (`lectural extract --json`). Best on lecture and slide-style video.
 
-Product boundary and feature admission follow `docs/product-identity.md`: LecturAL is an evidence compiler, and notes are one consumer of the evidence. Before adding a feature, apply its feature admission test (§16).
-
 ## Install & preflight
-Before the first run in a checkout or plugin installation, run:
+Before the first run in a checkout, run:
 
 ```bash
-lectural doctor --fix --plugin
+lectural doctor --fix
 ```
 
 Interpret the exit code exactly:
@@ -18,9 +16,7 @@ Interpret the exit code exactly:
 - `2`: surface the first missing/incompatible item and its one-line hint to the user, then stop.
 - `1`: report the internal/unfixable doctor output, then stop.
 
-`ffmpeg` must be on PATH. Python runtime deps are installed by the active uv/uvx environment; `doctor --fix` only makes safe bounded attempts for `yt-dlp` and obvious ffmpeg package-manager paths.
-
-The default `lectural doctor` checks only the Python runtime and external binaries; `--plugin` adds checks for the agent skill, references, hooks, and plugin manifests.
+`ffmpeg` must be on PATH. Install the `[run]` extra as in [README.md](README.md#install); Claude Code's plugin instead uses its locked uv environment and `/lectural:setup` ([host setup](docs/agents.md#claude-code)). `doctor --fix` makes bounded attempts for missing `yt-dlp` and `ffmpeg`; it does not install Python runtime dependencies. The default `lectural doctor` checks Python runtime and external binaries. Run `lectural doctor --fix --plugin` from the plugin root only to check the agent skill, references, hooks, and plugin manifests too; see the [doctor contract](docs/contracts/cli.md#doctor).
 
 ## Run
 
@@ -36,8 +32,8 @@ After a `/lectural:notes` run exits successfully, enrich the prose of `notes.md`
 Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. `--skip-ocr` does not relax speech, timeline, artifact, or citation gates. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
-For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media.
-See `README.md`, `docs/product-identity.md`, the `commands/` slash commands, and `skills/lectural/references/`.
+For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media. Per-host setup (Claude Code, Codex, other skill-aware agents) is in `docs/agents.md`.
+See `README.md`, the [CLI contract](docs/contracts/cli.md), the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations
 

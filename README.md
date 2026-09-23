@@ -1,144 +1,118 @@
 # LecturAL
 
-> A tool that turns a YouTube video, local video, or local audio file into deterministic evidence for video-based work — every utterance, every on-screen text, every scene — available as markdown notes or a versioned JSON contract. Best on lecture and slide-style video.
+[![PyPI](https://img.shields.io/pypi/v/lectural)](https://pypi.org/project/lectural/) [![Python](https://img.shields.io/pypi/pyversions/lectural)](https://pypi.org/project/lectural/) [![CI](https://github.com/haesol-shin/lectural/actions/workflows/ci.yml/badge.svg)](https://github.com/haesol-shin/lectural/actions/workflows/ci.yml) [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/haesol-shin/lectural/blob/main/LICENSE)
 
-LecturAL is an evidence compiler: evidence comes first, and notes are one consumer of it. See [Product identity](docs/product-identity.md) for the product boundary, priorities, and feature admission test.
+LecturAL turns video and audio into complete, deterministic, timestamp-addressable evidence that agents can verify and reuse.
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
-## Features
-
-- 🧾 **Full transcript + study notes** — a raw `transcript.md` (every utterance) and a seven-section `notes.md` (3줄 요약 / 목차 / 흐름 / 핵심 개념·이론 / 정리 노트 / 복습 질문 / 정리 커버리지). Note prose is Korean by design.
-- 🔗 **Video deeplinks** — YouTube inputs use `youtu.be?t=` links; local media uses `transcript.md#tHHMMSS[-n]` anchors.
-- 🇰🇷 **Korean & English** — uses YouTube captions when available, falls back to speech-to-text (faster-whisper) otherwise. Local files always use STT.
-- 🚧 **Completeness gate** — checks speech gaps, scene coverage, and artifact presence, and blocks "done" until they pass. `--skip-ocr` keeps scene frames and skips only the slide-text OCR check.
-- 📦 **Versioned extraction JSON** — `lectural extract ... --json` writes a public `evidence.json` manifest with safe artifact paths, completeness, timestamp integrity, representative frames, and explicit OCR state.
-
-## How it works
-
-```mermaid
-flowchart TD
-    A[YouTube URL or local media] --> B{YouTube captions available?}
-    B -->|yes| C[Acquire captions]
-    B -->|no / local / --force-stt| D[Audio -> STT faster-whisper]
-    C --> E[Visual evidence: ffmpeg keyframes / scene cuts]
-    D --> E
-    E --> F[Deduplicate frames: histogram / SSIM]
-    F --> G[OCR unless --skip-ocr]
-    G --> H[lectural extract: evidence.json + transcript.md + frames/]
-    H --> I{Generate notes?}
-    I -->|yes| J[lectural notes: synthesis_input.json + notes.md + coverage.json]
-    I -->|no| K[Evidence bundle]
-    L[Existing evidence bundle] --> J
-    J --> M{Completeness gate}
-    M -->|pass| N[Done]
-    M -->|fail · exit 2| O[Fix the gap, then retry]
-    O --> J
-```
-
-Local `.wav` skips the visual path. Local video/audio never use yt-dlp.
-
-## Requirements
-
-- **Python 3.10+**
-- **uv** — installs and runs the Python dependencies
-- **ffmpeg** — system binary, must be on PATH (STT/VAD and local-video audio extraction)
-- **yt-dlp** — YouTube only; checked and installed by `/lectural:setup` (doctor)
+Give it a YouTube URL or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
 
 ## Install
 
-### 1. Install the plugin (Claude Code)
-
-```text
-/plugin marketplace add haesol-shin/lectural
-/plugin install lectural@lectural
+```bash
+pip install "lectural[run]"
+# or as an isolated tool
+uv tool install "lectural[run]"
+# or run without installing
+uvx --from "lectural[run]" lectural --help
 ```
 
-This registers the completeness Stop hook and the `/lectural:notes` and `/lectural:setup` commands.
+The commands below use `lectural` from an active pip environment or a uv tool install. For one-shot `uvx`, replace that prefix with `uvx --from "lectural[run]" lectural`.
 
-### 2. Prepare the runtime
+Python 3.10–3.12 is required. The `[run]` extra pulls in speech-to-text (faster-whisper), OCR, and YouTube access (yt-dlp). LecturAL also needs `ffmpeg` on `PATH`:
 
-Run once after installing:
+Example package-manager commands for `ffmpeg` (package availability varies by platform; the Windows command installs a third-party build):
 
-```text
-/lectural:setup
+| OS | Command |
+|---|---|
+| Windows | `winget install --id Gyan.FFmpeg -e` |
+| macOS | `brew install ffmpeg` |
+| Debian/Ubuntu | `sudo apt-get install ffmpeg` |
+
+Run a preflight before your first extraction. `--fix` tries `uv tool install yt-dlp` if that binary is missing and may install `ffmpeg` through `winget` or Homebrew; on Debian/Ubuntu it prints an installation hint rather than requesting administrator privileges. Follow the [doctor exit codes](https://github.com/haesol-shin/lectural/blob/main/docs/contracts/cli.md#doctor) if anything remains missing:
+
+```bash
+lectural doctor --fix
 ```
-
-It installs the Python run dependencies → checks/repairs `ffmpeg` and `yt-dlp` → reports anything left to do. Local-only runs need ffmpeg, not yt-dlp.
-
-> Manual setup: `uv pip install -e ".[run]"`, then install `ffmpeg` per OS (Windows `winget install --id Gyan.FFmpeg -e`, Linux `sudo apt-get install ffmpeg`, macOS `brew install ffmpeg`).
-
-### Coding-agent skill
-
-`skills/lectural/SKILL.md` is the short, host-neutral guide for routing evidence requests through LecturAL's public CLI and contract. Claude Code discovers plugin skills from the plugin-root `skills/<name>/SKILL.md` layout ([plugin documentation](https://code.claude.com/docs/en/plugins)); `AGENTS.md` points Codex and other coding agents to the same skill.
-
-A Python wheel or PyPI runtime install does not include plugin files. Accordingly, `lectural doctor` checks the runtime only by default; pass `--plugin` to validate plugin files and manifests.
 
 ## Quick start
 
-```text
-/lectural:notes https://youtu.be/<VIDEO_ID>
-/lectural:notes ./recording.mp4 --skip-ocr
-/lectural:notes ./audio.wav
-```
-
-Or run the CLI directly without Claude Code (ffmpeg must be installed separately):
-
 ```bash
-uvx --from ".[run]" lectural notes "https://youtu.be/<VIDEO_ID>" --out ./output
-uvx --from ".[run]" lectural notes ./recording.mp4 --skip-ocr --out ./output
+lectural extract ./lecture.mp4 --out ./lecture-evidence --json
+lectural inspect ./lecture-evidence
+lectural verify ./lecture-evidence --source ./lecture.mp4
 ```
 
-For machine-readable extraction, negotiate the contract and use a new output directory:
+`extract` builds the bundle in a new directory; if `./lecture-evidence` already exists, choose a fresh name such as `./lecture-evidence-2` and use that name for the following commands. Never delete an existing bundle just to rerun extraction. `inspect` shows a readable inventory. `verify` checks structure, artifact containment, frame hashes, identifiers, timestamps, recomputed completeness, and, with `--source`, that the bundle came from that media; exit `0` means valid. It is not fact-checking.
 
-```bash
-lectural --version --json
-lectural extract ./recording.mp4 --out ./evidence-run --skip-ocr --json
-```
+## Commands at a glance
 
-See [`docs/contracts/cli.md`](docs/contracts/cli.md) for the public contract and JSON Schemas. The extraction command accepts one source, rejects an existing output directory, and retains representative frames independently of OCR annotations.
+| Command | Purpose |
+|---|---|
+| `lectural extract <source> --out <new-dir> [--skip-ocr] [--json]` | Build an evidence bundle from one source |
+| `lectural inspect <bundle> [--json]` | Summarize a bundle without modifying it |
+| `lectural verify <bundle> [--source <file-or-URL>] [--json]` | Check that a bundle is complete and intact |
+| `lectural notes <source-or-bundle>... [--out <root>]` | Generate study notes, extracting first when given a source |
+| `lectural doctor [--fix] [--plugin] [--json]` | Check the runtime; `--plugin` also checks agent-plugin files |
+| `lectural --version [--json]` | Report the tool and supported contract versions |
 
-## Usage
-
-| Command | Description |
-|---------|-------------|
-| `/lectural:setup` | Prepare and verify the runtime (first run) |
-| `/lectural:notes <source> [options]` | Turn a media source into evidence and complete markdown notes |
-| `lectural notes <input>... [options]` | Generate notes from sources or regenerate notes from evidence bundles |
-| `lectural extract <source> --out <dir> --json` | Extract a versioned evidence bundle without generating notes |
-| `lectural inspect <bundle> [--json]` | Inventory a bundle without modifying it |
-| `lectural verify <bundle> [--source <file-or-URL>] [--json]` | Verify bundle structure, artifact integrity, and completeness |
-
-For `notes`, `--out ./output` sets the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` apply only to sources and are rejected for evidence-bundle inputs. Bundles are regenerated in place. Source inputs and bundles can be processed sequentially.
-
-The commands run **only on explicit request** (they do not auto-trigger on a stray YouTube link). At session end, the Stop hook re-verifies note completeness.
+Every command exits non-zero on failure. With `--json`, normal responses and processable failures print one JSON document to stdout; argument-parser errors may go to stderr.
 
 ## Output
 
 ```text
-output/<video-title>/
-├── evidence.json          # extracted speech, frame, and completeness evidence
-├── transcript.md          # raw timestamped transcript — every utterance
-├── notes.md               # study notes: seven sections + source-appropriate citations
-├── frames/                # scene images (video sources)
-├── coverage.json          # completeness-gate results
-└── synthesis_input.json   # text input used to enrich the notes
+lecture-evidence/
+├── evidence.json   # contract-versioned evidence manifest
+├── transcript.md   # transcript with stable #tHHMMSS anchors
+└── frames/         # retained scene frames (video sources)
 ```
 
-`lectural extract ... --json` creates the evidence bundle only. `lectural notes <source>` creates the bundle and notes; `lectural notes <bundle-dir>` regenerates notes from its existing `evidence.json` in place.
+`audio.wav` may also be generated when video audio is acquired for transcription, but it is not a promised evidence artifact.
+
+## Optional study notes
+
+```bash
+lectural notes ./lecture-evidence
+```
+
+`lectural notes` adds `notes.md` (seven-section study notes with citations back to the source), `synthesis_input.json`, and `coverage.json` (the completeness gate). Notes are currently generated in Korean; the evidence bundle is language-neutral.
+
+## What you get
+
+`lectural extract` writes `evidence.json` (abridged):
+
+```json
+{
+  "contract_version": 2,
+  "source": {"id": "sha256:eb0162565065…", "kind": "local_video", "duration_sec": 20.352},
+  "speech": {"source": "stt", "language": "en", "model": "medium", "fallback": {"code": "local_source"}},
+  "transcript": {
+    "segments": [{"id": "s0001", "start": 0.0, "end": 5.28, "text": "Welcome to lecture 4 on optimization."}]
+  },
+  "frames": [
+    {"id": "f0001", "start": 0.0, "sha256": "2c57d8bd8e89…", "ocr": {"status": "text", "text": "Lecture 4: Optimization …"}}
+  ],
+  "extraction": {"status": "pass"}
+}
+```
+
+The full manifest also records speech and visual completeness, timestamp integrity, and resource use. See the versioned [CLI and evidence contract](https://github.com/haesol-shin/lectural/blob/main/docs/contracts/cli.md) and its JSON Schemas for the exact fields, options, and exit codes.
+
+## Use with coding agents
+
+LecturAL ships one shared skill, [`skills/lectural/SKILL.md`](https://github.com/haesol-shin/lectural/blob/main/skills/lectural/SKILL.md), that routes requests such as "extract evidence from this video" or "find where X is explained" to the CLI. Claude Code installs it as a plugin with `/lectural:notes` and a completeness hook; Codex and other agents load the same skill from their skills directory. Setup for each host is in [Using LecturAL with coding agents](https://github.com/haesol-shin/lectural/blob/main/docs/agents.md).
 
 ## FAQ
 
-**No captions?** STT transcribes audio when captions are missing or weak (`--force-stt` forces it). Local files always use STT.
+**No captions?** YouTube captions are used when they are usable; otherwise LecturAL transcribes the audio. Local files are always transcribed. `evidence.json` records which path ran in `speech.source` and `speech.fallback.code`.
 
-**Does a local run need yt-dlp?** No.
+**Does a local run need yt-dlp?** No; only YouTube sources use it. The preflight still checks all runtime tools, so `doctor --fix` may offer to install it for future YouTube runs.
 
-**What does `--skip-ocr` do?** Keeps scene frames, skips OCR, and relaxes only the slide-text OCR gate.
+**What does `--skip-ocr` do?** Keeps the scene frames and skips OCR; the OCR state is recorded as `skipped`.
 
-**Long video (1–2h)?** CPU STT gets slower with length; LecturAL warns on very long inputs, and `--model small` trades accuracy for speed.
+**Long videos?** CPU transcription time grows with length. `lectural notes ./lecture.mp4 --model small` trades accuracy for speed, and `resources` in `evidence.json` shows where the time went.
 
-**Empty OCR text on some frames?** Expected. Many frames (e.g. the speaker only) have no text, so OCR miss rate is not used as a gate.
+**Empty OCR text on some frames?** Expected: frames that show only the speaker have no text. Frames are kept as visual evidence regardless of OCR.
 
 ## License
 
-[MIT](LICENSE).
+[MIT](https://github.com/haesol-shin/lectural/blob/main/LICENSE)
