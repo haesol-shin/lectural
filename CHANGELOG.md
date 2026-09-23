@@ -4,21 +4,39 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
+### Added
+- Evidence manifests (contract 2) include source identity, speech provenance with bounded fallback codes, inline ID-addressed transcript segments with start and end times, frame IDs and SHA-256 digests, extraction completeness details, and observational resource measurements.
+- Read-only `lectural inspect` inventories evidence bundles; `lectural verify` checks schema, containment, artifacts, frame hashes, identifiers, timestamps, completeness, and optional source identity, including after bundles are moved.
+- `lectural notes` generates notes from a source or regenerates them in place from an existing evidence bundle.
+- A thin host-neutral `skills/lectural/SKILL.md` routes agent requests through the public CLI and evidence contract.
+- Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing.
+
 ### Changed
 - **BREAKING:** Extraction contract and schema are now version 2. The manifest removes `representative_frames`, `source_kind`, duplicate top-level `status`/`extraction_status`, notes/synthesis/coverage artifact paths, and `*_md`/`*_json` aliases. Consumers must use `source.kind`, `extraction.status`, `frames`, and the four canonical artifact paths.
 - **BREAKING:** The bare `lectural <source>` form is removed in favor of `lectural notes <source>`.
-- `lectural notes` accepts existing evidence bundles and regenerates notes in place without re-extraction.
-- CLI status and failure messages are now in English; ffmpeg/ffprobe banners and progress are suppressed while errors remain visible.
-- Extraction no longer emits notes, synthesis-input, or notes coverage artifacts; `lectural notes` composes evidence extraction with notes generation.
-- `transcript.md` headings are English; timestamp anchors remain unchanged.
-- `lectural doctor` checks the Python runtime and external binaries by default; `--plugin` enables plugin distribution checks.
+- `lectural extract` no longer writes notes, synthesis-input, or notes coverage artifacts; extraction status no longer depends on the notes contract.
+- `lectural doctor` checks the Python runtime and external binaries by default; `--plugin` enables plugin distribution checks. `/lectural:setup` runs it with `--plugin` from the plugin root.
+- `[run]` adds `psutil>=5.9` for process-tree peak RSS; RSS is null when sampling is unavailable.
+- CLI status and failure messages are in English; ffmpeg/ffprobe banners and progress are suppressed while errors remain visible. `transcript.md` headings are English; timestamp anchors are unchanged.
+- The wheel no longer ships the `lectural_bench` benchmark package.
 
-### Added
-- A thin host-neutral `skills/lectural/SKILL.md` routes agent requests through the public CLI and evidence contract.
-- Evidence manifests include source identity, speech provenance with bounded fallback codes, inline interval-bearing transcript segments, frame IDs and SHA-256 digests, extraction completeness details, and observational resource measurements.
-- Process-tree peak RSS uses `psutil>=5.9`; RSS is null when sampling is unavailable, while other resource metrics remain available.
-- Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing. The wheel no longer ships the `lectural_bench` benchmark package.
-- Read-only `lectural inspect` inventories evidence bundles; `lectural verify` checks schema, containment, artifacts, frame hashes, identifiers, timestamps, completeness, and optional source identity, including after bundles are moved.
+### Compatibility
+- Consumers must negotiate contract 2 via `lectural --version --json` (`supported_contract_versions: [2]`); contract 1 is no longer emitted. Bundles written by v0.2.0 are not readable by `notes`, `inspect`, or `verify`.
+- Notes output (`notes.md`, `synthesis_input.json`, `coverage.json`) and the completeness Stop hook are unchanged apart from the English `transcript.md` headings.
+
+### Upgrade
+- Replace `lectural <source> …` with `lectural notes <source> …`; replace reads of v1 fields with their v2 locations listed above.
+- Install from PyPI with `pip install "lectural[run]"` or `uvx --from "lectural[run]" lectural`.
+
+### Known limitations
+- Only the YouTube caption path and local STT are validated end to end; caption usability and fallback behavior remain under #23.
+- `[run]` still installs three overlapping OpenCV providers for the same `cv2` namespace (#29).
+- `query` and interval evidence are not yet available; agents locate evidence by searching `transcript.segments` and `frames[].ocr.text`.
+
+### Rollback
+- Reinstall v0.2.0 with `uvx --from "lectural[run] @ git+https://github.com/haesol-shin/lectural@v0.2.0" lectural` and pin consumers back to contract 1.
 
 ## [0.2.0] - 2026-09-23
 
@@ -80,7 +98,8 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - `lectural doctor [--fix] [--json]` runtime check and bounded auto-repair.
 - Two-layer completeness gate: CLI exit code (structure) plus Stop hook (citations, enrichment, per-slide checks).
 
-[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/haesol-shin/lectural/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/haesol-shin/lectural/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/haesol-shin/lectural/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/haesol-shin/lectural/compare/v0.1.0...v0.1.1
