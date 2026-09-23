@@ -4,28 +4,7 @@
 
 LecturAL turns video and audio into complete, deterministic, timestamp-addressable evidence that agents can verify and reuse.
 
-Give it a YouTube URL or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself; see [Product identity](https://github.com/haesol-shin/lectural/blob/main/docs/product-identity.md).
-
-## What you get
-
-`lectural extract` writes `evidence.json` (abridged):
-
-```json
-{
-  "contract_version": 2,
-  "source": {"id": "sha256:eb0162565065…", "kind": "local_video", "duration_sec": 20.352},
-  "speech": {"source": "stt", "language": "en", "model": "medium", "fallback": {"code": "local_source"}},
-  "transcript": {
-    "segments": [{"id": "s0001", "start": 0.0, "end": 5.28, "text": "Welcome to lecture 4 on optimization."}]
-  },
-  "frames": [
-    {"id": "f0001", "start": 0.0, "sha256": "2c57d8bd8e89…", "ocr": {"status": "text", "text": "Lecture 4: Optimization …"}}
-  ],
-  "extraction": {"status": "pass"}
-}
-```
-
-The full manifest also records speech and visual completeness, timestamp integrity, and resource use. See the versioned [CLI and evidence contract](https://github.com/haesol-shin/lectural/blob/main/docs/contracts/cli.md) and its JSON Schemas for the exact fields, options, and exit codes.
+Give it a YouTube URL or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
 
 ## Install
 
@@ -36,6 +15,8 @@ uv tool install "lectural[run]"
 # or run without installing
 uvx --from "lectural[run]" lectural --help
 ```
+
+The commands below use `lectural` from an active pip environment or a uv tool install. For one-shot `uvx`, replace that prefix with `uvx --from "lectural[run]" lectural`.
 
 Python 3.10–3.12 is required. The `[run]` extra pulls in speech-to-text (faster-whisper), OCR, and YouTube access (yt-dlp). LecturAL also needs `ffmpeg` on `PATH`:
 
@@ -56,13 +37,12 @@ lectural doctor --fix
 ## Quick start
 
 ```bash
-lectural extract ./lecture.mp4 --out ./lecture-evidence --json   # build the evidence bundle
-lectural inspect ./lecture-evidence                               # readable inventory
-lectural verify ./lecture-evidence --source ./lecture.mp4         # trust check; exit 0 = valid
-lectural notes ./lecture-evidence                                 # optional: study notes from the bundle
+lectural extract ./lecture.mp4 --out ./lecture-evidence --json
+lectural inspect ./lecture-evidence
+lectural verify ./lecture-evidence --source ./lecture.mp4
 ```
 
-`extract` requires a new output directory: if `./lecture-evidence` already exists, choose a fresh name such as `./lecture-evidence-2` and use that name for the following commands. Never delete an existing bundle just to rerun extraction. `verify` checks structure, artifact containment, frame hashes, identifiers, timestamps, recomputed completeness, and, with `--source`, that the bundle came from that media. It is not fact-checking.
+`extract` builds the bundle in a new directory; if `./lecture-evidence` already exists, choose a fresh name such as `./lecture-evidence-2` and use that name for the following commands. Never delete an existing bundle just to rerun extraction. `inspect` shows a readable inventory. `verify` checks structure, artifact containment, frame hashes, identifiers, timestamps, recomputed completeness, and, with `--source`, that the bundle came from that media; exit `0` means valid. It is not fact-checking.
 
 ## Commands at a glance
 
@@ -86,7 +66,36 @@ lecture-evidence/
 └── frames/         # retained scene frames (video sources)
 ```
 
-`audio.wav` may also be generated when video audio is acquired for transcription, but it is not a promised evidence artifact. `lectural notes` adds `notes.md` (seven-section study notes with citations back to the source), `synthesis_input.json`, and `coverage.json` (the completeness gate). Notes are currently generated in Korean; the evidence bundle is language-neutral.
+`audio.wav` may also be generated when video audio is acquired for transcription, but it is not a promised evidence artifact.
+
+## Optional study notes
+
+```bash
+lectural notes ./lecture-evidence
+```
+
+`lectural notes` adds `notes.md` (seven-section study notes with citations back to the source), `synthesis_input.json`, and `coverage.json` (the completeness gate). Notes are currently generated in Korean; the evidence bundle is language-neutral.
+
+## What you get
+
+`lectural extract` writes `evidence.json` (abridged):
+
+```json
+{
+  "contract_version": 2,
+  "source": {"id": "sha256:eb0162565065…", "kind": "local_video", "duration_sec": 20.352},
+  "speech": {"source": "stt", "language": "en", "model": "medium", "fallback": {"code": "local_source"}},
+  "transcript": {
+    "segments": [{"id": "s0001", "start": 0.0, "end": 5.28, "text": "Welcome to lecture 4 on optimization."}]
+  },
+  "frames": [
+    {"id": "f0001", "start": 0.0, "sha256": "2c57d8bd8e89…", "ocr": {"status": "text", "text": "Lecture 4: Optimization …"}}
+  ],
+  "extraction": {"status": "pass"}
+}
+```
+
+The full manifest also records speech and visual completeness, timestamp integrity, and resource use. See the versioned [CLI and evidence contract](https://github.com/haesol-shin/lectural/blob/main/docs/contracts/cli.md) and its JSON Schemas for the exact fields, options, and exit codes.
 
 ## Use with coding agents
 

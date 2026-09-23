@@ -3,7 +3,7 @@
 ## Inputs
 
 - Issue: none (maintainer-directed, recorded in this plan)
-- Product reference: `docs/product-identity.md` (PR #32): evidence-first boundary, composable primitives (§3), notes as one consumer (§5), `verify` semantics (§12), observability as a product feature (§10), priority 1 interval evidence (§17).
+- Historical product reference: [PR #32](https://github.com/haesol-shin/lectural/pull/32) supplied the evidence-first boundary and proposed future features; the current public contract is [`docs/contracts/cli.md`](../../docs/contracts/cli.md).
 - Maintainer decisions:
   - Segments and frames are inline in `evidence.json`.
   - The bare `lectural <source>` form is removed in v0.3.0 in favor of `lectural notes` (PR C, not this plan).

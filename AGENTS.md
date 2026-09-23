@@ -3,8 +3,6 @@
 ## Purpose
 Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: markdown notes (`/lectural:notes`) or a versioned JSON contract (`lectural extract --json`). Best on lecture and slide-style video.
 
-Product boundary and feature admission follow `docs/product-identity.md`: LecturAL is an evidence compiler, and notes are one consumer of the evidence. Before adding a feature, apply its feature admission test (§16).
-
 ## Install & preflight
 Before the first run in a checkout, run:
 
@@ -35,7 +33,7 @@ Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task 
 
 ## Pointers
 For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media. Per-host setup (Claude Code, Codex, other skill-aware agents) is in `docs/agents.md`.
-See `README.md`, `docs/product-identity.md`, the `commands/` slash commands, and `skills/lectural/references/`.
+See `README.md`, the [CLI contract](docs/contracts/cli.md), the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations
 
