@@ -4,7 +4,14 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Extraction contract and schema are now version 2. The manifest removes `representative_frames`, `source_kind`, duplicate top-level `status`/`extraction_status`, notes/synthesis/coverage artifact paths, and `*_md`/`*_json` aliases. Consumers must use `source.kind`, `extraction.status`, `frames`, and the four canonical artifact paths.
+- Extraction no longer emits notes, synthesis-input, or notes coverage artifacts; the existing bare-source notes run now composes evidence extraction with notes generation.
+- `transcript.md` headings are English; timestamp anchors remain unchanged.
+
 ### Added
+- Evidence manifests include source identity, speech provenance with bounded fallback codes, inline interval-bearing transcript segments, frame IDs and SHA-256 digests, extraction completeness details, and observational resource measurements.
+- Process-tree peak RSS uses `psutil>=5.9`; RSS is null when sampling is unavailable, while other resource metrics remain available.
 - Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing. The wheel no longer ships the `lectural_bench` benchmark package.
 
 ## [0.2.0] - 2026-09-23

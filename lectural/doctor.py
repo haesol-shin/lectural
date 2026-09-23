@@ -39,6 +39,7 @@ RUN_PYTHON_REQUIREMENTS: tuple[tuple[str, str | None, str | None], ...] = (
     ("pytesseract", "pytesseract", ">=0.3.10"),
     ("PIL", "Pillow", ">=10.0.0"),
     ("webrtcvad", "webrtcvad", ">=2.0.10"),
+    ("psutil", "psutil", ">=5.9"),
 )
 
 AGENT_FILES = (

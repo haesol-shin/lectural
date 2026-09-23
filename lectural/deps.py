@@ -54,12 +54,14 @@ _PYTHON_HINTS = {
     "pytesseract": 'Install run extras: `uv pip install "lectural[run]"`.',
     "PIL": 'Install run extras: `uv pip install "lectural[run]"`.',
     "webrtcvad": 'Optional VAD backend: `uv pip install webrtcvad`.',
+    "psutil": 'Install run extras: `uv pip install "lectural[run]"`.',
 }
 _PYTHON_REQUIREMENTS = {
     "numpy": PythonRequirement("numpy", ">=1.24,<2"),
     "paddleocr": PythonRequirement("paddleocr", ">=2.7,<3"),
     "paddle": PythonRequirement("paddlepaddle", ">=2.6,<3"),
     "cv2": PythonRequirement("opencv-python", ">=4.5,<=4.6.0.66"),
+    "psutil": PythonRequirement("psutil", ">=5.9"),
 }
 
 
@@ -263,6 +265,7 @@ def preflight(require_stt: bool = False, require_ocr: bool = False) -> list[DepS
         python_status("numpy"),
         python_status("paddleocr"),
         python_status("paddle"),
+        python_status("psutil"),
         python_status("cv2"),
         python_status("webrtcvad"),
     ]
