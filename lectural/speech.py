@@ -45,7 +45,7 @@ def transcribe_audio(
     for seg in segments_iter:
         text = re.sub(r"\s+", " ", seg.text).strip()
         if text:
-            segments.append(Segment(t=float(seg.start), text=text))
+            segments.append(Segment(t=float(seg.start), text=text, end=float(seg.end)))
 
     return SpeechTrack(
         segments=segments,

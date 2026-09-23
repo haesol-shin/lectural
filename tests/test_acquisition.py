@@ -9,7 +9,7 @@ import pytest
 
 from lectural import acquisition, media, speech
 from lectural.source import classify_source
-from lectural.acquisition import captions_are_usable, parse_json3, parse_vtt
+from lectural.acquisition import Segment, captions_are_usable, fill_segment_ends, parse_json3, parse_vtt
 
 
 def test_parse_vtt_basic():
@@ -19,7 +19,7 @@ def test_parse_vtt_basic():
     )
     segs = parse_vtt(vtt)
     assert [seg.text for seg in segs] == ["hello world", "second cue"]
-    assert segs[1].t == 3.0
+    assert [(seg.t, seg.end) for seg in segs] == [(1.0, 2.0), (3.0, 4.0)]
 
 
 def test_parse_vtt_dedupes_rolling_autocaptions():
@@ -30,19 +30,29 @@ def test_parse_vtt_dedupes_rolling_autocaptions():
     )
     segs = parse_vtt(vtt)
     assert [seg.text for seg in segs] == ["foo bar", "baz qux"]
+    assert [(seg.t, seg.end) for seg in segs] == [(1.0, 3.0), (3.0, 4.0)]
 
 
 def test_parse_json3():
     payload = json.dumps(
         {
             "events": [
-                {"tStartMs": 1000, "segs": [{"utf8": "Hello"}, {"utf8": " world"}]},
+                {"tStartMs": 1000, "dDurationMs": 1200, "segs": [{"utf8": "Hello"}, {"utf8": " world"}]},
                 {"tStartMs": 2500, "segs": [{"utf8": "Next"}]},
             ]
         }
     )
     segs = parse_json3(payload)
-    assert [(seg.t, seg.text) for seg in segs] == [(1.0, "Hello world"), (2.5, "Next")]
+    assert [(seg.t, seg.end, seg.text) for seg in segs] == [(1.0, 2.2, "Hello world"), (2.5, None, "Next")]
+
+
+def test_fill_segment_ends_uses_next_start_then_duration_and_clamps():
+    segs = [Segment(0.0, "a"), Segment(2.0, "b", end=9.0), Segment(5.0, "c"), Segment(8.0, "d")]
+    filled = fill_segment_ends(segs, duration=7.5)
+    # a -> next start; b -> clamped to duration; c -> next start 8.0 clamped to
+    # the duration; d starts past the probed duration, so its end collapses to
+    # its start instead of preceding it.
+    assert [(seg.t, seg.end) for seg in filled] == [(0.0, 2.0), (2.0, 7.5), (5.0, 7.5), (8.0, 8.0)]
 
 
 def test_captions_usable_heuristic():

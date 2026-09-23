@@ -20,10 +20,15 @@ from .source import InputSource, SourceKind
 
 @dataclass
 class Segment:
-    """One timestamped utterance. `t` is the start time in seconds."""
+    """One timestamped utterance in seconds.
+
+    `end` is None only when the source gave no end; `fill_segment_ends`
+    resolves it deterministically once the media duration is known.
+    """
 
     t: float
     text: str
+    end: float | None = None
 
     def as_dict(self) -> dict:
         return {"t": round(self.t, 3), "text": self.text}
@@ -64,8 +69,9 @@ def parse_vtt(text: str) -> list[Segment]:
     while i < n:
         line = lines[i].strip()
         if "-->" in line:
-            m = _TS_RE.search(line)
-            start = _hms_to_seconds(*m.groups()) if m else 0.0
+            stamps = _TS_RE.findall(line)
+            start = _hms_to_seconds(*stamps[0]) if stamps else 0.0
+            end = _hms_to_seconds(*stamps[1]) if len(stamps) > 1 else None
             i += 1
             body: list[str] = []
             while i < n and lines[i].strip() and "-->" not in lines[i]:
@@ -75,7 +81,7 @@ def parse_vtt(text: str) -> list[Segment]:
             cue = re.sub(r"<[^>]+>", "", cue)  # strip <c>, <00:00:00.000> tags
             cue = re.sub(r"\s+", " ", cue).strip()
             if cue:
-                segments.append(Segment(t=start, text=cue))
+                segments.append(Segment(t=start, text=cue, end=end))
         else:
             i += 1
     return _dedupe_rolling(segments)
@@ -90,21 +96,44 @@ def parse_json3(text: str) -> list[Segment]:
         if not segs:
             continue
         start_ms = event.get("tStartMs", 0)
+        duration_ms = event.get("dDurationMs")
         body = "".join(s.get("utf8", "") for s in segs)
         body = re.sub(r"\s+", " ", body).strip()
         if body:
-            segments.append(Segment(t=start_ms / 1000.0, text=body))
+            end = (start_ms + duration_ms) / 1000.0 if duration_ms is not None else None
+            segments.append(Segment(t=start_ms / 1000.0, text=body, end=end))
     return _dedupe_rolling(segments)
 
 
 def _dedupe_rolling(segments: list[Segment]) -> list[Segment]:
-    """Drop consecutive duplicate cue text (common in auto-captions). Pure."""
+    """Merge consecutive duplicate cue text (common in auto-captions). Pure.
+
+    The first cue keeps its start; its end extends to the last duplicate's end.
+    """
     out: list[Segment] = []
     for seg in segments:
         if out and out[-1].text == seg.text:
+            if seg.end is not None:
+                out[-1].end = seg.end
             continue
-        out.append(seg)
+        out.append(Segment(t=seg.t, text=seg.text, end=seg.end))
     return out
+
+
+def fill_segment_ends(segments: list[Segment], duration: float) -> list[Segment]:
+    """Return segments with every `end` resolved. Pure.
+
+    A missing end becomes the next segment's start, or `duration` for the
+    last segment. Ends never precede their start and never exceed `duration`.
+    """
+    filled: list[Segment] = []
+    for index, seg in enumerate(segments):
+        end = seg.end
+        if end is None:
+            end = segments[index + 1].t if index + 1 < len(segments) else duration
+        end = min(max(end, seg.t), max(duration, seg.t))
+        filled.append(Segment(t=seg.t, text=seg.text, end=end))
+    return filled
 
 
 def captions_are_usable(segments: list[Segment], min_segments: int = 3) -> bool:
@@ -124,7 +153,11 @@ def fetch_caption_segments(video_id: str, languages: tuple[str, ...] = ("ko", "e
     api = YouTubeTranscriptApi()
     fetched = api.fetch(video_id, languages=list(languages))
     segments = [
-        Segment(t=float(item.start), text=re.sub(r"\s+", " ", item.text).strip())
+        Segment(
+            t=float(item.start),
+            text=re.sub(r"\s+", " ", item.text).strip(),
+            end=float(item.start) + float(item.duration) if getattr(item, "duration", None) is not None else None,
+        )
         for item in fetched
         if item.text.strip()
     ]
