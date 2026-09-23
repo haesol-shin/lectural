@@ -143,8 +143,8 @@ def detect_speech_spans(audio_path: str, duration: float, noise_db: int = -30, m
     require_binary("ffmpeg")
     proc = subprocess.run(
         [
-            "ffmpeg", "-i", audio_path,
-            "-af", f"silencedetect=noise={noise_db}dB:d={min_silence}",
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
+            "-i", audio_path, "-af", f"silencedetect=noise={noise_db}dB:d={min_silence}",
             "-f", "null", "-",
         ],
         capture_output=True,

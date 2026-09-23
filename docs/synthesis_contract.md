@@ -4,7 +4,7 @@
 
 ## `synthesis_input.json`
 
-The deterministic core writes this compact, **text-only** handoff. It is the primary input a command-driven host-agent enrichment step reads to enrich `notes.md`; raw frame images remain separate under `frames/` and may be opened on disk when OCR text is garbled. Bare CLI runs stop at deterministic low-level artifacts and do not call an external LLM.
+The deterministic core writes this compact, **text-only** handoff. It is the primary input a command-driven host-agent enrichment step reads to enrich `notes.md`; raw frame images remain separate under `frames/` and may be opened on disk when OCR text is garbled. Direct CLI notes runs produce deterministic artifacts and do not call an external LLM.
 
 ```jsonc
 {
@@ -32,7 +32,7 @@ The deterministic core writes two markdown outputs with separate ownership:
 | `transcript.md` | verbatim, timestamped transcript with per-cue `<a id="tHHMMSS[-n]">` anchors; no summarization or enrichment |
 | `notes.md` | deterministic 7-section study-note skeleton; owns `NOTES_ENRICH_MARKER`, the seven section anchors, `<!-- 미보강 -->` placeholders, citation deeplinks, and the coverage footer |
 
-For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich only the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve `NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript anchors, and the `정리 커버리지` footer. Bare CLI runs do not perform this enrichment.
+For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich only the prose in `notes.md` sections marked by `<!-- 미보강 -->`. It MUST preserve `NOTES_ENRICH_MARKER`, the seven anchors, citation deeplinks, transcript anchors, and the `정리 커버리지` footer. Direct CLI runs do not perform this host-agent enrichment.
 
 ## `notes.md` required structure (validated by the completeness hook)
 

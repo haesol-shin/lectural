@@ -27,7 +27,7 @@ class ContractError(ValueError):
 
 
 _FAILURE_MESSAGES = {
-    "OUTPUT_EXISTS": "The requested output directory already exists.",
+    "OUTPUT_EXISTS": "The output directory already exists; choose a new --out path.",
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
     "SOURCE_INVALID": "The source is not a supported YouTube URL or local media file.",
     "SOURCE_UNAVAILABLE": "The source could not be accessed for extraction.",

@@ -99,7 +99,8 @@ def test_local_video_extracts_only_generated_audio_and_never_uses_ytdlp(monkeypa
     assert output == str(tmp_path / "out" / "audio.wav")
     assert calls[0] == ("require", "ffmpeg")
     assert calls[1][1] == [
-        "ffmpeg", "-y", "-i", str(path.resolve()), "-vn", "-acodec", "pcm_s16le", output,
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
+        "-y", "-i", str(path.resolve()), "-vn", "-acodec", "pcm_s16le", output,
     ]
     assert all("yt-dlp" not in call[1] for call in calls if call[0] == "run")
     assert path.read_bytes() == b"original-video"
@@ -115,8 +116,57 @@ def test_probe_video_resolution_uses_processed_file(monkeypatch):
     calls = []
     monkeypatch.setattr(media, "require_binary", lambda name: calls.append(name))
     monkeypatch.setattr(
-        media.subprocess, "run",
-        lambda command, **_kwargs: type("Result", (), {"stdout": '{"streams":[{"width":1280,"height":720}]}'})(),
+        media.subprocess,
+        "run",
+        lambda command, **_kwargs: calls.append(command)
+        or type("Result", (), {"stdout": '{"streams":[{"width":1280,"height":720}]}'})(),
     )
     assert media.probe_video_resolution("processed.mp4") == (1280, 720)
-    assert calls == ["ffprobe"]
+    assert calls[0] == "ffprobe"
+    assert calls[1][:4] == ["ffprobe", "-hide_banner", "-loglevel", "error"]
+
+
+def test_ffmpeg_visual_and_vad_argv_are_quiet(monkeypatch, tmp_path: Path):
+    from lectural import deps, vad, visual
+
+    calls = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        if command[0] == "ffmpeg" and command[-1].endswith(".wav"):
+            Path(command[-1]).write_bytes(b"audio")
+        return type(
+            "Result",
+            (),
+            {"stdout": '{"streams":[{"width":1280,"height":720}]}', "returncode": 0, "stderr": ""},
+        )()
+
+    monkeypatch.setattr(media, "require_binary", lambda _name: None)
+    monkeypatch.setattr(deps, "require_binary", lambda _name: None)
+    monkeypatch.setattr(media.subprocess, "run", fake_run)
+
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"video")
+    source = classify_source(str(video))
+    media.resolve_audio(source, str(tmp_path / "audio"))
+    media.probe_video_resolution(str(video))
+    assert visual.extract_candidate_frames(str(video), str(tmp_path / "frames")) == []
+    vad.detect_speech_spans(str(tmp_path / "audio" / "audio.wav"), 30.0)
+
+    assert {command[0] for command in calls} == {"ffmpeg", "ffprobe"}
+    for command in calls:
+        assert "-hide_banner" in command
+        assert command[command.index("-loglevel") + 1] == "error"
+        if command[0] == "ffmpeg":
+            assert "-nostats" in command
+
+
+def test_probe_video_resolution_surfaces_ffprobe_errors(monkeypatch, capsys):
+    monkeypatch.setattr(media, "require_binary", lambda _name: None)
+
+    def fail(*_args, **_kwargs):
+        raise media.subprocess.CalledProcessError(1, ["ffprobe"], stderr="invalid media stream")
+
+    monkeypatch.setattr(media.subprocess, "run", fail)
+    assert media.probe_video_resolution("broken.mp4") == (None, None)
+    assert capsys.readouterr().err == "invalid media stream\n"

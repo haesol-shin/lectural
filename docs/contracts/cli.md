@@ -9,17 +9,16 @@ This is the public boundary for consumers such as `lecture-tools`. Consumers mus
 ## Commands
 
 ```console
-lectural --version --json
+lectural --version [--json]
 lectural extract <source> --out <new-directory> [--skip-ocr] --json
+lectural notes <input>... [--out <root>] [--force-stt] [--model <model>] [--skip-ocr] [--keep-frames]
 ```
 
-`<source>` is exactly one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. The existing bare-source form remains available for notes generation; it runs extraction first and then builds notes from the emitted evidence bundle:
+`<source>` is one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
 
-```console
-lectural <source> [--out <root>] [--skip-ocr]
-```
+Multiple `notes` inputs are processed sequentially. Each source reserves a unique slug directory under `--out`, adding a numeric suffix when a directory already exists; evidence-bundle inputs keep their existing directory.
 
-The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The bare notes run writes those three notes artifacts after extraction. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind.
+The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The `notes` command creates those notes artifacts after extraction, or rebuilds them from a supplied evidence bundle. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind.
 
 ## Common JSON envelope
 
@@ -81,7 +80,7 @@ On success, `result` is the same evidence manifest written to `<out>/evidence.js
 - `resources` reports wall/stage seconds, process-tree peak RSS in MiB (null if optional `psutil` cannot be used), output bytes, and candidate/retained frame counts. Resource values are observational and never affect extraction status.
 - `failure` is null on pass/warn, or one bounded code/message on fail.
 
-The bare notes run reads `evidence.json` and the referenced transcript/frame files only. Its `coverage.json` retains `gap_check`, `scene_coverage`, `artifacts`, `notes_contract`, `overall_pass`, and the other notes completeness fields consumed by `render_notes_md` and the Stop hook.
+The `notes` command reads `evidence.json` and the referenced transcript/frame files to build notes artifacts. Its `coverage.json` retains `gap_check`, `scene_coverage`, `artifacts`, `notes_contract`, `overall_pass`, and the other notes completeness fields consumed by `render_notes_md` and the Stop hook.
 
 Contract v2 removes the v1 aliases `representative_frames`, `source_kind`, top-level `status`/`extraction_status`, and `*_md`/`*_json` artifact names. Notes, synthesis-input, and coverage paths are not fields in the extraction manifest. The extraction response envelope's `status` is unchanged. `transcript.md` remains the human-readable citation target; its headings are English and its `<a id="tHHMMSS">` anchors remain stable.
 

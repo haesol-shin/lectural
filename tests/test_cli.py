@@ -24,16 +24,17 @@ def test_output_dir_for():
 
 
 
-def test_parse_args_single_and_mixed_batch():
-    source = cli.parse_args(["https://youtu.be/abc"])
-    assert source.sources == ["https://youtu.be/abc"]
-    assert source.force_stt is False and source.model == "medium"
-    assert source.keep_frames is False and source.skip_ocr is False
+def test_parse_args_notes_and_mixed_batch():
+    source = cli.parse_args(["notes", "https://youtu.be/dQw4w9WgXcQ"])
+    assert source.command == "notes"
+    assert source.inputs == ["https://youtu.be/dQw4w9WgXcQ"]
+    assert source.force_stt is None and source.model is None
+    assert source.keep_frames is None and source.skip_ocr is None
     batch = cli.parse_args([
-        "u1", "./lecture.mp4", "sound.wav", "--force-stt", "--model", "small",
-        "--out", "./o", "--keep-frames", "--skip-ocr",
+        "notes", "dQw4w9WgXcQ", "./lecture.mp4", "sound.wav", "--force-stt",
+        "--model", "small", "--out", "./o", "--keep-frames", "--skip-ocr",
     ])
-    assert batch.sources == ["u1", "./lecture.mp4", "sound.wav"]
+    assert batch.inputs == ["dQw4w9WgXcQ", "./lecture.mp4", "sound.wav"]
     assert batch.force_stt is True and batch.model == "small" and batch.out == "./o"
     assert batch.keep_frames is True and batch.skip_ocr is True
 
@@ -43,13 +44,40 @@ def test_parse_args_doctor_command():
     assert args.command == "doctor" and args.fix is True and args.json is True
 
 
-def test_help_works_for_root_and_doctor():
-    with pytest.raises(SystemExit) as root_exit:
-        cli.parse_args(["--help"])
-    assert root_exit.value.code == 0
-    with pytest.raises(SystemExit) as doctor_exit:
-        cli.parse_args(["doctor", "--help"])
-    assert doctor_exit.value.code == 0
+def test_help_works_for_root_and_subcommands():
+    for argv in (["--help"], ["notes", "--help"], ["doctor", "--help"], ["extract", "--help"]):
+        with pytest.raises(SystemExit) as exit_info:
+            cli.parse_args(argv)
+        assert exit_info.value.code == 0
+    with pytest.raises(SystemExit) as no_args:
+        cli.parse_args([])
+    assert no_args.value.code == 2
+
+def test_bare_source_reports_notes_hint(tmp_path, capsys):
+    source = tmp_path / "lecture.mp4"
+    source.write_bytes(b"media")
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main([str(source)])
+    assert exit_info.value.code == 2
+    assert capsys.readouterr().err.strip().endswith(
+        f"unknown command {str(source)!r}; to generate notes use: lectural notes <source>"
+    )
+
+
+@pytest.mark.parametrize(
+    "option",
+    ["--force-stt", "--model", "--skip-ocr", "--keep-frames"],
+)
+def test_notes_rejects_extraction_options_for_evidence_bundle(tmp_path, capsys, monkeypatch, option):
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "evidence.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(cli, "run", lambda *_args, **_kwargs: pytest.fail("bundle processing started"))
+    argv = ["notes", str(bundle), option]
+    if option == "--model":
+        argv.append("medium")
+    assert cli.main(argv) == 2
+    assert "cannot be used with evidence bundles" in capsys.readouterr().err
 
 
 def _fake_processor(source, out_dir, force_stt, model, *, keep_frames=False, skip_ocr=False):
@@ -93,10 +121,10 @@ def test_run_continues_after_one_source_failure(tmp_path):
 def test_main_forwards_skip_ocr_and_exit_code(monkeypatch):
     captured = {}
     monkeypatch.setattr(cli, "run", lambda *args, **kwargs: captured.update(kwargs) or [{"output_dir": "x", "overall_pass": True}])
-    assert cli.main(["./deck.mp4", "--skip-ocr"]) == 0
+    assert cli.main(["notes", "./deck.mp4", "--skip-ocr"]) == 0
     assert captured["skip_ocr"] is True
     monkeypatch.setattr(cli, "run", lambda *args, **kwargs: [{"output_dir": "x", "overall_pass": False}])
-    assert cli.main(["./deck.mp4"]) == 2
+    assert cli.main(["notes", "./deck.mp4"]) == 2
 
 
 _DEFAULT_DURATION = object()

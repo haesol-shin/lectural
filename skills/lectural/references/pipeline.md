@@ -14,7 +14,7 @@ Module map (all heavy deps lazy-imported; deterministic logic is unit-tested off
 | `lectural/synthesis.py` | synthesis_input.json + transcript.md + notes.md skeleton | AC-7,8,12 |
 | `lectural/coverage.py` | coverage.json (gap/scene/artifact) + raw-samples contract | AC-13 |
 | `lectural/runstate.py` | active-run pointer for the Stop hook | AC-2 |
-| `lectural/cli.py` | doctor dispatch, arg parsing, sequential batch, orchestration | AC-1,2,10,11 |
+| `lectural/cli.py` | extract, notes, and doctor subcommands; sequential batch, orchestration | AC-1,2,10,11 |
 | `scripts/completeness_hook.py` | Stop hook: block done until coverage passes | AC-13 |
 
 ## Doctor component manifest

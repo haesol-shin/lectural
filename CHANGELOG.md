@@ -6,7 +6,10 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ### Changed
 - **BREAKING:** Extraction contract and schema are now version 2. The manifest removes `representative_frames`, `source_kind`, duplicate top-level `status`/`extraction_status`, notes/synthesis/coverage artifact paths, and `*_md`/`*_json` aliases. Consumers must use `source.kind`, `extraction.status`, `frames`, and the four canonical artifact paths.
-- Extraction no longer emits notes, synthesis-input, or notes coverage artifacts; the existing bare-source notes run now composes evidence extraction with notes generation.
+- **BREAKING:** The bare `lectural <source>` form is removed in favor of `lectural notes <source>`.
+- `lectural notes` accepts existing evidence bundles and regenerates notes in place without re-extraction.
+- CLI status and failure messages are now in English; ffmpeg/ffprobe banners and progress are suppressed while errors remain visible.
+- Extraction no longer emits notes, synthesis-input, or notes coverage artifacts; `lectural notes` composes evidence extraction with notes generation.
 - `transcript.md` headings are English; timestamp anchors remain unchanged.
 
 ### Added
