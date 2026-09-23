@@ -113,6 +113,17 @@ def test_version_json_negotiates_only_contract_and_schema_v2():
     assert payload["result"]["supported_contract_versions"] == [2]
     assert payload["result"]["supported_schema_versions"] == [2]
 
+def test_extract_json_stdout_is_exactly_one_document(monkeypatch, tmp_path):
+    source_path = _install_fake_pipeline(monkeypatch, tmp_path, audio_only=True)
+    exit_code, stdout = _invoke_cli([
+        "extract", str(source_path), "--out", str(tmp_path / "json-bundle"), "--json",
+    ])
+    assert exit_code == 0
+    payload, end = json.JSONDecoder().raw_decode(stdout)
+    assert isinstance(payload, dict)
+    assert not stdout[end:].strip()
+
+
 
 def test_extract_emits_v2_evidence_ids_hashes_and_local_source_identity(monkeypatch, tmp_path):
     source_path, output_dir, exit_code, payload = _run_extract(monkeypatch, tmp_path)
@@ -256,6 +267,31 @@ def test_notes_generate_from_bundle_containing_only_manifest_transcript_and_fram
     assert "notes_contract" in json.loads((bundle / "coverage.json").read_text(encoding="utf-8"))
     assert original.is_dir()
 
+def test_notes_command_regenerates_bundle_without_extraction(monkeypatch, tmp_path):
+    _source_path, bundle, extract_exit, _payload = _run_extract(
+        monkeypatch, tmp_path, audio_only=True
+    )
+    assert extract_exit == 0
+    notes.generate_notes(str(bundle))
+    (bundle / "notes.md").write_text("stale notes", encoding="utf-8")
+    runstate_path = tmp_path / "runstate.json"
+    monkeypatch.setenv("LECTURAL_RUNSTATE", str(runstate_path))
+
+    def extraction_must_not_run(*_args, **_kwargs):
+        raise AssertionError("bundle notes generation must not re-extract the source")
+
+    monkeypatch.setattr("lectural.extract.extract_source", extraction_must_not_run)
+    exit_code, stdout = _invoke_cli(["notes", str(bundle)])
+
+    assert exit_code == 0
+    assert (bundle / "notes.md").read_text(encoding="utf-8").startswith("<!-- lectural:notes -->")
+    assert "stale notes" not in (bundle / "notes.md").read_text(encoding="utf-8")
+    assert (bundle / "coverage.json").is_file()
+    state = json.loads(runstate_path.read_text(encoding="utf-8"))
+    assert state["runs"][0]["status"] == "complete"
+    assert state["runs"][0]["output_dir"] == str(bundle.resolve())
+    assert f"[OK] {bundle.resolve()}" in stdout
+
 
 def test_notes_from_evidence_is_byte_identical_to_legacy_notes_output(tmp_path):
     bundle = tmp_path / "legacy-equivalence"
@@ -363,6 +399,9 @@ def test_existing_output_is_rejected_as_bounded_json_failure(tmp_path):
     assert exit_code == 2
     payload = json.loads(stdout)
     assert payload["result"]["failure"]["code"] == "OUTPUT_EXISTS"
+    failure = payload["result"]["failure"]
+    assert failure["message"] == "The output directory already exists; choose a new --out path."
+    assert str(output) not in failure["message"]
     assert "source_kind" not in payload["result"]
     assert payload["result"]["source"] is None
     assert payload["result"]["artifacts"] == {

@@ -11,7 +11,7 @@ A clear, one-line description of the bug.
 
 ## Steps to reproduce
 
-1. Command run (for example, `/lectural:notes <url>` or `lectural "<url>"`)
+1. Command run (for example, `/lectural:notes <url>` or `lectural notes "<url>"`)
 2. Input URL or fixture type:
 3. What happened next:
 

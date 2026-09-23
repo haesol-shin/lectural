@@ -364,7 +364,7 @@ def synthesize_utterance_pyttsx3(
     # Standardize to 16kHz mono 16-bit PCM for consistent downstream STT & VAD
     subprocess.run(
         [
-            "ffmpeg", "-y", "-i", str(temp_wav),
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(temp_wav),
             "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
             str(out_wav)
         ],
@@ -587,7 +587,7 @@ def apply_audio_degradation(
         f"volume=enable='between(t,{gap_start},{gap_start + gap_duration})':volume=0"
     )
     cmd = [
-        "ffmpeg", "-y", "-i", str(in_wav),
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(in_wav),
         "-filter_complex", filter_str,
         "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
         str(out_wav),
@@ -625,7 +625,7 @@ def assemble_video_from_slides(
         f.write(f"file {last_rel_path}\n")
     
     cmd = [
-        "ffmpeg", "-y",
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y",
         "-f", "concat", "-safe", "0",
         "-i", concat_file.name,
         "-i", audio_wav.name,
@@ -640,10 +640,10 @@ def produce_360p_reencode(in_mp4: Path, out_360p_mp4: Path) -> None:
     """Produce a 360p-equivalent low-bitrate re-encode of video.
     
     Command:
-    ffmpeg -y -i <in> -vf scale=640:360 -b:v 250k -maxrate 300k -bufsize 500k -c:a aac -b:a 64k <out>
+    ffmpeg -hide_banner -loglevel error -nostats -y -i <in> -vf scale=640:360 -b:v 250k -maxrate 300k -bufsize 500k -c:a aac -b:a 64k <out>
     """
     cmd = [
-        "ffmpeg", "-y", "-i", str(in_mp4),
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(in_mp4),
         "-vf", "scale=640:360",
         "-b:v", "250k", "-maxrate", "300k", "-bufsize", "500k",
         "-c:a", "aac", "-b:a", "64k",

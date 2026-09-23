@@ -32,10 +32,10 @@ Offline verification is split across focused suites; use `uv run --with pytest -
 ffmpeg/yt-dlp/tesseract are NOT installed here, so live acquisition/STT/visual/OCR paths are exercised by a real-video smoke run after `uv pip install -e ".[run]"` and installing the binaries. Suggested smoke commands:
 
 ```bash
-lectural "https://www.youtube.com/watch?v=<captioned-lecture>"   # AC-1,3,7,8,12
-lectural "<url-a>" "<url-b>"                                       # AC-2 sequential
-lectural "<no-caption-url>" --force-stt --model medium            # AC-3,4 STT path
-lectural ./recording.mp4 --skip-ocr                               # AC-19,20 local
+lectural notes "https://www.youtube.com/watch?v=<captioned-lecture>"   # AC-1,3,7,8,12
+lectural notes "<url-a>" "<url-b>"                                    # AC-2 sequential
+lectural notes "<no-caption-url>" --force-stt --model medium          # AC-3,4 STT path
+lectural notes ./recording.mp4 --skip-ocr                             # AC-19,20 local
 python scripts/completeness_hook.py < /dev/null                   # AC-13 (after a run)
 ```
 

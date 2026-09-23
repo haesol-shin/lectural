@@ -12,6 +12,7 @@ import json
 import math
 import os
 import subprocess
+import sys
 
 from .deps import assert_acquisition_ready, require_binary
 from .source import InputSource, SourceKind, extract_video_id
@@ -146,8 +147,8 @@ def _resolve_audio_local_video(source: InputSource, out_dir: str) -> str:
     audio_path = os.path.join(out_dir, "audio.wav")
     subprocess.run(
         [
-            "ffmpeg", "-y", "-i", source.locator,
-            "-vn", "-acodec", "pcm_s16le", audio_path,
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
+            "-y", "-i", source.locator, "-vn", "-acodec", "pcm_s16le", audio_path,
         ],
         check=True,
         capture_output=True,
@@ -222,12 +223,14 @@ def probe_video_resolution(video_path: str) -> tuple[int | None, int | None]:
     try:
         proc = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "ffprobe", "-hide_banner", "-loglevel", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=width,height", "-of", "json", video_path,
             ],
             check=True, capture_output=True, text=True,
         )
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as exc:
+        if isinstance(exc.stderr, str) and exc.stderr.strip():
+            print(exc.stderr.strip()[-500:], file=sys.stderr)
         return None, None
     streams = json.loads(proc.stdout).get("streams", [])
     stream = streams[0] if streams else {}

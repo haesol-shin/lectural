@@ -1,12 +1,12 @@
-"""`lectural` CLI: turn video into deterministic evidence for video-based work.
+"""`lectural` CLI: extract evidence bundles and consume them as notes.
 
 Usage:
+    lectural extract <source> --out <directory> [--json]
+    lectural notes <input> [<input> ...] [--out ./output]
     lectural doctor [--fix] [--json]
-    lectural <source> [<source> ...] [--force-stt] [--model medium]
-             [--out ./output] [--keep-frames] [--skip-ocr]
+    lectural --version [--json]
 
-The per-source pipeline is shared across YouTube, local video, and local WAV
-inputs. Heavy dependencies remain lazy so deterministic logic runs offline.
+Extraction creates versioned evidence; notes are one consumer of that bundle.
 """
 
 from __future__ import annotations
@@ -68,81 +68,139 @@ def _reserve_output_dir(
 
 
 
-def _run_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+class _LecturalArgumentParser(argparse.ArgumentParser):
+    """Root parser with a useful hint when a source is used as a command."""
+
+    input_argv: list[str] = []
+
+    def error(self, message: str) -> None:
+        argv = self.input_argv
+        if argv and _looks_like_source(argv[0]):
+            message = (
+                f"unknown command {argv[0]!r}; to generate notes use: "
+                "lectural notes <source>"
+            )
+        super().error(message)
+
+
+def _looks_like_source(value: str) -> bool:
+    if os.path.isfile(os.path.expanduser(value)):
+        return True
+    if value.startswith(("http://", "https://")):
+        return True
+    try:
+        classify_source(value)
+    except (OSError, TypeError, ValueError):
+        return False
+    return True
+
+
+def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
+    parser = _LecturalArgumentParser(
         prog="lectural",
-        description="Video-based work -> deterministic evidence as markdown notes",
-        epilog="Command: lectural doctor [--fix] [--json]",
+        description=(
+            "Evidence comes first: extract creates a versioned evidence bundle; "
+            "notes is one consumer that generates study notes."
+        ),
+        epilog=(
+            "Use `lectural extract` to create evidence.json, or `lectural notes` "
+            "to create notes from a source or an existing bundle."
+        ),
     )
-    parser.add_argument(
-        "sources",
-        nargs="*",
-        help="One or more YouTube URLs/IDs or local mp4/webm/mkv/wav files (processed sequentially)",
+    parser.input_argv = argv
+    parser.add_argument("--version", action="store_true", help="Show the LecturAL version")
+    parser.add_argument("--json", dest="version_json", action="store_true", help=argparse.SUPPRESS)
+    commands = parser.add_subparsers(dest="command")
+
+    extract_parser = commands.add_parser(
+        "extract",
+        help="Extract a source into a versioned evidence bundle",
+        description="Extract speech and visual evidence into a versioned bundle; does not generate notes.",
     )
-    parser.add_argument("--force-stt", action="store_true", help="Skip captions; always transcribe with STT")
-    parser.add_argument("--model", default=DEFAULT_STT_MODEL, help="faster-whisper model size (default: medium)")
-    parser.add_argument("--out", default="./output", help="Output root directory (default: ./output)")
-    parser.add_argument(
-        "--keep-frames",
+    extract_parser.add_argument("source", help="One YouTube URL/ID or local media file")
+    extract_parser.add_argument("--out", required=True, help="New, empty output directory")
+    extract_parser.add_argument("--force-stt", action="store_true", help=argparse.SUPPRESS)
+    extract_parser.add_argument("--model", default=DEFAULT_STT_MODEL, help=argparse.SUPPRESS)
+    extract_parser.add_argument("--skip-ocr", action="store_true", help="Skip OCR while retaining representative frames")
+    extract_parser.add_argument("--json", action="store_true", help="Print the versioned JSON response")
+
+    notes_parser = commands.add_parser(
+        "notes",
+        help="Generate notes from a source or existing evidence bundle",
+        description=(
+            "For a source, extract evidence and then generate notes. For an existing "
+            "directory with evidence.json, regenerate notes in that directory."
+        ),
+    )
+    notes_parser.add_argument(
+        "inputs",
+        nargs="+",
+        help="YouTube URL/ID, local media file, or evidence bundle directory (processed sequentially)",
+    )
+    notes_parser.add_argument(
+        "--out",
+        default="./output",
+        help="Output root for source inputs; evidence bundles are always updated in place",
+    )
+    notes_parser.add_argument(
+        "--force-stt",
         action="store_true",
-        help="Archive raw sampled frames under frames/raw/ instead of deleting extras",
+        default=None,
+        help="Skip captions and always transcribe source inputs",
     )
-    parser.add_argument(
+    notes_parser.add_argument("--model", default=None, help="faster-whisper model size (default: medium)")
+    notes_parser.add_argument(
         "--skip-ocr",
         action="store_true",
-        default=False,
-        help="Keep scene frames but skip OCR and the slide-text coverage check",
+        default=None,
+        help="Keep scene frames but skip OCR for source inputs",
     )
-    parser.add_argument("--json", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
-    return parser
-
-
-def _extract_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="lectural extract",
-        description="Extract a versioned JSON evidence bundle from one source",
+    notes_parser.add_argument(
+        "--keep-frames",
+        action="store_true",
+        default=None,
+        help="Archive raw sampled frames for source inputs",
     )
-    parser.add_argument("source", help="One YouTube URL/ID or local mp4/webm/mkv/wav file")
-    parser.add_argument("--out", required=True, help="New, empty output directory for this extraction")
-    parser.add_argument("--force-stt", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--model", default=DEFAULT_STT_MODEL, help=argparse.SUPPRESS)
-    parser.add_argument("--skip-ocr", action="store_true", help="Skip OCR while retaining representative frames")
-    parser.add_argument("--json", action="store_true", help="Print the versioned JSON response")
-    return parser
 
-
-def _doctor_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="lectural doctor", description="Validate LecturAL runtime and plugin distribution"
+    doctor_parser = commands.add_parser(
+        "doctor",
+        help="Validate LecturAL runtime and plugin distribution",
+        description="Validate LecturAL runtime and plugin distribution",
     )
-    parser.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
-    parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
+    doctor_parser.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
+    doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
     return parser
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     argv = list(argv)
-    if argv and argv[0] == "doctor":
-        args = _doctor_parser().parse_args(argv[1:])
-        args.command = "doctor"
-        return args
-
-    if argv and argv[0] == "extract":
-        args = _extract_parser().parse_args(argv[1:])
-        args.command = "extract"
-        return args
-
-    parser = _run_parser()
+    parser = _cli_parser(argv)
+    if not argv:
+        parser.print_help()
+        parser.exit(2)
     args = parser.parse_args(argv)
-    if args.version:
-        args.command = "version"
-        return args
-    args.command = "run"
-    if not args.sources:
-        parser.error("the following arguments are required: sources (or use `lectural doctor`)")
+    if args.command is None:
+        if getattr(args, "version", False):
+            args.command = "version"
+            return args
+        parser.error("--version is required when no command is given")
+    if getattr(args, "version", False) or getattr(args, "version_json", False):
+        parser.error("--version and its --json option must be used without a command")
     return args
 
+def _captured_stderr(exc: BaseException) -> str:
+    value = getattr(exc, "stderr", None)
+    if isinstance(value, bytes):
+        value = value.decode(errors="replace")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _run_error_message(exc: Exception) -> str:
+    message = f"{type(exc).__name__}: {exc}"
+    stderr = _captured_stderr(exc)
+    if stderr:
+        message = f"{message}\n{stderr[-500:]}"
+    return message
 
 def run(
     sources: list[str],
@@ -204,10 +262,11 @@ def run(
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001 - record + continue
+            error_message = _run_error_message(exc)
             runstate.update_run(
                 index,
                 status="failed",
-                error=f"{type(exc).__name__}: {exc}",
+                error=error_message,
                 path=runstate_file,
             )
             results.append(
@@ -215,10 +274,15 @@ def run(
                     "output_dir": out_dir,
                     "source": source_argument,
                     "overall_pass": False,
-                    "error": f"{type(exc).__name__}: {exc}",
+                    "error": error_message,
                 }
             )
     return results
+
+
+def _is_evidence_bundle(argument: str) -> bool:
+    path = os.path.expanduser(argument)
+    return os.path.isdir(path) and os.path.isfile(os.path.join(path, "evidence.json"))
 
 
 def _extract_then_notes_processor(
@@ -231,7 +295,12 @@ def _extract_then_notes_processor(
     skip_ocr: bool = False,
     reserved_output_dirs: set[str] | None = None,
 ) -> dict:
-    """Compose the evidence extractor with the notes consumer for bare runs."""
+    """Extract source evidence and pass the bundle to the notes consumer."""
+    if _is_evidence_bundle(source_argument):
+        from . import notes
+
+        return notes.generate_notes(source_argument)
+
     from . import extract, media, notes
 
     source = classify_source(source_argument)
@@ -309,9 +378,12 @@ def _extract_main(args: argparse.Namespace) -> int:
             source=source.safe_as_dict(),
         ))
         return 1
-    except Exception:  # noqa: BLE001 - never expose traceback or source details
+    except Exception as exc:  # noqa: BLE001 - never expose traceback or source details
         if diagnostics.getvalue().strip():
             print(diagnostics.getvalue(), file=sys.stderr, end="")
+        error_output = _captured_stderr(exc)
+        if error_output:
+            print(error_output[-500:], file=sys.stderr)
         _emit_json(evidence.build_failure_response(
             "EXTRACTION_FAILED",
             output_dir=output_dir,
@@ -328,7 +400,7 @@ def _extract_main(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     if args.command == "version":
-        if getattr(args, "json", False):
+        if args.version_json:
             _emit_json(evidence.build_version_response())
         else:
             print(evidence.build_version_response()["tool_version"])
@@ -347,23 +419,41 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "extract":
         return _extract_main(args)
 
+    bundle_inputs = [value for value in args.inputs if _is_evidence_bundle(value)]
+    extraction_options = (
+        ("--force-stt", args.force_stt is not None),
+        ("--model", args.model is not None),
+        ("--skip-ocr", args.skip_ocr is not None),
+        ("--keep-frames", args.keep_frames is not None),
+    )
+    used_options = [option for option, used in extraction_options if used]
+    if bundle_inputs and used_options:
+        joined = ", ".join(used_options)
+        print(
+            f"lectural notes: {joined} apply only to source inputs and cannot be used with evidence bundles.",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         results = run(
-            args.sources,
+            args.inputs,
             out_root=args.out,
-            force_stt=args.force_stt,
-            model=args.model,
-            keep_frames=args.keep_frames,
-            skip_ocr=args.skip_ocr,
+            force_stt=bool(args.force_stt),
+            model=args.model or DEFAULT_STT_MODEL,
+            keep_frames=bool(args.keep_frames),
+            skip_ocr=bool(args.skip_ocr),
         )
     except Exception as exc:  # noqa: BLE001 - surface a clean CLI error
-        print(f"lectural: 실패 — {exc}", file=sys.stderr)
+        print(f"lectural notes: failed — {exc}", file=sys.stderr)
         return 1
     ok = all(result.get("overall_pass") for result in results)
     for result in results:
-        mark = "OK" if result.get("overall_pass") else "미달"
+        mark = "OK" if result.get("overall_pass") else "FAIL"
         print(f"[{mark}] {result['output_dir']}")
-    print("완료 게이트는 Stop 훅(scripts/completeness_hook.py)이 최종 검증합니다.")
+        if not result.get("overall_pass") and result.get("error"):
+            print(result["error"], file=sys.stderr)
+    print("The Stop hook (scripts/completeness_hook.py) performs the final completeness check.")
     return 0 if ok else 2
 
 

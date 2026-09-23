@@ -18,18 +18,22 @@ LecturAL is an evidence compiler: evidence comes first, and notes are one consum
 
 ```mermaid
 flowchart TD
-    A[YouTube URL or local file] --> B{YouTube captions available?}
-    B -->|yes| C[Acquire: captions]
+    A[YouTube URL or local media] --> B{YouTube captions available?}
+    B -->|yes| C[Acquire captions]
     B -->|no / local / --force-stt| D[Audio -> STT faster-whisper]
-    C --> E[Visual: ffmpeg keyframes / scene cuts]
+    C --> E[Visual evidence: ffmpeg keyframes / scene cuts]
     D --> E
-    E --> F[Dedup: histogram / SSIM]
+    E --> F[Deduplicate frames: histogram / SSIM]
     F --> G[OCR unless --skip-ocr]
-    G --> H[Synthesize: transcript.md / notes.md / frames/ / coverage.json]
-    H --> I{Completeness gate}
-    I -->|pass| J[Done]
-    I -->|fail · exit 2| K[Fix the gap, then retry]
-    K --> H
+    G --> H[lectural extract: evidence.json + transcript.md + frames/]
+    H --> I{Generate notes?}
+    I -->|yes| J[lectural notes: synthesis_input.json + notes.md + coverage.json]
+    I -->|no| K[Evidence bundle]
+    L[Existing evidence bundle] --> J
+    J --> M{Completeness gate}
+    M -->|pass| N[Done]
+    M -->|fail · exit 2| O[Fix the gap, then retry]
+    O --> J
 ```
 
 Local `.wav` skips the visual path. Local video/audio never use yt-dlp.
@@ -75,8 +79,8 @@ It installs the Python run dependencies → checks/repairs `ffmpeg` and `yt-dlp`
 Or run the CLI directly without Claude Code (ffmpeg must be installed separately):
 
 ```bash
-uvx --from ".[run]" lectural "https://youtu.be/<VIDEO_ID>" --out ./output
-uvx --from ".[run]" lectural ./recording.mp4 --skip-ocr --out ./output
+uvx --from ".[run]" lectural notes "https://youtu.be/<VIDEO_ID>" --out ./output
+uvx --from ".[run]" lectural notes ./recording.mp4 --skip-ocr --out ./output
 ```
 
 For machine-readable extraction, negotiate the contract and use a new output directory:
@@ -93,9 +97,11 @@ See [`docs/contracts/cli.md`](docs/contracts/cli.md) for the public contract and
 | Command | Description |
 |---------|-------------|
 | `/lectural:setup` | Prepare and verify the runtime (first run) |
-| `/lectural:notes <source> [options]` | Turn a video or audio source into deterministic evidence as complete markdown notes |
+| `/lectural:notes <source> [options]` | Turn a media source into evidence and complete markdown notes |
+| `lectural notes <input>... [options]` | Generate notes from sources or regenerate notes from evidence bundles |
+| `lectural extract <source> --out <dir> --json` | Extract a versioned evidence bundle without generating notes |
 
-Options: `--force-stt` (ignore captions, force STT), `--model medium|small` (STT model size), `--out ./output` (output location), `--keep-frames`, `--skip-ocr` (keep scene frames, skip OCR). Pass multiple YouTube URLs/IDs or existing `.mp4`/`.webm`/`.mkv`/`.wav` files to process them sequentially.
+For `notes`, `--out ./output` sets the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` apply only to sources and are rejected for evidence-bundle inputs. Bundles are regenerated in place. Source inputs and bundles can be processed sequentially.
 
 The commands run **only on explicit request** (they do not auto-trigger on a stray YouTube link). At session end, the Stop hook re-verifies note completeness.
 
@@ -103,6 +109,7 @@ The commands run **only on explicit request** (they do not auto-trigger on a str
 
 ```text
 output/<video-title>/
+├── evidence.json          # extracted speech, frame, and completeness evidence
 ├── transcript.md          # raw timestamped transcript — every utterance
 ├── notes.md               # study notes: seven sections + source-appropriate citations
 ├── frames/                # scene images (video sources)
@@ -110,7 +117,7 @@ output/<video-title>/
 └── synthesis_input.json   # text input used to enrich the notes
 ```
 
-`lectural extract ... --json` additionally writes `evidence.json` in its new output directory.
+`lectural extract ... --json` creates the evidence bundle only. `lectural notes <source>` creates the bundle and notes; `lectural notes <bundle-dir>` regenerates notes from its existing `evidence.json` in place.
 
 ## FAQ
 

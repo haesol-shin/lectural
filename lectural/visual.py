@@ -315,8 +315,8 @@ def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_
     # Keep scene-change frames OR a steady low-fps sample, whichever fires.
     vf = f"select='gt(scene,0.3)+eq(pict_type,I)',fps={fps}"
     subprocess.run(
-        ["ffmpeg", "-i", video_path, "-vf", vf, "-vsync", "vfr",
-         "-frame_pts", "1", pattern],
+        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
+         "-i", video_path, "-vf", vf, "-vsync", "vfr", "-frame_pts", "1", pattern],
         check=True,
     )
     frames: list[Frame] = []
