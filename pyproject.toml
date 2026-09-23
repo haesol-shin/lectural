@@ -1,6 +1,6 @@
 [project]
 name = "lectural"
-version = "0.2.0"
+version = "0.3.0"
 description = "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene."
 readme = "README.md"
 license = "MIT"
