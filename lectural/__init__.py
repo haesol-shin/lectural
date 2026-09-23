@@ -25,4 +25,4 @@ __all__ = [
     "EXTRACTION_SCHEMA_VERSION",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

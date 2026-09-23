@@ -4,11 +4,25 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-24
+
 ### Documentation
-- The README leads with CLI and PyPI installation, separates optional notes from the quick start, and uses absolute links for PyPI rendering.
-- New `docs/agents.md` covers Claude Code, Codex, and other skill-aware agents.
-- The shared skill links to the CLI contract and uses the plugin's locked runtime in Claude Code; plugin descriptions now lead with evidence rather than notes.
-- The provisional product-identity draft was removed.
+- The PyPI description now presents CLI and PyPI installation, an extraction-first quick start, optional study notes, and a versioned evidence example with links that render on PyPI.
+- New `docs/agents.md` covers Claude Code, Codex, and other skill-aware agents; the shared skill uses the plugin's locked runtime in Claude Code.
+- The provisional product-identity draft was removed, and plugin descriptions now lead with evidence rather than notes.
+
+### Compatibility
+- Documentation-only release: the CLI, evidence contract version 2, and Korean notes output are unchanged from v0.3.0.
+
+### Upgrade
+- Install `lectural[run]==0.3.1` with pip, or run `uv tool upgrade lectural` for an existing uv tool installation.
+
+### Known limitations
+- Caption usability and fallback behavior remain under #23; `[run]` still installs overlapping OpenCV providers (#29).
+- `query` and interval evidence are not yet available.
+
+### Rollback
+- Reinstall `lectural[run]==0.3.0` to return local installations to the previous version; published release pages remain immutable.
 
 ## [0.3.0] - 2026-09-23
 
@@ -104,7 +118,8 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 - `lectural doctor [--fix] [--json]` runtime check and bounded auto-repair.
 - Two-layer completeness gate: CLI exit code (structure) plus Stop hook (citations, enrichment, per-slide checks).
 
-[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/haesol-shin/lectural/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/haesol-shin/lectural/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/haesol-shin/lectural/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/haesol-shin/lectural/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/haesol-shin/lectural/compare/v0.1.1...v0.1.2
