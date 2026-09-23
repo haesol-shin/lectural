@@ -24,4 +24,4 @@ LecturAL releases are lightweight GitHub Releases driven by the annotated versio
 
 The release workflow checks the tag version against all three version sources, extracts the matching `## [X.Y.Z]` section from `CHANGELOG.md` as the GitHub Release body, and publishes the release. If the tag version disagrees with any source, or the `CHANGELOG.md` section is missing, the workflow fails — so the curated changelog entry is the release notes (write it before tagging; do not hand-author a separate release description). Include `Compatibility`, `Known limitations`, and `Rollback` subsections alongside the Keep a Changelog categories.
 
-Do not run a build, npm publish, or a separate QA readiness document for this project.
+The release workflow builds the source distribution and wheel, attaches them to the GitHub Release, and publishes the package to PyPI through Trusted Publishing. One-time prerequisites are a PyPI publisher registered for owner `haesol-shin`, repository `lectural`, workflow `release.yml`, and environment `pypi`, plus a GitHub environment named `pypi`.

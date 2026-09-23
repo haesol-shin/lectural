@@ -4,6 +4,9 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+### Added
+- Tagged releases build the sdist and wheel, attach them to the GitHub Release, and publish them to PyPI through Trusted Publishing. The wheel no longer ships the `lectural_bench` benchmark package.
+
 ## [0.2.0] - 2026-09-23
 
 ### Added

@@ -3,10 +3,23 @@ name = "lectural"
 version = "0.2.0"
 description = "Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: every utterance, every on-screen text, every scene."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.13"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 # Heavy runtime deps are imported lazily inside functions so the package
 # imports and unit-tests run offline without these installed.
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/haesol-shin/lectural"
+Repository = "https://github.com/haesol-shin/lectural"
+Changelog = "https://github.com/haesol-shin/lectural/blob/main/CHANGELOG.md"
+Issues = "https://github.com/haesol-shin/lectural/issues"
 
 [project.optional-dependencies]
 # Install with: pip install "lectural[run]"
@@ -58,11 +71,12 @@ constraint-dependencies = [
 lectural = "lectural.cli:main"
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["lectural*"]
+exclude = ["lectural_bench*"]
 
 [tool.pytest.ini_options]
 markers = [
