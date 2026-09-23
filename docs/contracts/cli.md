@@ -30,7 +30,7 @@ Both JSON commands return one object with:
   "schema_version": 1,
   "contract_version": 1,
   "tool": "lectural",
-  "tool_version": "0.1.2",
+  "tool_version": "0.2.0",
   "status": "ok",
   "result": {},
   "errors": [],
