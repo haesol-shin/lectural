@@ -82,7 +82,7 @@ def _notes_text(hook, *, frame_link: bool = False) -> str:
 
 
 def _transcript_text() -> str:
-    return '# 강의 정리 — 전체 전사본 (raw)\n\n<a id="t000002"></a> [00:00:02] 핵심 설명\n'
+    return '# Lecture — Full transcript (raw)\n\n<a id="t000002"></a> [00:00:02] 핵심 설명\n'
 
 
 def _set_runstate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runs: list[dict]) -> Path:

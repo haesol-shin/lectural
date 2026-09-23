@@ -178,6 +178,7 @@ def acquire_speech(
 
     source_meta = source.as_dict()
     fallback_reason: str | None = None
+    fallback_code: str | None = "local_source" if source.kind is not SourceKind.YOUTUBE else None
     if source.kind is SourceKind.YOUTUBE and not force_stt:
         video_id = source.video_id
         if not video_id:
@@ -194,13 +195,11 @@ def acquire_speech(
                         "input_source": source_meta,
                     },
                 )
+            fallback_code = "captions_unusable"
             fallback_reason = f"captions present but unusable ({len(segs)} cues)"
-        except Exception as exc:  # noqa: BLE001
-            # youtube-transcript-api raises several distinct types
-            # (NoTranscriptFound, TranscriptsDisabled, network errors) that
-            # cannot be imported without the optional dep, so we catch broadly
-            # here -- but the reason is preserved and surfaced, never discarded.
-            fallback_reason = f"caption fetch failed: {type(exc).__name__}: {exc}"
+        except Exception:  # noqa: BLE001
+            fallback_code = "captions_unavailable"
+            fallback_reason = "caption retrieval failed"
         warnings.warn(
             f"Captions unavailable; falling back to CPU STT. Reason: {fallback_reason}",
             RuntimeWarning,
@@ -209,6 +208,7 @@ def acquire_speech(
     elif source.kind not in (SourceKind.YOUTUBE, SourceKind.LOCAL_VIDEO, SourceKind.LOCAL_AUDIO):
         raise ValueError(f"Unsupported source kind: {source.kind!r}")
     elif force_stt and source.kind is SourceKind.YOUTUBE:
+        fallback_code = "forced_stt"
         fallback_reason = "force_stt requested"
         warnings.warn(
             f"Captions unavailable; falling back to CPU STT. Reason: {fallback_reason}",
@@ -229,4 +229,6 @@ def acquire_speech(
         track.meta.setdefault("video_id", source.video_id)
     if fallback_reason is not None:
         track.meta["caption_fallback_reason"] = fallback_reason
+    if fallback_code is not None:
+        track.meta["fallback_code"] = fallback_code
     return track

@@ -22,9 +22,6 @@ def test_output_dir_for():
     assert cli.output_dir_for("./output", "OS Lecture") == os.path.join("./output", "OS-Lecture")
 
 
-def test_frame_link_is_posix_separated():
-    image = os.path.join("output", "lecture", "frames", "frame_00001.png")
-    assert cli._frame_link(image, os.path.join("output", "lecture")) == "frames/frame_00001.png"
 
 
 def test_parse_args_single_and_mixed_batch():
@@ -169,9 +166,9 @@ def _install_default_processor_fakes(
     return calls
 
 
-def test_default_youtube_processor_uses_ocr_and_youtube_citation(monkeypatch, tmp_path):
+def test_extract_then_notes_youtube_uses_ocr_and_youtube_citation(monkeypatch, tmp_path):
     calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="운영체제 1강", duration=120.0, source_kind=SourceKind.YOUTUBE)
-    result = cli._default_processor("https://youtu.be/dQw4w9WgXcQ", str(tmp_path / "video_01"), False, "tiny")
+    result = cli._extract_then_notes_processor("https://youtu.be/dQw4w9WgXcQ", str(tmp_path / "video_01"), False, "tiny")
     out = Path(result["output_dir"])
     assert result["output_dir"] == str(tmp_path / "운영체제-1강")
     assert calls[0][1].kind is SourceKind.YOUTUBE
@@ -183,12 +180,12 @@ def test_default_youtube_processor_uses_ocr_and_youtube_citation(monkeypatch, tm
     assert "영상 딥링크" in (out / "notes.md").read_text(encoding="utf-8")
 
 
-def test_local_video_skip_ocr_keeps_deduplicated_frames_and_disables_only_ocr(monkeypatch, tmp_path):
+def test_extract_then_notes_local_video_skip_ocr_keeps_deduplicated_frames(monkeypatch, tmp_path):
     calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO)
     monkeypatch.setattr("lectural.ocr.ocr_frames", lambda *_args: (_ for _ in ()).throw(AssertionError("OCR called")))
     source_path = tmp_path / "deck.mp4"
     source_path.write_bytes(b"source")
-    result = cli._default_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
+    result = cli._extract_then_notes_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
     out = Path(result["output_dir"])
     handoff = json.loads((out / "synthesis_input.json").read_text(encoding="utf-8"))
     coverage_payload = json.loads((out / "coverage.json").read_text(encoding="utf-8"))
@@ -217,11 +214,12 @@ def test_reliability_gates_synthesis_but_preserves_evidence(monkeypatch, tmp_pat
         return frames, "paddleocr"
 
     monkeypatch.setattr("lectural.ocr.ocr_frames", fake_ocr)
-    result = cli._default_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny")
+    result = cli._extract_then_notes_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny")
     handoff = json.loads((Path(result["output_dir"]) / "synthesis_input.json").read_text(encoding="utf-8"))
+    frames = result["manifest"]["frames"]
     assert all(not slide["ocr_text"] for slide in handoff["slides"])
-    assert all(frame["reliable"] is False for frame in result["representative_frames"])
-    assert all(frame["ocr_text"] for frame in result["representative_frames"])
+    assert all(frame["ocr"]["reliable"] is False for frame in frames)
+    assert all(frame["ocr"]["text"] for frame in frames)
     assert calls[0][1].kind is SourceKind.LOCAL_VIDEO
 
 
@@ -230,7 +228,7 @@ def test_local_wav_processor_skips_visual_and_has_not_applicable_scene(monkeypat
     path.write_bytes(b"source")
     _install_default_processor_fakes(monkeypatch, tmp_path, title="recording", duration=30.0, source_kind=SourceKind.LOCAL_AUDIO)
     monkeypatch.setattr(visual, "extract_candidate_frames", lambda *_args: (_ for _ in ()).throw(AssertionError("visual called")))
-    result = cli._default_processor(str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
+    result = cli._extract_then_notes_processor(str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
     out = Path(result["output_dir"])
     coverage_payload = json.loads((out / "coverage.json").read_text(encoding="utf-8"))
     assert coverage_payload["scene_coverage"]["visual_required"] is False
@@ -259,8 +257,7 @@ def test_local_wav_processor_keeps_visual_coverage_not_applicable_without_durati
         "extract_candidate_frames",
         lambda *_args: (_ for _ in ()).throw(AssertionError("visual called")),
     )
-
-    result = cli._default_processor(
+    result = cli._extract_then_notes_processor(
         str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
     )
     coverage_payload = json.loads(
@@ -294,8 +291,7 @@ def test_default_video_processor_uses_valid_stt_duration_when_metadata_is_unusab
     )
     source_path = tmp_path / "deck.mp4"
     source_path.write_bytes(b"source")
-
-    result = cli._default_processor(
+    result = cli._extract_then_notes_processor(
         str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
     )
     coverage_payload = json.loads(
@@ -325,8 +321,7 @@ def test_default_video_processor_fails_closed_when_both_durations_are_invalid(
     )
     source_path = tmp_path / "deck.mp4"
     source_path.write_bytes(b"source")
-
-    result = cli._default_processor(
+    result = cli._extract_then_notes_processor(
         str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
     )
     coverage_payload = json.loads(

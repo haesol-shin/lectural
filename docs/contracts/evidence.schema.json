@@ -1,63 +1,126 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/evidence.schema.json",
-  "title": "LecturAL extraction response and evidence manifest",
+  "title": "LecturAL extraction evidence contract v2",
   "type": "object",
-  "required": ["schema_version", "contract_version", "tool", "tool_version", "source", "source_kind", "status", "artifacts", "extraction", "representative_frames", "failure"],
+  "required": ["schema_version", "contract_version", "tool", "tool_version", "generated_at", "source", "speech", "transcript", "frames", "artifacts", "extraction", "resources", "failure"],
   "properties": {
-    "schema_version": {"const": 1},
-    "contract_version": {"const": 1},
+    "schema_version": {"const": 2},
+    "contract_version": {"const": 2},
     "tool": {"const": "lectural"},
     "tool_version": {"type": "string", "minLength": 1},
     "generated_at": {"type": "string", "format": "date-time"},
     "source": {"$ref": "#/$defs/source"},
-    "source_kind": {"enum": ["youtube", "local_video", "local_audio"]},
-    "status": {"enum": ["pass", "warn", "fail"]},
-    "extraction_status": {"enum": ["pass", "warn", "fail"]},
+    "speech": {"$ref": "#/$defs/speech"},
+    "transcript": {"$ref": "#/$defs/transcript"},
+    "frames": {"type": "array", "items": {"$ref": "#/$defs/frame"}},
     "artifacts": {"$ref": "#/$defs/artifacts"},
     "extraction": {"$ref": "#/$defs/extraction"},
-    "representative_frames": {"type": "array", "items": {"$ref": "#/$defs/frame"}},
+    "resources": {"$ref": "#/$defs/resources"},
     "failure": {"anyOf": [{"$ref": "#/$defs/failure"}, {"type": "null"}]}
   },
+  "additionalProperties": false,
   "$defs": {
     "source": {
       "type": "object",
-      "required": ["kind", "argument", "has_video", "citation"],
+      "required": ["id", "kind", "argument", "title", "duration_sec", "has_video", "resolution", "citation"],
       "properties": {
+        "id": {"type": "string", "pattern": "^(sha256:[0-9a-f]{64}|youtube:[A-Za-z0-9_-]{11})$"},
         "kind": {"enum": ["youtube", "local_video", "local_audio"]},
-        "argument": {"type": "string"},
+        "argument": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "duration_sec": {"type": "number", "minimum": 0},
         "has_video": {"type": "boolean"},
-        "citation": {"type": "object"},
         "resolution": {
           "type": "object",
+          "required": ["width", "height"],
           "properties": {
             "width": {"type": ["integer", "null"], "minimum": 1},
             "height": {"type": ["integer", "null"], "minimum": 1}
           },
-          "additionalProperties": true
+          "additionalProperties": false
+        },
+        "citation": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {"enum": ["youtube", "transcript"]},
+            "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{11}$"}
+          },
+          "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "path": {"type": ["string", "null"]},
+    "speech": {
+      "type": "object",
+      "required": ["source", "language", "model", "fallback"],
+      "properties": {
+        "source": {"enum": ["caption", "stt"]},
+        "language": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "fallback": {
+          "anyOf": [
+            {"type": "object", "required": ["code"], "properties": {"code": {"enum": ["captions_unavailable", "captions_unusable", "forced_stt", "local_source"]}}, "additionalProperties": false},
+            {"type": "null"}
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "transcript": {
+      "type": "object",
+      "required": ["segments"],
+      "properties": {
+        "segments": {"type": "array", "items": {"$ref": "#/$defs/segment"}}
+      },
+      "additionalProperties": false
+    },
+    "segment": {
+      "type": "object",
+      "required": ["id", "start", "end", "text"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^s[0-9]{4,}$"},
+        "start": {"type": "number", "minimum": 0},
+        "end": {"type": "number", "minimum": 0},
+        "text": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "frame": {
+      "type": "object",
+      "required": ["id", "start", "path", "sha256", "width", "height", "ocr"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^f[0-9]{4,}$"},
+        "start": {"type": "number", "minimum": 0},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "width": {"type": ["integer", "null"], "minimum": 1},
+        "height": {"type": ["integer", "null"], "minimum": 1},
+        "ocr": {
+          "type": "object",
+          "required": ["status", "text", "is_slide", "reliable"],
+          "properties": {
+            "status": {"enum": ["text", "no-text", "skipped", "failed"]},
+            "text": {"type": ["string", "null"]},
+            "is_slide": {"type": "boolean"},
+            "reliable": {"type": ["boolean", "null"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "artifacts": {
       "type": "object",
-      "required": ["output_dir", "evidence", "transcript", "notes", "synthesis_input", "coverage", "frames_dir"],
+      "required": ["evidence", "transcript", "frames_dir", "output_dir"],
       "properties": {
-        "output_dir": {"type": "string"},
-        "evidence": {"type": "string"},
-        "evidence_json": {"type": "string"},
-        "transcript": {"type": "string"},
-        "transcript_md": {"type": "string"},
-        "notes": {"type": "string"},
-        "notes_md": {"type": "string"},
-        "synthesis_input": {"type": "string"},
-        "synthesis_input_json": {"type": "string"},
-        "coverage": {"type": "string"},
-        "coverage_json": {"type": "string"},
-        "frames_dir": {"$ref": "#/$defs/path"}
+        "evidence": {"type": "string", "minLength": 1},
+        "transcript": {"type": "string", "minLength": 1},
+        "frames_dir": {"type": ["string", "null"]},
+        "output_dir": {"type": "string", "minLength": 1}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "failure": {
       "type": "object",
@@ -72,7 +135,10 @@
     "completeness": {
       "type": "object",
       "required": ["status", "pass"],
-      "properties": {"status": {"type": "string"}, "pass": {"type": "boolean"}},
+      "properties": {
+        "status": {"type": "string"},
+        "pass": {"type": "boolean"}
+      },
       "additionalProperties": true
     },
     "extraction": {
@@ -88,37 +154,37 @@
           "type": "object",
           "required": ["status", "engine", "annotation_only"],
           "properties": {
-            "status": {"enum": ["skipped", "completed-no-text", "completed-with-text", "failed"]},
+            "status": {"enum": ["skipped", "completed-no-text", "completed-with-text", "failed", "not_applicable"]},
             "engine": {"type": "string"},
             "annotation_only": {"const": true}
           },
           "additionalProperties": true
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
-    "frame": {
+    "resources": {
       "type": "object",
-      "required": ["timestamp_sec", "path", "ocr"],
+      "required": ["wall_sec", "stages", "peak_rss_mb", "artifact_bytes", "frames_candidate", "frames_retained"],
       "properties": {
-        "timestamp_sec": {"type": "number", "minimum": 0},
-        "path": {"type": "string"},
-        "width": {"type": ["integer", "null"], "minimum": 1},
-        "height": {"type": ["integer", "null"], "minimum": 1},
-        "ocr": {
+        "wall_sec": {"type": "number", "minimum": 0},
+        "stages": {
           "type": "object",
-          "required": ["status", "text", "is_slide"],
+          "required": ["speech", "frames", "dedupe", "ocr"],
           "properties": {
-            "status": {"enum": ["skipped", "text", "no-text", "failed"]},
-            "text": {"type": ["string", "null"]},
-            "is_slide": {"type": "boolean"},
-            "reliable": {"type": ["boolean", "null"]}
+            "speech": {"type": "number", "minimum": 0},
+            "frames": {"type": "number", "minimum": 0},
+            "dedupe": {"type": "number", "minimum": 0},
+            "ocr": {"type": "number", "minimum": 0}
           },
-          "additionalProperties": true
-        }
+          "additionalProperties": false
+        },
+        "peak_rss_mb": {"type": ["number", "null"], "minimum": 0},
+        "artifact_bytes": {"type": "integer", "minimum": 0},
+        "frames_candidate": {"type": "integer", "minimum": 0},
+        "frames_retained": {"type": "integer", "minimum": 0}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
-  },
-  "additionalProperties": true
+  }
 }

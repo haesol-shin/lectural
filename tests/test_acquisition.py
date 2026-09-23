@@ -93,6 +93,7 @@ def test_youtube_forced_stt_warns_and_forwards_model(monkeypatch, tmp_path):
     assert track.meta["audio_path"] == audio_path
     assert track.meta["caption_fallback_reason"] == "force_stt requested"
     assert track.meta["video_id"] == "dQw4w9WgXcQ"
+    assert track.meta["fallback_code"] == "forced_stt"
 
 
 def test_unusable_youtube_captions_preserve_fallback_reason(monkeypatch, tmp_path):
@@ -103,6 +104,7 @@ def test_unusable_youtube_captions_preserve_fallback_reason(monkeypatch, tmp_pat
     with pytest.warns(RuntimeWarning, match="captions present but unusable"):
         track = acquisition.acquire_speech(source, str(tmp_path))
     assert track.meta["caption_fallback_reason"] == "captions present but unusable (1 cues)"
+    assert track.meta["fallback_code"] == "captions_unusable"
 
 
 @pytest.mark.parametrize("filename", ["lecture.mp4", "recording.wav"])
@@ -125,3 +127,4 @@ def test_local_sources_directly_select_stt_without_caption_warning(monkeypatch, 
     assert track.meta["audio_path"] == audio_path
     assert track.meta["source_kind"] == source.kind.value
     assert track.meta["input_source"]["citation"] == {"kind": "transcript"}
+    assert track.meta["fallback_code"] == "local_source"

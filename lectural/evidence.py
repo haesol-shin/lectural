@@ -31,13 +31,12 @@ _FAILURE_MESSAGES = {
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
     "SOURCE_INVALID": "The source is not a supported YouTube URL or local media file.",
     "SOURCE_UNAVAILABLE": "The source could not be accessed for extraction.",
-    "OCR_FAILED": "Requested OCR failed; representative frames were retained when available.",
+    "OCR_FAILED": "Requested OCR failed; visual evidence frames were retained when available.",
     "TIMESTAMP_INVALID": "Extraction produced invalid or inconsistent timestamps.",
     "SPEECH_INCOMPLETE": "Speech coverage contains an untranscribed interval.",
     "VISUAL_INCOMPLETE": "Visual timeline coverage contains an uncovered interval.",
     "OCR_INCOMPLETE": "OCR did not annotate every required slide frame.",
     "ARTIFACT_INCOMPLETE": "A required extraction artifact is missing or empty.",
-    "NOTES_CONTRACT_INVALID": "The deterministic notes contract is incomplete.",
     "EXTRACTION_FAILED": "Extraction could not produce a complete evidence bundle.",
     "CONTRACT_INTERNAL": "LecturAL could not produce a safe extraction response.",
 }
@@ -109,25 +108,41 @@ def _finite_timestamp(value: object, duration: float) -> bool:
 def timestamp_integrity(
     duration_sec: object,
     transcript_segments: Iterable[dict],
-    representative_frames: Iterable[dict],
+    frames: Iterable[dict],
     *,
     allow_unknown_duration: bool = False,
 ) -> dict:
-    """Validate all public time references without interpreting their content."""
+    """Validate public segment intervals and frame start timestamps."""
     try:
         duration = float(duration_sec)
     except (TypeError, ValueError):
         duration = 0.0
     duration_valid = math.isfinite(duration) and duration > 0
     segments = list(transcript_segments)
-    frames = list(representative_frames)
-    segment_ok = all(_finite_timestamp(item.get("t"), duration) for item in segments)
-    frame_ok = all(_finite_timestamp(item.get("timestamp_sec"), duration) for item in frames)
+    frame_items = list(frames)
+    segment_ok = True
+    for item in segments:
+        try:
+            start = float(item.get("start"))
+            end = float(item.get("end"))
+        except (TypeError, ValueError):
+            segment_ok = False
+            break
+        if not (
+            math.isfinite(start)
+            and math.isfinite(end)
+            and start >= 0
+            and start <= end
+            and (not duration > 0 or end <= duration + 0.001)
+        ):
+            segment_ok = False
+            break
+    frame_ok = all(_finite_timestamp(item.get("start"), duration) for item in frame_items)
     frame_ordered = all(
-        float(frames[i - 1].get("timestamp_sec")) <= float(frames[i].get("timestamp_sec"))
-        for i in range(1, len(frames))
-        if _finite_timestamp(frames[i - 1].get("timestamp_sec"), duration)
-        and _finite_timestamp(frames[i].get("timestamp_sec"), duration)
+        float(frame_items[index - 1]["start"]) <= float(frame_items[index]["start"])
+        for index in range(1, len(frame_items))
+        if _finite_timestamp(frame_items[index - 1].get("start"), duration)
+        and _finite_timestamp(frame_items[index].get("start"), duration)
     )
     issues: list[str] = []
     if not duration_valid and not allow_unknown_duration:
@@ -145,35 +160,24 @@ def timestamp_integrity(
         "duration_sec": round(duration, 3) if math.isfinite(duration) else 0.0,
         "duration_known": duration_valid,
         "transcript_segments": {"count": len(segments), "valid": segment_ok},
-        "representative_frames": {"count": len(frames), "valid": frame_ok, "ordered": frame_ordered},
+        "frames": {"count": len(frame_items), "valid": frame_ok, "ordered": frame_ordered},
         "issues": issues,
     }
 
 
 def _artifact_paths(output_dir: str, paths: dict[str, str | None]) -> dict[str, str | None]:
     result: dict[str, str | None] = {}
-    for name, path in paths.items():
+    for name in ("evidence", "transcript", "frames_dir", "output_dir"):
+        path = paths.get(name)
         if path is None:
             result[name] = None
-            continue
-        result[name] = assert_contained(output_dir, path)
-    # The explicit *_md/*_json aliases make the public shape readable while
-    # keeping the short names used in consumer code stable.
-    aliases = {
-        "transcript": "transcript_md",
-        "notes": "notes_md",
-        "synthesis_input": "synthesis_input_json",
-        "coverage": "coverage_json",
-        "evidence": "evidence_json",
-    }
-    for short, long_name in aliases.items():
-        if long_name in result:
-            result[short] = result[long_name]
+        else:
+            result[name] = assert_contained(output_dir, path)
     return result
 
 
 def _safe_source(source: dict) -> dict:
-    """Defensively remove a raw source argument before writing public JSON."""
+    """Return the public source identity and bounded display metadata."""
     kind = source.get("kind")
     citation = source.get("citation") if isinstance(source.get("citation"), dict) else {}
     safe_citation = {"kind": citation.get("kind")}
@@ -185,40 +189,29 @@ def _safe_source(source: dict) -> dict:
         argument = os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
     raw_resolution = source.get("resolution")
     resolution = raw_resolution if isinstance(raw_resolution, dict) else {}
+
     def _dimension(value: object) -> int | None:
         return value if isinstance(value, int) and value > 0 else None
+
+    duration = source.get("duration_sec")
+    try:
+        duration_value = float(duration)
+    except (TypeError, ValueError):
+        duration_value = 0.0
+    if not math.isfinite(duration_value) or duration_value < 0:
+        duration_value = 0.0
     return {
+        "id": str(source.get("id") or ""),
         "kind": kind,
         "argument": argument,
+        "title": str(source.get("title") or "Untitled"),
+        "duration_sec": round(duration_value, 3),
         "has_video": bool(source.get("has_video", kind in {"youtube", "local_video"})),
-        "citation": safe_citation,
         "resolution": {"width": _dimension(resolution.get("width")), "height": _dimension(resolution.get("height"))},
+        "citation": safe_citation,
     }
 
 
-def completeness_from_coverage(coverage: dict) -> tuple[dict, dict]:
-    gap = coverage.get("gap_check", {})
-    scene = coverage.get("scene_coverage", {})
-    speech_pass = bool(gap.get("pass"))
-    speech = {
-        "status": "pass" if speech_pass else "fail",
-        "pass": speech_pass,
-        "max_untranscribed_speech_gap_sec": gap.get("max_untranscribed_speech_gap_sec", 0),
-        "threshold_sec": gap.get("threshold_sec"),
-    }
-    if not scene.get("visual_required", True):
-        visual = {"status": "not-applicable", "pass": True, "timeline_pass": True}
-    else:
-        visual_pass = bool(scene.get("timeline_pass"))
-        visual = {
-            "status": "pass" if visual_pass else "fail",
-            "pass": visual_pass,
-            "timeline_pass": visual_pass,
-            "speech_bins": scene.get("speech_bins", []),
-            "covered_speech_bins": scene.get("covered_speech_bins", []),
-            "uncovered_speech_bins": scene.get("uncovered_speech_bins", []),
-        }
-    return speech, visual
 
 
 def build_version_response() -> dict:
@@ -252,58 +245,46 @@ def build_evidence_manifest(
     source: dict,
     output_dir: str,
     paths: dict[str, str | None],
-    coverage: dict,
     transcript_segments: list[dict],
-    representative_frames: list[dict],
+    frames: list[dict],
+    speech: dict,
+    speech_completeness: dict,
+    visual_completeness: dict,
+    timestamp_integrity_result: dict,
     ocr_status: str,
     ocr_engine: str,
     extraction_status: str,
     reasons: list[dict],
+    resources: dict,
     failure_info: dict | None = None,
 ) -> dict:
-    """Build the public manifest using only safe, output-contained paths."""
+    """Build the v2 public manifest using only safe, output-contained paths."""
     safe_paths = _artifact_paths(output_dir, paths)
-    source = _safe_source(source)
+    safe_source = _safe_source(source)
     checked_frames: list[dict] = []
-    for frame in representative_frames:
+    for frame in frames:
         path = assert_contained(output_dir, str(frame["path"]))
-        text = str(frame.get("ocr_text") or "")
-        annotation_status = "text" if text else "no-text"
-        if ocr_status == "skipped":
-            annotation_status = "skipped"
-        elif ocr_status == "failed":
-            annotation_status = "failed"
-        checked_frames.append(
-            {
-                "timestamp_sec": round(float(frame["timestamp_sec"]), 3),
-                "path": path,
-                "ocr": {
-                    "status": annotation_status,
-                    "text": text or None,
-                    "is_slide": bool(frame.get("is_slide", False)),
-                    "reliable": frame.get("reliable"),
-                },
-                "width": frame.get("width"),
-                "height": frame.get("height"),
-            }
-        )
-
-    timestamp = timestamp_integrity(
-        coverage.get("duration_sec", 0),
-        transcript_segments,
-        checked_frames,
-        allow_unknown_duration=not bool(source.get("has_video", True)),
-    )
-    speech, visual = completeness_from_coverage(coverage)
-    if not timestamp["pass"] and not any(item.get("code") == "TIMESTAMP_INVALID" for item in reasons):
-        reasons = [*reasons, reason("TIMESTAMP_INVALID")]
+        checked_frames.append({
+            "id": str(frame["id"]),
+            "start": round(float(frame["start"]), 3),
+            "path": path,
+            "sha256": str(frame["sha256"]),
+            "width": frame.get("width"),
+            "height": frame.get("height"),
+            "ocr": {
+                "status": frame["ocr"]["status"],
+                "text": frame["ocr"].get("text"),
+                "is_slide": bool(frame["ocr"].get("is_slide")),
+                "reliable": frame["ocr"].get("reliable"),
+            },
+        })
 
     extraction = {
         "status": extraction_status,
-        "reasons": reasons,
-        "speech_completeness": speech,
-        "visual_completeness": visual,
-        "timestamp_integrity": timestamp,
+        "reasons": list(reasons),
+        "speech_completeness": speech_completeness,
+        "visual_completeness": visual_completeness,
+        "timestamp_integrity": timestamp_integrity_result,
         "ocr": {
             "status": ocr_status,
             "engine": ocr_engine,
@@ -316,21 +297,21 @@ def build_evidence_manifest(
         "tool": "lectural",
         "tool_version": __version__,
         "generated_at": utc_now(),
-        "source": source,
-        "source_kind": source.get("kind"),
-        "status": extraction_status,
+        "source": safe_source,
+        "speech": speech,
+        "transcript": {"segments": transcript_segments},
+        "frames": checked_frames,
         "artifacts": safe_paths,
         "extraction": extraction,
-        "representative_frames": checked_frames,
+        "resources": resources,
         "failure": failure_info,
     }
 
-
 def build_extract_response(evidence: dict) -> dict:
-    """Wrap an evidence manifest in the common JSON CLI envelope."""
-    status = evidence.get("status")
+    """Wrap a v2 evidence manifest in the common JSON CLI envelope."""
+    status = (evidence.get("extraction") or {}).get("status")
     envelope_status = {"pass": "ok", "warn": "partial", "fail": "error"}.get(status, "error")
-    error_list = [] if status == "pass" else list(evidence.get("extraction", {}).get("reasons", []))
+    error_list = [] if status == "pass" else list((evidence.get("extraction") or {}).get("reasons", []))
     return {
         "schema_version": EXTRACTION_SCHEMA_VERSION,
         "contract_version": EXTRACTION_CONTRACT_VERSION,
@@ -344,14 +325,18 @@ def build_extract_response(evidence: dict) -> dict:
 
 
 def build_failure_response(code: str, *, output_dir: str | None = None, source: dict | None = None) -> dict:
-    """Build a JSON response for failures that happen before a manifest exists."""
+    """Build a bounded response when extraction fails before a v2 manifest."""
     item = failure(code)
     result = {
         "contract_version": EXTRACTION_CONTRACT_VERSION,
-        "source": source,
-        "source_kind": (source or {}).get("kind"),
-        "output_dir": output_dir,
-        "extraction_status": "fail",
+        "source": _safe_source(source) if source else None,
+        "artifacts": {
+            "evidence": os.path.join(output_dir, "evidence.json") if output_dir else None,
+            "transcript": os.path.join(output_dir, "transcript.md") if output_dir else None,
+            "frames_dir": None,
+            "output_dir": output_dir,
+        },
+        "extraction": {"status": "fail", "reasons": [reason(code)]},
         "failure": item,
     }
     return {

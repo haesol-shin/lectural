@@ -1,18 +1,79 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/haesol-shin/lectural/blob/main/docs/contracts/extract.schema.json",
-  "title": "LecturAL extract JSON response",
+  "title": "LecturAL extract JSON response v2",
   "type": "object",
   "required": ["schema_version", "contract_version", "tool", "tool_version", "status", "result", "errors", "generated_at"],
   "properties": {
-    "schema_version": {"const": 1},
-    "contract_version": {"const": 1},
+    "schema_version": {"const": 2},
+    "contract_version": {"const": 2},
     "tool": {"const": "lectural"},
     "tool_version": {"type": "string", "minLength": 1},
     "status": {"enum": ["ok", "partial", "error"]},
-    "result": {"$ref": "evidence.schema.json"},
+    "result": {
+      "anyOf": [
+        {"$ref": "evidence.schema.json"},
+        {"$ref": "#/$defs/failureResult"}
+      ]
+    },
     "errors": {"type": "array", "items": {"$ref": "evidence.schema.json#/$defs/failure"}},
     "generated_at": {"type": "string", "format": "date-time"}
   },
-  "additionalProperties": true
+  "$defs": {
+    "failureResult": {
+      "type": "object",
+      "required": ["contract_version", "source", "artifacts", "extraction", "failure"],
+      "properties": {
+        "contract_version": {"const": 2},
+        "source": {
+          "anyOf": [
+            {"$ref": "#/$defs/failureSource"},
+            {"type": "null"}
+          ]
+        },
+        "artifacts": {
+          "type": "object",
+          "required": ["evidence", "transcript", "frames_dir", "output_dir"],
+          "properties": {
+            "evidence": {"type": ["string", "null"]},
+            "transcript": {"type": ["string", "null"]},
+            "frames_dir": {"type": ["string", "null"]},
+            "output_dir": {"type": ["string", "null"]}
+          },
+          "additionalProperties": false
+        },
+        "extraction": {
+          "type": "object",
+          "required": ["status", "reasons"],
+          "properties": {
+            "status": {"const": "fail"},
+            "reasons": {"type": "array", "items": {"$ref": "evidence.schema.json#/$defs/reason"}}
+          },
+          "additionalProperties": true
+        },
+        "failure": {"$ref": "evidence.schema.json#/$defs/failure"}
+      },
+      "additionalProperties": false
+    },
+    "failureSource": {
+      "type": "object",
+      "required": ["kind", "argument", "has_video", "citation"],
+      "properties": {
+        "kind": {"enum": ["youtube", "local_video", "local_audio"]},
+        "argument": {"type": "string", "minLength": 1},
+        "has_video": {"type": "boolean"},
+        "citation": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {"enum": ["youtube", "transcript"]},
+            "video_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{11}$"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
 }

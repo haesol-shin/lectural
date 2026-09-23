@@ -148,10 +148,9 @@ def assign_segments_to_sections(segments: list[dict], hints: list[dict]) -> dict
 def render_transcript_md(video: dict, segments: list[dict]) -> str:
     """Pure: raw timestamped transcript covering every utterance (AC-7)."""
     title = video.get("title", "Untitled")
-    # ``speech_source`` replaces the former scalar ``source`` in version 2;
-    # retaining the fallback keeps direct legacy renderer callers stable.
     src = video.get("speech_source", video.get("source", "unknown"))
-    lines = [f"# {title} — 전체 전사본 (raw)", "", f"- 소스: {src}", ""]
+    # Keep transcript anchors stable because notes cite them as evidence.
+    lines = [f"# {title} — Full transcript (raw)", "", f"- Source: {src}", ""]
     for s, anchor_id in zip(segments, build_transcript_anchor_ids(segments)):
         lines.append(
             f'<a id="{anchor_id}"></a> '
