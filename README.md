@@ -2,6 +2,8 @@
 
 > A tool that turns a YouTube video, local video, or local audio file into deterministic evidence for video-based work — every utterance, every on-screen text, every scene — available as markdown notes or a versioned JSON contract. Best on lecture and slide-style video.
 
+LecturAL is an evidence compiler: evidence comes first, and notes are one consumer of it. See [Product identity](docs/product-identity.md) for the product boundary, priorities, and feature admission test.
+
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Features

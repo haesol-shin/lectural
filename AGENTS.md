@@ -3,6 +3,8 @@
 ## Purpose
 Turn a YouTube video, local video, or local audio file into deterministic evidence for video-based work: markdown notes (`/lectural:notes`) or a versioned JSON contract (`lectural extract --json`). Best on lecture and slide-style video.
 
+Product boundary and feature admission follow `docs/product-identity.md`: LecturAL is an evidence compiler, and notes are one consumer of the evidence. Before adding a feature, apply its feature admission test (§16).
+
 ## Install & preflight
 Before the first run in a checkout or plugin installation, run:
 
@@ -33,7 +35,7 @@ After a `/lectural:notes` run exits successfully, enrich the prose of `notes.md`
 Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. `--skip-ocr` does not relax speech, timeline, artifact, or citation gates. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
-See `README.md`, the `commands/` slash commands, and `skills/lectural/references/`.
+See `README.md`, `docs/product-identity.md`, the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations
 
