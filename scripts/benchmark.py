@@ -274,11 +274,12 @@ def acquire_speech_with_caption_injection(
     ('usable' | 'unusable' | 'fetch_failure' | 'force_stt'):
       1. Constructs or validates an InputSource with kind=SourceKind.YOUTUBE.
       2. Monkeypatches lectural.acquisition.fetch_caption_segments:
-         - 'usable': returns a verified caption SpeechTrack parsed from fixture VTT.
+         - 'usable': returns a caption SpeechTrack parsed from fixture VTT.
          - 'unusable': returns a near-empty caption SpeechTrack, failing usability heuristic.
          - 'fetch_failure': raises RuntimeError, exercising the fetch failure fallback path.
          - 'force_stt': calls acquire_speech with force_stt=True, bypassing caption fetch.
       3. Monkeypatches lectural.media.resolve_audio to return the fixture's local audio file path.
+      4. Monkeypatches audio language detection to the fixture language.
 
     Uses Python's standard unittest.mock.patch (not pytest's monkeypatch fixture) so that it works
     both in standalone benchmark scripts and inside unit/integration tests.
@@ -329,16 +330,16 @@ def acquire_speech_with_caption_injection(
         languages: tuple[str, ...] = ("ko", "en"),
     ) -> SpeechTrack:
         if caption_variant == "usable":
-            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language"), {"language_verified": True})
+            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language") or "en")
         elif caption_variant == "unusable":
             # Return near-empty / garbage segment list (1 segment, 1 char)
             # which fails captions_are_usable (requires >= 3 segments and >= 20 chars).
-            return SpeechTrack([Segment(t=0.0, text="x")], "caption", gt.get("language"), {"language_verified": True})
+            return SpeechTrack([Segment(t=0.0, text="x")], "caption", gt.get("language") or "en")
         elif caption_variant == "fetch_failure":
             raise RuntimeError(f"Simulated caption fetch failure for video_id={video_id}")
         elif caption_variant == "force_stt":
             # If called, return parsed VTT, but acquire_speech with force_stt=True skips this branch
-            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language"), {"language_verified": True})
+            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language") or "en")
         else:
             raise ValueError(f"Unknown caption_variant: {caption_variant!r}")
 
@@ -353,7 +354,7 @@ def acquire_speech_with_caption_injection(
     if transcribe_mock is not None:
         patches.append(patch("lectural.speech.transcribe_audio", transcribe_mock))
 
-    with patches[0], patches[1]:
+    with patches[0], patches[1], patch("lectural.speech.detect_audio_language", return_value=gt.get("language") or "en"):
         if len(patches) > 2:
             with patches[2]:
                 return acquire_speech(source, str(out_dir), force_stt=force_stt_arg, model=model)

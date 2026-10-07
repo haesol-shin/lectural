@@ -33,6 +33,7 @@ def track(url):
 
 def test_mislabeled_original_falls_back_with_detected_language(monkeypatch, tmp_path):
     downloads = install_listing(monkeypatch, {
+        "language": "ar",
         "automatic_captions": {
             "ar-orig": track("https://captions.invalid/original?lang=ar"),
             "ko": track("https://captions.invalid/translated?tlang=ko"),
@@ -63,7 +64,7 @@ def test_translated_only_tracks_rejected(monkeypatch):
 
 
 @pytest.mark.parametrize("collection,key", [("subtitles", "en"), ("automatic_captions", "en-orig")])
-def test_matching_original_records_language_without_probe(monkeypatch, collection, key):
+def test_matching_original_records_candidate_language(monkeypatch, collection, key):
     downloads = install_listing(monkeypatch, {
         "language": "en-US", collection: {key: track("https://captions.invalid/original?lang=en")},
         "automatic_captions": {"en-orig": track("https://captions.invalid/original?lang=en"), "ko": track("https://captions.invalid/sub?tlang=ko")},
@@ -71,13 +72,13 @@ def test_matching_original_records_language_without_probe(monkeypatch, collectio
     result = acquisition.fetch_caption_segments("synthetic01")
     assert result.source == "caption"
     assert result.language == "en"
-    assert result.meta["language_verified"] is True
+    assert result.meta["metadata_language"] == "en"
     assert len(result.segments) == 3
     assert downloads == ["https://captions.invalid/original?lang=en"]
 
 
 @pytest.mark.parametrize("metadata_language,detected,expected", [
-    (None, "en", None), ("ar", "en", None),
+    (None, "en", None), ("ar", "en", None), ("en", "en", None),
     (None, None, "captions_language_unverified"),
 ])
 def test_probe_verifies_original_or_falls_back(monkeypatch, tmp_path, metadata_language, detected, expected):

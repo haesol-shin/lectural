@@ -158,7 +158,7 @@ def fetch_caption_segments(
     video_id: str, languages: tuple[str, ...] = ("ko", "en"),
     *, spoken_language: str | None = None,
 ) -> SpeechTrack:
-    """Fetch an original track, retaining the language evidence from yt-dlp.
+    """Fetch an original candidate; acquire_speech verifies its language from audio.
 
     Language preferences only break ties; they never authorize a translation.
     """
@@ -191,7 +191,6 @@ def fetch_caption_segments(
         text = response.read().decode("utf-8")
     segments = parse_json3(text) if fmt["ext"] == "json3" else parse_vtt(text)
     return SpeechTrack(segments, "caption", language, {
-        "language_verified": spoken is not None and spoken == language,
         "metadata_language": spoken,
     })
 
@@ -220,23 +219,24 @@ def acquire_speech(
         try:
             caption = fetch_caption_segments(video_id, languages)
             segs = caption.segments
-            if not caption.meta.get("language_verified"):
-                from .speech import detect_audio_language
+            from .speech import detect_audio_language
 
-                audio_path = media.resolve_audio(source, out_dir)
-                detected = detect_audio_language(audio_path, model_size=model)
-                if detected is None:
-                    fallback_code = "captions_language_unverified"
-                    fallback_reason = "spoken language could not be verified"
+            # Uploader metadata can agree with a mislabeled track; only audio
+            # can verify that the caption language matches the spoken language.
+            audio_path = media.resolve_audio(source, out_dir)
+            detected = detect_audio_language(audio_path, model_size=model)
+            if detected is None:
+                fallback_code = "captions_language_unverified"
+                fallback_reason = "spoken language could not be verified"
+            else:
+                if detected != caption.language:
+                    caption = fetch_caption_segments(video_id, languages, spoken_language=detected)
+                    segs = caption.segments
+                if detected != caption.language:
+                    fallback_code = "captions_language_mismatch"
+                    fallback_reason = "original caption label disagrees with spoken language"
                 else:
-                    if detected != caption.language:
-                        caption = fetch_caption_segments(video_id, languages, spoken_language=detected)
-                        segs = caption.segments
-                    if detected != caption.language:
-                        fallback_code = "captions_language_mismatch"
-                        fallback_reason = "original caption label disagrees with spoken language"
-                    else:
-                        caption.language = detected
+                    caption.language = detected
             if fallback_code is None and captions_are_usable(segs):
                 caption.meta.update({
                     "video_id": video_id, "source_kind": source.kind.value,
