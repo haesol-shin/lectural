@@ -274,8 +274,8 @@ def acquire_speech_with_caption_injection(
     ('usable' | 'unusable' | 'fetch_failure' | 'force_stt'):
       1. Constructs or validates an InputSource with kind=SourceKind.YOUTUBE.
       2. Monkeypatches lectural.acquisition.fetch_caption_segments:
-         - 'usable': returns parsed Segments from fixture VTT via lectural.acquisition.parse_vtt.
-         - 'unusable': returns a near-empty/garbage list ([Segment(0.0, "x")]), failing usability heuristic.
+         - 'usable': returns a verified caption SpeechTrack parsed from fixture VTT.
+         - 'unusable': returns a near-empty caption SpeechTrack, failing usability heuristic.
          - 'fetch_failure': raises RuntimeError, exercising the fetch failure fallback path.
          - 'force_stt': calls acquire_speech with force_stt=True, bypassing caption fetch.
       3. Monkeypatches lectural.media.resolve_audio to return the fixture's local audio file path.
@@ -286,7 +286,7 @@ def acquire_speech_with_caption_injection(
     if out_dir is None:
         out_dir = tempfile.gettempdir()
     # Lazy product imports (zero heavy imports at module load time)
-    from lectural.acquisition import Segment, acquire_speech, parse_vtt
+    from lectural.acquisition import Segment, SpeechTrack, acquire_speech, parse_vtt
     from lectural.source import InputSource, SourceKind
 
     caption_variant = str(gt.get("caption_variant", "usable")).lower()
@@ -327,18 +327,18 @@ def acquire_speech_with_caption_injection(
     def _mock_fetch_caption_segments(
         video_id: str,
         languages: tuple[str, ...] = ("ko", "en"),
-    ) -> list[Segment]:
+    ) -> SpeechTrack:
         if caption_variant == "usable":
-            return parse_vtt(vtt_content)
+            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language"), {"language_verified": True})
         elif caption_variant == "unusable":
             # Return near-empty / garbage segment list (1 segment, 1 char)
             # which fails captions_are_usable (requires >= 3 segments and >= 20 chars).
-            return [Segment(t=0.0, text="x")]
+            return SpeechTrack([Segment(t=0.0, text="x")], "caption", gt.get("language"), {"language_verified": True})
         elif caption_variant == "fetch_failure":
             raise RuntimeError(f"Simulated caption fetch failure for video_id={video_id}")
         elif caption_variant == "force_stt":
             # If called, return parsed VTT, but acquire_speech with force_stt=True skips this branch
-            return parse_vtt(vtt_content)
+            return SpeechTrack(parse_vtt(vtt_content), "caption", gt.get("language"), {"language_verified": True})
         else:
             raise ValueError(f"Unknown caption_variant: {caption_variant!r}")
 

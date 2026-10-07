@@ -128,7 +128,7 @@ def _valid_source(value: object) -> bool:
 
 def _valid_speech(value: object) -> bool:
     fallback = lambda item: item is None or _object(
-        item, {"code"}, {"code": _enum("captions_unavailable", "captions_unusable", "forced_stt", "local_source")}
+        item, {"code"}, {"code": _enum("captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source")}
     )
     return _object(
         value, {"source", "language", "model", "fallback"},

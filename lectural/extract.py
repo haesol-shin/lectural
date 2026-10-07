@@ -244,7 +244,7 @@ def _extract_source(
     fallback_code = track.meta.get("fallback_code")
     if fallback_code is None and speech_source == "stt" and source.kind is not SourceKind.YOUTUBE:
         fallback_code = "local_source"
-    allowed_fallbacks = {"captions_unavailable", "captions_unusable", "forced_stt", "local_source"}
+    allowed_fallbacks = {"captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"}
     fallback = {"code": fallback_code} if fallback_code in allowed_fallbacks else None
     speech = {
         "source": speech_source,

@@ -1,7 +1,7 @@
 """Acquire the speech track for a YouTube video.
 
 Strategy (captions-first, token-zero):
-  1. Try captions via youtube-transcript-api / yt-dlp (manual then auto).
+  1. Try original captions via yt-dlp (manual then original ASR).
   2. If captions are absent/poor OR --force-stt, download audio for STT.
 
 The network/binary calls are isolated; the subtitle PARSERS below are pure
@@ -12,9 +12,13 @@ from __future__ import annotations
 import json
 import re
 import warnings
+import subprocess
+import urllib.request
+from urllib.parse import parse_qs, urlsplit
 from dataclasses import dataclass, field
 
 from .config import DEFAULT_STT_MODEL
+from .deps import require_binary
 from .source import InputSource, SourceKind
 
 
@@ -146,22 +150,50 @@ def captions_are_usable(segments: list[Segment], min_segments: int = 3) -> bool:
 
 # --- Network/binary-backed acquisition (lazy) ------------------------------
 
-def fetch_caption_segments(video_id: str, languages: tuple[str, ...] = ("ko", "en")) -> list[Segment]:
-    """Fetch captions via youtube-transcript-api. Lazy import; may raise."""
-    from youtube_transcript_api import YouTubeTranscriptApi  # lazy
+def _language_code(value: str | None) -> str | None:
+    return value.lower().split("-")[0] if value else None
 
-    api = YouTubeTranscriptApi()
-    fetched = api.fetch(video_id, languages=list(languages))
-    segments = [
-        Segment(
-            t=float(item.start),
-            text=re.sub(r"\s+", " ", item.text).strip(),
-            end=float(item.start) + float(item.duration) if getattr(item, "duration", None) is not None else None,
-        )
-        for item in fetched
-        if item.text.strip()
-    ]
-    return _dedupe_rolling(segments)
+
+def fetch_caption_segments(
+    video_id: str, languages: tuple[str, ...] = ("ko", "en"),
+    *, spoken_language: str | None = None,
+) -> SpeechTrack:
+    """Fetch an original track, retaining the language evidence from yt-dlp.
+
+    Language preferences only break ties; they never authorize a translation.
+    """
+    require_binary("yt-dlp")
+    proc = subprocess.run(
+        ["yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
+         "--extractor-args", "youtube:player_client=android",
+         f"https://www.youtube.com/watch?v={video_id}"],
+        check=True, capture_output=True, text=True,
+    )
+    metadata = json.loads(proc.stdout)
+    spoken = spoken_language or _language_code(metadata.get("language"))
+    candidates = []
+    for automatic, collection in ((False, "subtitles"), (True, "automatic_captions")):
+        for label, formats in (metadata.get(collection) or {}).items():
+            if automatic and not label.endswith("-orig"):
+                continue
+            language = _language_code(label)
+            for fmt in formats:
+                url = fmt.get("url", "")
+                if fmt.get("ext") not in ("json3", "vtt") or "tlang" in parse_qs(urlsplit(url).query, keep_blank_values=True):
+                    continue
+                rank = (language != spoken if spoken else False, automatic,
+                        language not in languages, fmt["ext"] != "json3")
+                candidates.append((rank, language, fmt))
+    if not candidates:
+        raise ValueError("No original caption track available")
+    _, language, fmt = min(candidates, key=lambda item: item[0])
+    with urllib.request.urlopen(fmt["url"]) as response:
+        text = response.read().decode("utf-8")
+    segments = parse_json3(text) if fmt["ext"] == "json3" else parse_vtt(text)
+    return SpeechTrack(segments, "caption", language, {
+        "language_verified": spoken is not None and spoken == language,
+        "metadata_language": spoken,
+    })
 
 
 
@@ -179,30 +211,46 @@ def acquire_speech(
     source_meta = source.as_dict()
     fallback_reason: str | None = None
     fallback_code: str | None = "local_source" if source.kind is not SourceKind.YOUTUBE else None
+    audio_path: str | None = None
+    detected: str | None = None
     if source.kind is SourceKind.YOUTUBE and not force_stt:
         video_id = source.video_id
         if not video_id:
             raise ValueError(f"Could not extract a YouTube video id from: {source.argument!r}")
         try:
-            segs = fetch_caption_segments(video_id, languages)
-            if captions_are_usable(segs):
-                return SpeechTrack(
-                    segments=segs,
-                    source="caption",
-                    meta={
-                        "video_id": video_id,
-                        "source_kind": source.kind.value,
-                        "input_source": source_meta,
-                    },
-                )
-            fallback_code = "captions_unusable"
-            fallback_reason = f"captions present but unusable ({len(segs)} cues)"
+            caption = fetch_caption_segments(video_id, languages)
+            segs = caption.segments
+            if not caption.meta.get("language_verified"):
+                from .speech import detect_audio_language
+
+                audio_path = media.resolve_audio(source, out_dir)
+                detected = detect_audio_language(audio_path, model_size=model)
+                if detected is None:
+                    fallback_code = "captions_language_unverified"
+                    fallback_reason = "spoken language could not be verified"
+                else:
+                    if detected != caption.language:
+                        caption = fetch_caption_segments(video_id, languages, spoken_language=detected)
+                        segs = caption.segments
+                    if detected != caption.language:
+                        fallback_code = "captions_language_mismatch"
+                        fallback_reason = "original caption label disagrees with spoken language"
+                    else:
+                        caption.language = detected
+            if fallback_code is None and captions_are_usable(segs):
+                caption.meta.update({
+                    "video_id": video_id, "source_kind": source.kind.value,
+                    "input_source": source_meta,
+                })
+                if audio_path is not None:
+                    caption.meta["audio_path"] = audio_path
+                return caption
+            if fallback_code is None:
+                fallback_code = "captions_unusable"
+                fallback_reason = f"captions present but unusable ({len(segs)} cues)"
         except Exception as exc:  # noqa: BLE001
-            # youtube-transcript-api raises several distinct types
-            # (NoTranscriptFound, TranscriptsDisabled, network errors) that
-            # cannot be imported without the optional dep, so we catch broadly.
-            # The detail stays in the stderr warning; JSON carries only the
-            # bounded fallback code.
+            # Optional dependencies and acquisition calls can fail independently.
+            # Keep exception detail in stderr, not the bounded JSON evidence.
             fallback_code = "captions_unavailable"
             fallback_reason = f"caption fetch failed: {type(exc).__name__}: {exc}"
         warnings.warn(
@@ -223,10 +271,11 @@ def acquire_speech(
 
     # Every STT path resolves its audio through the source-specific media
     # boundary. Local inputs never call the caption API or emit its warning.
-    audio_path = media.resolve_audio(source, out_dir)
+    audio_path = audio_path or media.resolve_audio(source, out_dir)
     from .speech import transcribe_audio
 
     track = transcribe_audio(audio_path, model_size=model)
+    track.language = track.language or detected
     track.meta["audio_path"] = audio_path
     track.meta["source_kind"] = source.kind.value
     track.meta["input_source"] = source_meta
