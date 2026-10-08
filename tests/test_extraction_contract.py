@@ -13,7 +13,7 @@ from lectural import acquisition, cli, evidence, media, notes, speech, vad, visu
 
 
 SCHEMA_PATH = Path("docs/contracts/evidence.schema.json")
-FALLBACK_CODES = {"captions_unavailable", "captions_unusable", "forced_stt", "local_source"}
+FALLBACK_CODES = {"captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"}
 
 
 def _install_fake_pipeline(monkeypatch, tmp_path: Path, *, audio_only: bool = False, duration: float = 20.0, ocr: str = "completed-with-text") -> Path:

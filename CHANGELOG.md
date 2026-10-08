@@ -4,6 +4,10 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+### Fixed
+- Reject translated YouTube captions and preserve spoken-language evidence when selecting original tracks
+- Always verify caption language against an audio-language probe, treating uploader metadata only as a selection hint and falling back to STT with explicit language-mismatch or unverified-language codes
+
 ## [0.3.1] - 2026-09-24
 
 ### Documentation

@@ -1,12 +1,14 @@
 """Speech-to-text via faster-whisper (CPU, int8).
 
-Used only when captions are unavailable/poor or --force-stt is set.
+Used for STT fallback and bounded spoken-language verification for captions.
 faster-whisper is imported lazily so the package stays import-safe offline.
 """
 
 from __future__ import annotations
 
 import re
+import io
+import subprocess
 
 from .acquisition import Segment, SpeechTrack
 from .config import (
@@ -14,6 +16,26 @@ from .config import (
     STT_COMPUTE_TYPE,
     STT_LONG_VIDEO_WARN_SEC,
 )
+from .deps import require_binary
+
+
+def detect_audio_language(audio_path: str, model_size: str = DEFAULT_STT_MODEL) -> str | None:
+    """Detect language from at most 30 seconds, without transcribing the video."""
+    from faster_whisper import WhisperModel
+
+    require_binary("ffmpeg")
+    sample = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", audio_path, "-t", "30",
+         "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1"],
+        check=True, capture_output=True,
+    )
+    model = WhisperModel(model_size, device="cpu", compute_type=STT_COMPUTE_TYPE)
+    _, info = model.transcribe(
+        io.BytesIO(sample.stdout), language=None, vad_filter=True, word_timestamps=False,
+    )
+    if getattr(info, "duration_after_vad", 1.0) <= 0 or getattr(info, "language_probability", 0.0) < 0.8:
+        return None
+    return getattr(info, "language", None)
 
 
 def should_warn_long_video(duration_sec: float, threshold: float = STT_LONG_VIDEO_WARN_SEC) -> bool:

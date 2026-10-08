@@ -100,7 +100,7 @@ from 0–100 to 0–1 before applying the same threshold.
 
 ### Caption/fallback injection mechanism
 
-Local synthetic fixtures cannot reach `lectural.acquisition.acquire_speech`'s real caption/fallback branches on their own — those only trigger for a `SourceKind.YOUTUBE` source, and local sources always transcribe. The harness builds a `YOUTUBE`-shaped fixture source and monkeypatches `acquisition.fetch_caption_segments` (to return the fixture's parsed VTT cues, return an unusable/near-empty list, or raise) and `media.resolve_audio` (to the fixture's local audio), exercising the real `acquire_speech` dispatch logic without any change to `lectural/acquisition.py` — the same dependency-injection pattern already used by `tests/test_acquisition.py`.
+Local synthetic fixtures cannot reach `lectural.acquisition.acquire_speech`'s real caption/fallback branches on their own — those only trigger for a `SourceKind.YOUTUBE` source, and local sources always transcribe. The harness builds a `YOUTUBE`-shaped fixture source and monkeypatches `acquisition.fetch_caption_segments` (to return a caption `SpeechTrack` containing the fixture's parsed VTT cues, return an unusable/near-empty track, or raise), `media.resolve_audio` (to the fixture's local audio), and `speech.detect_audio_language` (to the fixture language), exercising the real `acquire_speech` dispatch logic without network access. Caption language selection and detection are separately covered by synthetic metadata and probe tests.
 
 ### Observational rows
 

@@ -65,17 +65,18 @@ def test_captions_usable_heuristic():
     assert captions_are_usable([]) is False
 
 
-def test_youtube_usable_captions_skip_audio_and_stt(monkeypatch):
+def test_youtube_usable_captions_probe_audio_and_skip_stt(monkeypatch):
     source = classify_source("https://youtu.be/dQw4w9WgXcQ")
     segments = [acquisition.Segment(i, f"cue {i} with enough text") for i in range(3)]
     calls = []
-    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: segments)
-    monkeypatch.setattr(media, "resolve_audio", lambda *_args: calls.append("audio"))
+    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: acquisition.SpeechTrack(segments, "caption", "en"))
+    monkeypatch.setattr(media, "resolve_audio", lambda *_args: calls.append("audio") or "synthetic.wav")
+    monkeypatch.setattr(speech, "detect_audio_language", lambda *_args, **_kwargs: calls.append("probe") or "en")
     monkeypatch.setattr(speech, "transcribe_audio", lambda *_args, **_kwargs: calls.append("stt"))
     track = acquisition.acquire_speech(source, "/tmp/out")
     assert track.source == "caption"
     assert track.segments == segments
-    assert calls == []
+    assert calls == ["audio", "probe"]
     assert track.meta["source_kind"] == "youtube"
 
 
@@ -98,7 +99,8 @@ def test_youtube_forced_stt_warns_and_forwards_model(monkeypatch, tmp_path):
 
 def test_unusable_youtube_captions_preserve_fallback_reason(monkeypatch, tmp_path):
     source = classify_source("https://youtu.be/dQw4w9WgXcQ")
-    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: [acquisition.Segment(1, "x")])
+    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: acquisition.SpeechTrack([acquisition.Segment(1, "x")], "caption", "en"))
+    monkeypatch.setattr(speech, "detect_audio_language", lambda *_args, **_kwargs: "en")
     monkeypatch.setattr(media, "resolve_audio", lambda *_args: str(tmp_path / "audio.wav"))
     monkeypatch.setattr(speech, "transcribe_audio", lambda *_args, **_kwargs: acquisition.SpeechTrack([], "stt", meta={}))
     with pytest.warns(RuntimeWarning, match="captions present but unusable"):

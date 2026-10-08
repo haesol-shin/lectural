@@ -61,7 +61,7 @@
         "model": {"type": ["string", "null"]},
         "fallback": {
           "anyOf": [
-            {"type": "object", "required": ["code"], "properties": {"code": {"enum": ["captions_unavailable", "captions_unusable", "forced_stt", "local_source"]}}, "additionalProperties": false},
+            {"type": "object", "required": ["code"], "properties": {"code": {"enum": ["captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"]}}, "additionalProperties": false},
             {"type": "null"}
           ]
         }
