@@ -55,7 +55,11 @@ def _is_youtube_url(value: str) -> bool:
 
 @dataclass(frozen=True)
 class InputSource:
-    """A classified CLI input and its normalized runtime locator."""
+    """A classified CLI input and its normalized runtime locator.
+
+    Per-kind facts come from ``lectural.sources``, imported lazily because the
+    handlers import this module.
+    """
 
     argument: str
     kind: SourceKind
@@ -65,15 +69,21 @@ class InputSource:
 
     @property
     def has_video(self) -> bool:
-        return self.kind in (SourceKind.YOUTUBE, SourceKind.LOCAL_VIDEO)
+        from .sources import handler_for
+
+        return handler_for(self).has_video
 
     @property
     def caption_capable(self) -> bool:
-        return self.kind is SourceKind.YOUTUBE
+        from .sources import handler_for
+
+        return handler_for(self).caption_capable
 
     @property
     def citation_kind(self) -> CitationKind:
-        return CitationKind.YOUTUBE if self.kind is SourceKind.YOUTUBE else CitationKind.TRANSCRIPT
+        from .sources import handler_for
+
+        return handler_for(self).citation_kind
 
     def as_dict(self) -> dict:
         """Return the JSON-safe source descriptor used by synthesis handoff."""

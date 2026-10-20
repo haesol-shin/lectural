@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .. import media
-from ..source import InputSource
+from ..source import CitationKind, InputSource
 
 
 def _probe(source: InputSource) -> media.SourceMetadata:
@@ -12,6 +12,10 @@ def _probe(source: InputSource) -> media.SourceMetadata:
 
 
 class LocalVideoHandler:
+    has_video = True
+    caption_capable = False
+    citation_kind = CitationKind.TRANSCRIPT
+
     def probe(self, source: InputSource) -> media.SourceMetadata:
         return _probe(source)
 
@@ -23,6 +27,10 @@ class LocalVideoHandler:
 
 
 class LocalAudioHandler:
+    has_video = False
+    caption_capable = False
+    citation_kind = CitationKind.TRANSCRIPT
+
     def probe(self, source: InputSource) -> media.SourceMetadata:
         return _probe(source)
 

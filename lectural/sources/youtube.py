@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from .. import media
-from ..source import InputSource
+from ..source import CitationKind, InputSource
 
 
 class YouTubeHandler:
+    has_video = True
+    caption_capable = True
+    citation_kind = CitationKind.YOUTUBE
+
     def probe(self, source: InputSource) -> media.SourceMetadata:
         metadata = media.fetch_video_metadata(source.locator)
         return media.SourceMetadata(

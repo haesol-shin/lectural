@@ -6,10 +6,14 @@ from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from ..media import SourceMetadata
-    from ..source import InputSource
+    from ..source import CitationKind, InputSource
 
 
 class SourceHandler(Protocol):
+    has_video: bool  # frames, OCR, and visual gates apply
+    caption_capable: bool  # captions may replace STT
+    citation_kind: CitationKind
+
     def probe(self, source: InputSource) -> SourceMetadata:
         """Return title, duration, and video id for the source."""
 
