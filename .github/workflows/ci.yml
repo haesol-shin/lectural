@@ -16,6 +16,19 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - run: uv run --with pytest --with numpy pytest -q
 
+  url-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: |
+          uv run --with pytest --with numpy --with 'yt-dlp==2026.8.19' python -c \
+            "import shutil, yt_dlp; assert shutil.which('ffmpeg') and shutil.which('ffprobe')"
+          uv run --with pytest --with numpy --with 'yt-dlp==2026.8.19' pytest -q -m url_runtime
+        env:
+          LECTURAL_REQUIRE_URL_RUNTIME: "1"
+
   plugin-validate:
     runs-on: ubuntu-latest
     steps:

@@ -1,5 +1,5 @@
 ---
-description: Turn a YouTube video, local video, local audio file, or evidence bundle into deterministic evidence for video-based work: complete markdown notes.
+description: Turn YouTube, public HTTP(S) media, local media, or an evidence bundle into complete notes.
 argument-hint: <source-or-bundle> [more-inputs...] [--force-stt] [--model medium] [--out ./output] [--skip-ocr] [--keep-frames]
 ---
 
@@ -9,7 +9,9 @@ This command performs heavy work (media download, optional long CPU transcriptio
 
 Always invoke the CLI as `uv run --project "${CLAUDE_PLUGIN_ROOT}" --extra run lectural ...`. This uses the plugin's project and its `uv.lock`, so the Python run dependencies (including the pinned OpenCV/OCR stack) resolve consistently regardless of the current shell/venv. Do NOT invoke an unqualified `lectural` executable, `python -m lectural.cli`, or `uvx --from "...[run]"` — the session Python may lack the extras, and `uvx` ignores the lockfile and can pull an incompatible OpenCV. `ffmpeg` must still be on PATH.
 
-1. If `$ARGUMENTS` contains no YouTube URL/ID, existing local `.mp4`/`.webm`/`.mkv`/`.wav` file, or evidence bundle directory with `evidence.json`, ask the user for an input and stop until they provide one. Do not run anything yet.
+1. Accept a YouTube URL/ID, public HTTP(S) media/page URL, existing local
+   `.mp4`/`.webm`/`.mkv`/`.wav` file, or evidence bundle directory with `evidence.json`.
+   If none is supplied, ask the user for an input and stop until they provide one. Do not run anything yet.
 2. Preflight. Run `uv run --project "${CLAUDE_PLUGIN_ROOT}" --extra run lectural doctor --fix` and interpret the exit code:
    - `0`: ready, continue.
    - `2`: surface the first missing/incompatible item and its one-line hint, tell the user to run `/lectural:setup`, then stop.

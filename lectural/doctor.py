@@ -29,7 +29,7 @@ STATUSES = {STATUS_OK, STATUS_MISSING, STATUS_INCOMPATIBLE, STATUS_UNFIXABLE}
 SCHEMA_VERSION = 1
 
 RUN_PYTHON_REQUIREMENTS: tuple[tuple[str, str | None, str | None], ...] = (
-    ("yt_dlp", "yt-dlp", ">=2024.1.0"),
+    ("yt_dlp", "yt-dlp", ">=2026.8.19"),
     ("youtube_transcript_api", "youtube-transcript-api", ">=0.6.2"),
     ("faster_whisper", "faster-whisper", ">=1.0.0"),
     ("numpy", None, None),

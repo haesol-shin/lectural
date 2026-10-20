@@ -88,6 +88,7 @@ def _extract_source(
     skip_ocr: bool = False,
     source: InputSource | None = None,
     metadata=None,
+    work_dir: str | None = None,
     resources: ResourceSampler,
 ) -> dict:
     """Extract speech and visual evidence into ``output_dir`` and write v2 JSON.
@@ -103,6 +104,7 @@ def _extract_source(
     handler = handler_for(source)
     metadata = metadata or media.probe_source(source)
     out_dir = os.path.realpath(os.path.abspath(output_dir))
+    audio_dir = work_dir or out_dir
     os.makedirs(out_dir, exist_ok=True)
     source_resolution = {"width": None, "height": None}
     raw_frames = []
@@ -113,11 +115,11 @@ def _extract_source(
     ocr_failed = False
 
     with resources.stage("speech"):
-        track = acquisition.acquire_speech(source, out_dir, force_stt=force_stt, model=model)
+        track = acquisition.acquire_speech(source, audio_dir, force_stt=force_stt, model=model)
         duration = _positive_finite_duration(metadata.duration, track.meta.get("duration"))
         speech_spans = (
-            detect_speech_spans(track.meta.get("audio_path", os.path.join(out_dir, "audio.wav")), duration)
-            if os.path.isfile(track.meta.get("audio_path", os.path.join(out_dir, "audio.wav")))
+            detect_speech_spans(track.meta.get("audio_path", os.path.join(audio_dir, "audio.wav")), duration)
+            if os.path.isfile(track.meta.get("audio_path", os.path.join(audio_dir, "audio.wav")))
             else [(0.0, duration)]
         )
         segments = fill_segment_ends(sorted(track.segments, key=lambda segment: segment.t), duration)
@@ -284,6 +286,7 @@ def extract_source(
     skip_ocr: bool = False,
     source: InputSource | None = None,
     metadata=None,
+    work_dir: str | None = None,
 ) -> dict:
     """Extract speech and visual evidence into a directory and write v2 JSON."""
     resources = ResourceSampler().start()
@@ -297,6 +300,7 @@ def extract_source(
             skip_ocr=skip_ocr,
             source=source,
             metadata=metadata,
+            work_dir=work_dir,
             resources=resources,
         )
     except BaseException:

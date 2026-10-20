@@ -12,7 +12,7 @@ from enum import Enum
 from pathlib import Path
 import os
 import re
-from urllib.parse import urlparse
+from .urlpolicy import has_url_scheme, is_youtube_url, is_url_like
 
 
 class SourceKind(str, Enum):
@@ -44,14 +44,6 @@ def extract_video_id(url: str) -> str | None:
             return match.group(1)
     return None
 
-def _is_youtube_url(value: str) -> bool:
-    # Bare IDs (and the existing scheme-less ``v=...`` form) have no host.
-    candidate = value if "://" in value else f"//{value}" if "/" in value or "." in value else ""
-    parsed = urlparse(candidate)
-    if not parsed.netloc:
-        return True
-    host = (parsed.hostname or "").lower().rstrip(".")
-    return host in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"}
 
 @dataclass(frozen=True)
 class InputSource:
@@ -66,6 +58,7 @@ class InputSource:
     locator: str
     title_hint: str
     video_id: str | None
+    origin: str | None = None
 
     @property
     def has_video(self) -> bool:
@@ -92,7 +85,7 @@ class InputSource:
             citation["video_id"] = self.video_id
         return {
             "kind": self.kind.value,
-            "argument": self.argument,
+            "argument": self.origin or self.argument,
             "has_video": self.has_video,
             "citation": citation,
         }
@@ -110,7 +103,7 @@ class InputSource:
             citation["video_id"] = self.video_id
             argument = f"https://youtu.be/{self.video_id}" if self.video_id else "youtube"
         else:
-            argument = Path(self.locator).name or "local-media"
+            argument = self.origin or Path(self.locator).name or "local-media"
         return {
             "kind": self.kind.value,
             "argument": argument,
@@ -137,6 +130,13 @@ def classify_source(argument: str) -> InputSource:
     expanded = os.path.expanduser(argument)
     suffix = Path(expanded).suffix.lower()
     exists_as_regular_file = os.path.isfile(expanded)
+    if not exists_as_regular_file and is_url_like(argument) and not (
+        is_youtube_url(argument) and extract_video_id(argument)
+    ):
+        if (suffix in _SUPPORTED_SUFFIXES and not has_url_scheme(argument)
+                and not argument.startswith("//") and not os.path.isdir(expanded)):
+            raise FileNotFoundError("Local source does not exist")
+        raise ValueError("Input must be a YouTube URL/ID or an existing supported local file")
     if exists_as_regular_file:
         locator = _normalized_local_path(argument)
         if suffix in _SUPPORTED_VIDEO_SUFFIXES:
@@ -161,7 +161,7 @@ def classify_source(argument: str) -> InputSource:
         raise FileNotFoundError(f"Local source does not exist: {argument!r}")
 
     video_id = extract_video_id(argument)
-    if video_id and _is_youtube_url(argument):
+    if video_id and is_youtube_url(argument):
         return InputSource(
             argument=argument,
             kind=SourceKind.YOUTUBE,
@@ -170,5 +170,5 @@ def classify_source(argument: str) -> InputSource:
             video_id=video_id,
         )
     raise ValueError(
-        f"Input must be a YouTube URL/ID or an existing supported local file: {argument!r}"
+        "Input must be a YouTube URL/ID or an existing supported local file"
     )

@@ -65,7 +65,7 @@ def test_extract_video_id_stays_pure_and_rejects_malformed_values(tmp_path: Path
     assert extract_video_id("not a url") is None
     assert extract_video_id("too-short") is None
     with pytest.raises(ValueError, match="YouTube URL/ID"):
-        classify_source("https://example.com/watch?v=dQw4w9WgXcQ")
+        classify_source("https://media.example.invalid/watch?v=dQw4w9WgXcQ")
 
 
     with pytest.raises(FileNotFoundError, match="missing.wav"):
