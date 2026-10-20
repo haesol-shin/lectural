@@ -24,7 +24,7 @@ Issues = "https://github.com/haesol-shin/lectural/issues"
 [project.optional-dependencies]
 # Install with: pip install "lectural[run]"
 run = [
-    "yt-dlp>=2024.1.0",
+    "yt-dlp>=2026.8.19",
     "youtube-transcript-api>=0.6.2",
     "faster-whisper>=1.0.0",
     "opencv-python==4.6.0.66",
@@ -81,5 +81,7 @@ exclude = ["lectural_bench*"]
 [tool.pytest.ini_options]
 markers = [
     "smoke: requires external binaries/models or network (ffmpeg, yt-dlp, faster-whisper, paddleocr); skipped by default",
+    "url_runtime: exercises URL transport with real binaries, networking adapters, or POSIX lifecycle",
+    "url_ytdlp: requires the real yt-dlp Python resolver",
 ]
 addopts = "-m 'not smoke'"

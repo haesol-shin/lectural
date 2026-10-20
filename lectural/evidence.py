@@ -16,6 +16,7 @@ from typing import Iterable
 
 from . import __version__
 from .config import EXTRACTION_CONTRACT_VERSION, EXTRACTION_SCHEMA_VERSION
+from .urlpolicy import url_origin
 
 
 class ContractError(ValueError):
@@ -30,7 +31,15 @@ class ContractError(ValueError):
 _FAILURE_MESSAGES = {
     "OUTPUT_EXISTS": "The output directory already exists; choose a new --out path.",
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
-    "SOURCE_INVALID": "The source is not a supported YouTube URL or local media file.",
+    "SOURCE_INVALID": (
+        "The source is not a supported YouTube URL, public http(s) media URL, or local media file."
+    ),
+    "SOURCE_REDIRECT_REJECTED": "The source URL redirected to a location that is not http or https.",
+    "SOURCE_LOGIN_REQUIRED": "The source URL requires a login; only public URLs are supported.",
+    "SOURCE_ACCESS_DENIED": (
+        "The source URL refused access: the media may be private, or the site may block programmatic "
+        "downloads; only public URLs are supported."
+    ),
     "SOURCE_UNAVAILABLE": "The source could not be accessed for extraction.",
     "OCR_FAILED": "Requested OCR failed; visual evidence frames were retained when available.",
     "TIMESTAMP_INVALID": "Extraction produced invalid or inconsistent timestamps.",
@@ -86,12 +95,18 @@ def assert_contained(root: str, path: str) -> str:
     return resolved
 
 
-def prepare_empty_output(path: str) -> str:
-    """Create a new output directory, rejecting every pre-existing target."""
+def check_new_output(path: str) -> str:
+    """Check output availability without creating directories."""
     expanded = os.path.expanduser(path)
     candidate = os.path.abspath(expanded)
     if os.path.lexists(candidate):
         raise ContractError("OUTPUT_EXISTS", _FAILURE_MESSAGES["OUTPUT_EXISTS"])
+    return candidate
+
+
+def prepare_empty_output(path: str) -> str:
+    """Create a new output directory, rejecting every pre-existing target."""
+    candidate = check_new_output(path)
 
     parent = os.path.dirname(candidate) or os.curdir
     try:
@@ -195,7 +210,9 @@ def _safe_source(source: dict) -> dict:
         argument = f"https://youtu.be/{citation['video_id']}"
     else:
         raw_argument = str(source.get("argument") or "local-media")
-        argument = os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
+        argument = (
+            url_origin(raw_argument) or os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
+        )
     raw_resolution = source.get("resolution")
     resolution = raw_resolution if isinstance(raw_resolution, dict) else {}
 
@@ -333,9 +350,13 @@ def build_extract_response(evidence: dict) -> dict:
     }
 
 
-def build_failure_response(code: str, *, output_dir: str | None = None, source: dict | None = None) -> dict:
+def build_failure_response(
+    code: str, *, output_dir: str | None = None, source: dict | None = None, message: str | None = None,
+) -> dict:
     """Build a bounded response when extraction fails before a v2 manifest."""
     item = failure(code)
+    if message is not None:
+        item["message"] = message
     result = {
         "contract_version": EXTRACTION_CONTRACT_VERSION,
         "source": _safe_source(source) if source else None,
@@ -345,7 +366,7 @@ def build_failure_response(code: str, *, output_dir: str | None = None, source: 
             "frames_dir": None,
             "output_dir": output_dir,
         },
-        "extraction": {"status": "fail", "reasons": [reason(code)]},
+        "extraction": {"status": "fail", "reasons": [dict(item)]},
         "failure": item,
     }
     return {
@@ -377,6 +398,7 @@ __all__ = [
     "build_failure_response",
     "build_version_response",
     "failure",
+    "check_new_output",
     "is_contained",
     "prepare_empty_output",
     "reason",
