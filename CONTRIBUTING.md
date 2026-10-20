@@ -65,6 +65,10 @@ A squash-merge commit message additionally carries a scope naming the functional
   - **Rebase and merge**: only when the branch holds independently meaningful Conventional Commits that must stay separate in `main`.
   - Avoid merge commits; keep `main` linear.
 
+## Markdown
+
+- Write each paragraph or list item as one line; do not hard-wrap prose at a fixed width. Tables, code blocks and front matter keep their own format.
+
 ## Dependency policy
 
 Runtime dependencies are pinned with intentional upper-bound caps (`opencv-python`, `paddleocr`, `paddlepaddle`, `setuptools`). These caps are compatibility boundaries, not arbitrary: for example `opencv-python` is held at `<=4.6.0.66` because cv2 4.11+ breaks the runtime. The offline CI does not exercise these heavy deps (they are lazily imported and smoke-skipped), so a green CI does not validate a major bump.
