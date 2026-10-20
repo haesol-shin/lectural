@@ -61,6 +61,7 @@ A squash-merge commit message additionally carries a scope naming the functional
 - Merge only with maintainer approval.
 - Merge strategy:
   - **Squash and merge** (default): one PR becomes one `main` entry, easy to read and revert. The squash commit message MUST be the Conventional Commit PR title, because it becomes the `main` history entry.
+    The squash body is rewritten, not the default list of branch commits: 2-4 `- ` lines describing the final change as it lands, with no fixup, review-response or plan commits and no `* ` commit headers.
   - **Rebase and merge**: only when the branch holds independently meaningful Conventional Commits that must stay separate in `main`.
   - Avoid merge commits; keep `main` linear.
 
