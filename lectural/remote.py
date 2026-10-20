@@ -1,14 +1,19 @@
 """Fetch a public ``http(s)`` media URL into a temporary local file.
 
-Only public URLs are supported: no cookie jar, no credentials, and no
-configuration that could add them.  Every request LecturAL makes itself goes
-through an opener that speaks only HTTP/HTTPS and refuses redirects to any
-other scheme.  yt-dlp is used only to resolve a page URL to one progressive
-``http(s)`` media URL; LecturAL downloads that URL itself.
+Only public URLs are supported: no cookie file, no credentials, and no user
+configuration that could add them.  Every request follows redirects only to
+``http``/``https`` targets:
+
+* LecturAL's own requests (the first request and the media download) use an
+  opener that has only HTTP/HTTPS handlers and rejects other redirect targets.
+* yt-dlp resolves a page URL to one progressive ``http(s)`` media URL
+  in-process, with its request director limited to a urllib handler that
+  speaks only HTTP/HTTPS and checks every redirect target before following it.
 
 Fetched media and audio derived from it live only in a private temporary
 directory that ``materialize`` removes after success and failure.  Errors are
-bounded codes; neither the URL path/query nor tool output is ever surfaced.
+bounded codes; the URL path/query and tool output are never surfaced, and the
+title of a fetched source is its host.
 """
 
 from __future__ import annotations
@@ -27,18 +32,18 @@ import tempfile
 from typing import Iterator
 import urllib.error
 import urllib.request
-from urllib.parse import unquote, urljoin, urlsplit
+from urllib.parse import urljoin, urlsplit
 
-from .deps import require_binary
+from .deps import DependencyError, require_binary
 from .evidence import ContractError, failure
 from .source import InputSource, SourceKind
 
 _ALLOWED_SCHEMES = ("http", "https")
 _ALLOWED_PROTOCOLS = ("http", "https")
 _REQUEST_TIMEOUT_SEC = 60
-_RESOLVE_TIMEOUT_SEC = 300
 _CHUNK_BYTES = 1024 * 1024
 _MAX_REDIRECTS = 10
+_REDIRECT_CODES = (301, 302, 303, 307, 308)
 _USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -50,8 +55,7 @@ _UNAUTHORIZED_HINTS = (
     "sign in", "cookies", "private", "authentication", "members-only",
 )
 _DROPPED_HEADERS = {"cookie", "authorization", "proxy-authorization"}
-_TOKEN_MIN_LENGTH = 6
-_WORD_TOKEN_MIN_LENGTH = 3
+_YTDLP_HINT = 'Install run extras: `uv pip install "lectural[run]"` (a yt-dlp Python package with request handlers).'
 
 
 class RemoteSourceError(ContractError):
@@ -65,7 +69,6 @@ class RemoteSourceError(ContractError):
 class FetchedMedia:
     path: str
     has_video: bool
-    title: str
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,11 @@ def _scheme(url: str) -> str:
         return (urlsplit(url).scheme or "").lower()
     except ValueError:
         return ""
+
+
+def _redirect_target_allowed(req, headers) -> bool:
+    location = headers.get("location") or headers.get("uri")
+    return not location or _scheme(urljoin(req.full_url, location)) in _ALLOWED_SCHEMES
 
 
 class _HttpOnlyRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -155,59 +163,88 @@ def _stream_to_file(response, path: str) -> None:
         raise RemoteSourceError("SOURCE_UNAVAILABLE")
 
 
-def _url_tokens(url: str) -> set[str]:
-    parts = urlsplit(url)
-    text = unquote("/".join((parts.path, parts.query, parts.fragment)))
-    return {piece.lower() for piece in re.split(r"[^0-9A-Za-z]+", text) if len(piece) >= _WORD_TOKEN_MIN_LENGTH}
+class _SilentLogger:
+    """yt-dlp messages contain the URL; they are never printed."""
+
+    def debug(self, _message: str) -> None:
+        pass
+
+    info = warning = error = debug
 
 
-def _echoes_token(title: str, token: str) -> bool:
-    # Long pieces (IDs, signatures) must not appear anywhere; short path words
-    # such as a file stem must not appear as a whole word.
-    if len(token) >= _TOKEN_MIN_LENGTH:
-        return token in title
-    return re.search(rf"(?<![0-9a-z]){re.escape(token)}(?![0-9a-z])", title) is not None
+def _http_only_ytdlp(rejected: list[bool]):
+    """Return a YoutubeDL subclass whose only request handler is HTTP(S)-only."""
+    try:
+        import yt_dlp
+        from yt_dlp.networking._urllib import UrllibRH
+    except ImportError:
+        raise DependencyError(f"Required Python module `yt_dlp` not installed. {_YTDLP_HINT}") from None
+    if "build_request_director" not in vars(yt_dlp.YoutubeDL):
+        # Fail closed: without this hook yt-dlp would use handlers we cannot restrict.
+        raise DependencyError(f"The installed yt-dlp cannot restrict request handlers. {_YTDLP_HINT}")
+
+    class _RedirectGuard(urllib.request.BaseHandler):
+        # Runs before yt-dlp's redirect handler (order 500) for every redirect.
+        handler_order = 100
+
+        def _guard(self, req, fp, code, msg, headers):
+            if not _redirect_target_allowed(req, headers):
+                rejected.append(True)
+                raise urllib.error.HTTPError(req.full_url, code, "redirect target rejected", headers, fp)
+            return None
+
+        http_error_301 = http_error_302 = http_error_303 = http_error_307 = http_error_308 = _guard
+
+    class HttpOnlyUrllibRH(UrllibRH):
+        _SUPPORTED_URL_SCHEMES = _ALLOWED_SCHEMES
+        RH_NAME = "urllib-http-only"
+
+        def _create_instance(self, *args, **kwargs):
+            opener = super()._create_instance(*args, **kwargs)
+            opener.add_handler(_RedirectGuard())
+            return opener
+
+    class HttpOnlyYoutubeDL(yt_dlp.YoutubeDL):
+        def build_request_director(self, handlers, preferences=None):
+            return super().build_request_director([HttpOnlyUrllibRH], preferences)
+
+    return HttpOnlyYoutubeDL
 
 
-def _host_label(url: str) -> str:
-    return (urlsplit(url).hostname or "media").rstrip(".")
-
-
-def _safe_title(info: dict, url: str) -> str:
-    """Keep an extractor title only when it cannot echo the URL path/query."""
-    title = re.sub(r"\s+", " ", str(info.get("title") or "")).strip()
-    if not title or str(info.get("extractor_key") or "").lower() == "generic":
-        return _host_label(url)
-    lowered = title.lower()
-    if any(_echoes_token(lowered, token) for token in _url_tokens(url)):
-        return _host_label(url)
-    return title[:200]
+def _ytdlp_extract_info(url: str) -> dict:
+    """Run yt-dlp extraction for ``url`` without cookies, config, or output."""
+    rejected: list[bool] = []
+    youtube_dl = _http_only_ytdlp(rejected)
+    params = {
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "noplaylist": True,
+        "skip_download": True,
+        "format": _FORMAT_SELECTOR,
+        "socket_timeout": _REQUEST_TIMEOUT_SEC,
+        "logger": _SilentLogger(),
+        "cookiefile": None,
+        "cookiesfrombrowser": None,
+    }
+    try:
+        with youtube_dl(params) as ydl:
+            info = ydl.sanitize_info(ydl.extract_info(url, download=False))
+    except Exception as exc:  # noqa: BLE001 - extractor errors embed the URL; classify only.
+        if rejected:
+            raise RemoteSourceError("SOURCE_REDIRECT_REJECTED") from None
+        text = str(exc).lower()
+        code = "SOURCE_UNAUTHORIZED" if any(hint in text for hint in _UNAUTHORIZED_HINTS) else "SOURCE_UNAVAILABLE"
+        raise RemoteSourceError(code) from None
+    if rejected:
+        raise RemoteSourceError("SOURCE_REDIRECT_REJECTED")
+    return info if isinstance(info, dict) else {}
 
 
 def _resolve_with_ytdlp(url: str) -> dict:
     """Return yt-dlp's single selected progressive format for ``url``."""
-    require_binary("yt-dlp")
-    try:
-        proc = subprocess.run(
-            [
-                "yt-dlp", "--ignore-config", "--no-cookies", "--no-cookies-from-browser",
-                "--no-playlist", "--quiet", "--no-warnings", "--no-progress",
-                "--skip-download", "--dump-single-json", "-f", _FORMAT_SELECTOR, "--", url,
-            ],
-            capture_output=True, text=True, timeout=_RESOLVE_TIMEOUT_SEC,
-        )
-    except (OSError, subprocess.SubprocessError):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE") from None
-    if proc.returncode != 0:
-        # yt-dlp messages contain the URL; classify them, never print them.
-        stderr = (proc.stderr or "").lower()
-        code = "SOURCE_UNAUTHORIZED" if any(hint in stderr for hint in _UNAUTHORIZED_HINTS) else "SOURCE_UNAVAILABLE"
-        raise RemoteSourceError(code)
-    try:
-        info = json.loads(proc.stdout)
-    except ValueError:
-        raise RemoteSourceError("SOURCE_UNAVAILABLE") from None
-    if not isinstance(info, dict) or info.get("entries") is not None or info.get("requested_formats"):
+    info = _ytdlp_extract_info(url)
+    if info.get("entries") is not None or info.get("requested_formats"):
         raise RemoteSourceError("SOURCE_UNAVAILABLE")
     media_url = info.get("url")
     if (
@@ -249,7 +286,6 @@ def fetch(url: str, dest_dir: str) -> FetchedMedia:
     if content_type.split("/", 1)[0] in ("video", "audio"):
         path = os.path.join(dest_dir, _media_filename(content_type))
         _stream_to_file(response, path)
-        title = _host_label(url)
     else:
         response.close()
         info = _resolve_with_ytdlp(url)
@@ -261,8 +297,7 @@ def fetch(url: str, dest_dir: str) -> FetchedMedia:
         media_response = _open(info["url"], headers)
         path = os.path.join(dest_dir, _media_filename(_content_type(media_response), info.get("ext")))
         _stream_to_file(media_response, path)
-        title = _safe_title(info, url)
-    return FetchedMedia(path=path, has_video=_has_video_stream(path), title=title)
+    return FetchedMedia(path=path, has_video=_has_video_stream(path))
 
 
 @contextlib.contextmanager
@@ -274,17 +309,19 @@ def materialize(source: InputSource) -> Iterator[Materialized]:
     if source.kind is not SourceKind.REMOTE:
         yield Materialized(source, None)
         return
+    origin = source.origin or "url"
     scratch_dir = tempfile.mkdtemp(prefix="lectural-fetch-")
     try:
         fetched = fetch(source.locator, scratch_dir)
         yield Materialized(
             InputSource(
-                argument=source.origin or "url",
+                argument=origin,
                 kind=SourceKind.LOCAL_VIDEO if fetched.has_video else SourceKind.LOCAL_AUDIO,
                 locator=fetched.path,
-                title_hint=fetched.title,
+                # Page titles can quote the URL path or query; the host cannot.
+                title_hint=origin.split("://", 1)[-1],
                 video_id=None,
-                origin=source.origin,
+                origin=origin,
             ),
             scratch_dir,
         )

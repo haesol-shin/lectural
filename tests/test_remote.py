@@ -10,7 +10,6 @@ import json
 import os
 from pathlib import Path
 import socket
-import subprocess
 import tempfile
 import threading
 
@@ -27,8 +26,15 @@ TOKENS = (PATH_TOKEN, QUERY_TOKEN, "lecture.mp4", "sig=")
 
 
 class _Handler(BaseHTTPRequestHandler):
+    ftp_port = 21
+    hits: dict = {}
+
     def log_message(self, *_args):  # keep test output quiet
         pass
+
+    def _html(self, video_src: str) -> None:
+        body = f'<html><head><title>{PATH_TOKEN}</title></head><body><video src="{video_src}"></video></body></html>'
+        self._send(200, body.encode(), "text/html")
 
     def _send(self, status: int, body: bytes = b"", content_type: str = "text/plain", headers: dict | None = None):
         self.send_response(status)
@@ -69,12 +75,26 @@ class _Handler(BaseHTTPRequestHandler):
             self.connection.shutdown(socket.SHUT_RDWR)
         elif path == f"/{PATH_TOKEN}/page":
             self._send(200, b"<html><body>player</body></html>", "text/html")
+        elif path == f"/{PATH_TOKEN}/html5":
+            self._html(f"lecture.mp4?sig={QUERY_TOKEN}")
+        elif path == f"/{PATH_TOKEN}/page-to-ftp":
+            # LecturAL's first request sees a page; yt-dlp's request is redirected.
+            count = self.hits[path] = self.hits.get(path, 0) + 1
+            if count == 1:
+                self._html(f"lecture.mp4?sig={QUERY_TOKEN}")
+            else:
+                self._send(302, headers={"Location": f"ftp://127.0.0.1:{self.ftp_port}/{PATH_TOKEN}/x.mp4"})
+        elif path == f"/{PATH_TOKEN}/html5-to-ftp":
+            self._html(f"/{PATH_TOKEN}/media-to-ftp.mp4")
+        elif path == f"/{PATH_TOKEN}/media-to-ftp.mp4":
+            self._send(302, headers={"Location": f"ftp://127.0.0.1:{self.ftp_port}/{PATH_TOKEN}/x.mp4"})
         else:
             self._send(404)
 
 
 @pytest.fixture()
 def server():
+    _Handler.hits = {}
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
@@ -323,76 +343,115 @@ def test_notes_run_redacts_url_in_run_state_and_output(server, temp_root, probe_
     _assert_no_tokens(out, err, runstate_path.read_text(encoding="utf-8"), _tree_text(out_root))
 
 
-def _fake_ytdlp(info: dict | None, *, returncode: int = 0, stderr: str = ""):
-    calls = []
+def _fake_youtube_dl(result):
+    """A stand-in for the HTTP-only YoutubeDL class (offline, no yt_dlp)."""
+    calls: list = []
 
-    def run(argv, **kwargs):
-        calls.append(argv)
-        assert argv[0] == "yt-dlp"
-        return subprocess.CompletedProcess(argv, returncode, json.dumps(info) if info else "", stderr)
+    class FakeYoutubeDL:
+        def __init__(self, params):
+            calls.append(params)
 
-    return run, calls
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def extract_info(self, url, download):
+            assert download is False
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        def sanitize_info(self, info):
+            return info
+
+    return (lambda _rejected: FakeYoutubeDL), calls
 
 
 def test_page_url_downloads_the_single_progressive_format_ytdlp_selects(server, temp_root, probe_by_suffix, monkeypatch):
     info = {
         "extractor_key": "SomeSite",
-        "title": "Week 3 lecture",
+        "title": f"Week 3 lecture {PATH_TOKEN}",
         "url": server + VIDEO_PATH,
         "protocol": "http",
         "ext": "mp4",
         "http_headers": {"User-Agent": "test-agent", "Cookie": "session=leak"},
     }
-    run, calls = _fake_ytdlp(info)
-    monkeypatch.setattr(remote.subprocess, "run", run)
-    monkeypatch.setattr(remote, "require_binary", lambda _name: None)
+    factory, calls = _fake_youtube_dl(info)
+    monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
     page = f"{server}/{PATH_TOKEN}/page?sig={QUERY_TOKEN}"
     with remote.materialize(cli.classify_source(page)) as ready:
         assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
-        assert ready.source.title_hint == "Week 3 lecture"
+        # Extractor titles can quote the URL; a fetched source is titled by host.
+        assert ready.source.title_hint == "127.0.0.1"
         assert ready.source.safe_as_dict()["argument"] == "http://127.0.0.1"
         scratch = ready.scratch_dir
     assert not os.path.exists(scratch)
-    argv = calls[0]
-    for flag in ("--ignore-config", "--no-cookies", "--no-cookies-from-browser", "--no-playlist"):
-        assert flag in argv
-    assert "-f" in argv and "protocol=http" in argv[argv.index("-f") + 1]
+    params = calls[0]
+    assert params["noplaylist"] is True
+    assert params["cookiefile"] is None and params["cookiesfrombrowser"] is None
+    assert "protocol=http" in params["format"]
 
 
 @pytest.mark.parametrize(
-    ("info", "returncode", "stderr", "code"),
+    ("result", "code"),
     [
-        (None, 1, "ERROR: [Site] abc: This video is private. Use --cookies", "SOURCE_UNAUTHORIZED"),
-        (None, 1, "ERROR: Unsupported URL: https://x.invalid/secret", "SOURCE_UNAVAILABLE"),
-        ({"url": "rtmp://cdn.invalid/live", "protocol": "rtmp"}, 0, "", "SOURCE_UNAVAILABLE"),
-        ({"url": "https://cdn.invalid/v.m3u8", "protocol": "m3u8_native"}, 0, "", "SOURCE_UNAVAILABLE"),
-        ({"_type": "playlist", "entries": []}, 0, "", "SOURCE_UNAVAILABLE"),
+        (RuntimeError(f"ERROR: [Site] {PATH_TOKEN}: This video is private. Use --cookies"), "SOURCE_UNAUTHORIZED"),
+        (RuntimeError(f"ERROR: Unsupported URL: https://x.invalid/{PATH_TOKEN}"), "SOURCE_UNAVAILABLE"),
+        ({"url": "rtmp://cdn.invalid/live", "protocol": "rtmp"}, "SOURCE_UNAVAILABLE"),
+        ({"url": "https://cdn.invalid/v.m3u8", "protocol": "m3u8_native"}, "SOURCE_UNAVAILABLE"),
+        ({"url": "ftp://cdn.invalid/v.mp4", "protocol": "https"}, "SOURCE_UNAVAILABLE"),
+        ({"_type": "playlist", "entries": []}, "SOURCE_UNAVAILABLE"),
+        ({"requested_formats": [{}, {}], "url": "https://cdn.invalid/v", "protocol": "https"}, "SOURCE_UNAVAILABLE"),
     ],
 )
-def test_page_url_resolution_failures_are_bounded(server, temp_root, monkeypatch, info, returncode, stderr, code):
-    run, _calls = _fake_ytdlp(info, returncode=returncode, stderr=stderr)
-    monkeypatch.setattr(remote.subprocess, "run", run)
-    monkeypatch.setattr(remote, "require_binary", lambda _name: None)
+def test_page_url_resolution_failures_are_bounded(server, temp_root, monkeypatch, result, code):
+    factory, _calls = _fake_youtube_dl(result)
+    monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
     with pytest.raises(remote.RemoteSourceError) as excinfo:
         with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/page")):
             pass
     assert excinfo.value.code == code
+    assert excinfo.value.__cause__ is None
     _assert_no_tokens(str(excinfo.value))
     assert list(temp_root.iterdir()) == []
 
 
-@pytest.mark.parametrize(
-    ("info", "expected"),
-    [
-        ({"extractor_key": "Generic", "title": "anything"}, "media.example.invalid"),
-        ({"extractor_key": "Site", "title": f"clip {PATH_TOKEN}"}, "media.example.invalid"),
-        ({"extractor_key": "Site", "title": f"clip {QUERY_TOKEN.upper()}"}, "media.example.invalid"),
-        ({"extractor_key": "Site", "title": "  Lecture   one  "}, "Lecture one"),
-        ({"extractor_key": "Site", "title": "My Reel (1)"}, "media.example.invalid"),
-        ({"extractor_key": "Site", "title": "Reeling in"}, "Reeling in"),
-        ({"extractor_key": "Site"}, "media.example.invalid"),
-    ],
-)
-def test_titles_never_echo_url_tokens(info, expected):
-    url = f"https://media.example.invalid/reel/{PATH_TOKEN}/?sig={QUERY_TOKEN}"
-    assert remote._safe_title(info, url) == expected
+@pytest.fixture()
+def ftp_listener():
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.listen(1)
+        sock.settimeout(0.5)
+        _Handler.ftp_port = sock.getsockname()[1]
+        yield sock
+
+
+def _connection_attempted(sock: socket.socket) -> bool:
+    try:
+        conn, _addr = sock.accept()
+    except (socket.timeout, TimeoutError):
+        return False
+    conn.close()
+    return True
+
+
+def test_real_ytdlp_resolves_html5_page_through_checked_download(server, temp_root, probe_by_suffix):
+    pytest.importorskip("yt_dlp")
+    with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/html5?ref={QUERY_TOKEN}")) as ready:
+        assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
+    assert list(temp_root.iterdir()) == []
+
+
+@pytest.mark.parametrize("route", ["page-to-ftp", "html5-to-ftp"])
+def test_real_ytdlp_never_follows_a_redirect_to_ftp(server, temp_root, probe_by_suffix, ftp_listener, capsys, route):
+    pytest.importorskip("yt_dlp")
+    with pytest.raises(remote.RemoteSourceError) as excinfo:
+        with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/{route}")):
+            pass
+    assert excinfo.value.code == "SOURCE_REDIRECT_REJECTED"
+    assert not _connection_attempted(ftp_listener)
+    assert list(temp_root.iterdir()) == []
+    captured = capsys.readouterr()
+    _assert_no_tokens(captured.out, captured.err)

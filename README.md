@@ -50,9 +50,9 @@ lectural verify ./lecture-evidence --source ./lecture.mp4
 lectural extract "https://media.example.org/talk" --out ./talk-evidence --json
 ```
 
-Any public `http` or `https` URL that is either a direct video/audio file or a page yt-dlp can resolve to a single progressive `http(s)` file is accepted; `file:`, `data:`, and other schemes are rejected, and redirects are followed only to `http(s)` targets. No cookies or logins are used, so private or login-only media fails with `SOURCE_UNAUTHORIZED`. Streams that exist only as HLS/DASH fragments are not supported yet.
+Any public `http` or `https` URL that is either a direct video/audio file or a page that yt-dlp (installed by the `[run]` extra) can resolve to a single progressive `http(s)` file is accepted; `file:`, `data:`, and other schemes are rejected, and redirects — including those yt-dlp meets while resolving the page — are followed only to `http(s)` targets. No cookies or logins are used, so private or login-only media fails with `SOURCE_UNAUTHORIZED`. Streams that exist only as HLS/DASH fragments are not supported yet.
 
-The media is downloaded to a private temporary directory, processed like a local file, and deleted afterwards whether extraction succeeds or fails; transcription audio derived from it is kept there too. The bundle records only the URL's scheme and host (for example `https://media.example.org`), never its path or query, and the same applies to printed errors and run state. Captions are a YouTube-only feature, so these sources are always transcribed.
+The media is downloaded to a private temporary directory, processed like a local file, and deleted afterwards whether extraction succeeds or fails; transcription audio derived from it is kept there too. The bundle records only the URL's scheme and host (for example `https://media.example.org`), never its path or query, and the same applies to printed errors and run state. The bundle title is the host as well, since page titles can quote the URL. Captions are a YouTube-only feature, so these sources are always transcribed.
 
 Use this only for your own personal study. Do not redistribute fetched media or derived evidence. You are responsible for following the terms and rules of the platform or institution that hosts the media; LecturAL does not bypass DRM or other access controls.
 

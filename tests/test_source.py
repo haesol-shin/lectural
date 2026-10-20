@@ -160,6 +160,13 @@ def test_public_http_urls_classify_as_remote_with_origin_only(value: str):
         "ftp://media.example.invalid/secret-path-token/lecture.mp4",
         "javascript:secret-path-token",
         "https:///secret-path-token/lecture.mp4",
+        # A YouTube-shaped ID never exempts a disallowed scheme.
+        "ftp://youtu.be/dQw4w9WgXcQ?secret-path-token",
+        "file://youtube.com/watch?v=dQw4w9WgXcQ&secret-path-token",
+        "data:v=dQw4w9WgXcQ&secret-path-token",
+        "x://media.example.invalid/secret-path-token?sig=1",
+        # A URL typed without a scheme is invalid and not echoed either.
+        "media.example.invalid/secret-path-token?sig=1",
     ],
 )
 def test_non_http_urls_are_rejected_without_echoing_the_url(value: str):
@@ -173,6 +180,8 @@ def test_youtube_hosts_never_become_remote_sources():
     with pytest.raises(ValueError, match="YouTube URL/ID"):
         classify_source("https://www.youtube.com/playlist?list=secret-list-token")
     assert classify_source("https://youtu.be/dQw4w9WgXcQ?si=token").kind is SourceKind.YOUTUBE
+    assert classify_source("www.youtube.com/watch?v=dQw4w9WgXcQ").kind is SourceKind.YOUTUBE
+    assert classify_source("www.youtube.com:443/watch?v=dQw4w9WgXcQ").kind is SourceKind.YOUTUBE
 
 
 def test_public_source_label_keeps_local_and_youtube_and_reduces_urls(tmp_path: Path):
@@ -184,3 +193,6 @@ def test_public_source_label_keeps_local_and_youtube_and_reduces_urls(tmp_path: 
     assert public_source_label(youtube) == youtube
     assert public_source_label("https://cdn.example.invalid/a/secret?sig=token") == "https://cdn.example.invalid"
     assert public_source_label("data:video/mp4;base64,AAAA") == "data:"
+    assert public_source_label("ftp://youtu.be/dQw4w9WgXcQ") == "ftp://youtu.be"
+    assert public_source_label("x://media.example.invalid/secret?sig=1") == "x://media.example.invalid"
+    assert public_source_label("media.example.invalid/secret?sig=1") == "media.example.invalid"

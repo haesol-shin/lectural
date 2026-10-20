@@ -38,8 +38,10 @@ _SUPPORTED_VIDEO_SUFFIXES = (".mp4", ".webm", ".mkv")
 _SUPPORTED_AUDIO_SUFFIXES = (".wav",)
 _SUPPORTED_SUFFIXES = _SUPPORTED_VIDEO_SUFFIXES + _SUPPORTED_AUDIO_SUFFIXES
 _REMOTE_SCHEMES = ("http", "https")
-# A URL scheme of two or more characters; one letter is a Windows drive.
-_SCHEME_RE = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]+):")
+# A URL scheme: any scheme followed by ``//``, or a dot-free scheme of two or
+# more characters (``data:``, ``javascript:``).  One letter without ``//`` is a
+# Windows drive, and a dotted name without ``//`` is a ``host:port`` form.
+_SCHEME_RE = re.compile(r"^(?:([A-Za-z][A-Za-z0-9+.-]*):(?=//)|([A-Za-z][A-Za-z0-9+-]+):)")
 _YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"}
 _INVALID_SOURCE_MESSAGE = (
     "Input must be a YouTube URL/ID, a public http(s) media URL, "
@@ -68,7 +70,7 @@ def _is_youtube_url(value: str) -> bool:
 
 def _url_scheme(value: str) -> str | None:
     match = _SCHEME_RE.match(value.strip())
-    return match.group(1).lower() if match else None
+    return (match.group(1) or match.group(2)).lower() if match else None
 
 
 def url_origin(value: str) -> str:
@@ -104,6 +106,28 @@ def remote_url_origin(value: str) -> str | None:
     return url_origin(value)
 
 
+# ``host.tld[:port]`` followed by a path, query, or fragment: a URL typed
+# without a scheme.  It is never accepted, but must not be echoed either.
+_SCHEMELESS_URL_RE = re.compile(r"^([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)(?::\d+)?[/?#]")
+
+
+def _url_label(value: str) -> str | None:
+    """Return a token-free label for a URL-like value, or None for other text."""
+    if _url_scheme(value) is not None:
+        return url_origin(value)
+    match = _SCHEMELESS_URL_RE.match(value.strip())
+    if match:
+        return match.group(1).lower().rstrip(".")
+    if any(mark in value for mark in "?#&="):
+        return "url"
+    return None
+
+
+def _echo_safe(argument: str) -> str:
+    label = _url_label(argument)
+    return f"({label})" if label is not None else repr(argument)
+
+
 def public_source_label(argument: str) -> str:
     """Return a CLI argument as it may appear in logs and run state.
 
@@ -112,11 +136,10 @@ def public_source_label(argument: str) -> str:
     """
     if not isinstance(argument, str) or os.path.exists(os.path.expanduser(argument)):
         return argument
-    if _url_scheme(argument) is None:
+    if extract_video_id(argument) and _is_youtube_url(argument) and _url_scheme(argument) in (None, *_REMOTE_SCHEMES):
         return argument
-    if extract_video_id(argument) and _is_youtube_url(argument):
-        return argument
-    return url_origin(argument)
+    label = _url_label(argument)
+    return argument if label is None else label
 
 
 @dataclass(frozen=True)
@@ -218,12 +241,16 @@ def classify_source(argument: str) -> InputSource:
 
     video_id = extract_video_id(argument)
     is_youtube = bool(video_id) and _is_youtube_url(argument)
-    if _url_scheme(argument) is not None and not is_youtube:
+    scheme = _url_scheme(argument)
+    # Never echo a URL in these errors: its path or query may carry tokens.
+    if scheme is not None and scheme not in _REMOTE_SCHEMES:
+        raise ValueError(
+            f"{_INVALID_SOURCE_MESSAGE}; only http and https URLs are accepted ({url_origin(argument)})"
+        )
+    if scheme is not None and not is_youtube:
         origin = remote_url_origin(argument)
         if origin is None:
-            # Never echo the URL: its path or query may carry tokens.
-            detail = "" if _url_scheme(argument) in _REMOTE_SCHEMES else "; only http and https URLs are accepted"
-            raise ValueError(f"{_INVALID_SOURCE_MESSAGE}{detail} ({url_origin(argument)})")
+            raise ValueError(f"{_INVALID_SOURCE_MESSAGE} ({url_origin(argument)})")
         return InputSource(
             argument=argument,
             kind=SourceKind.REMOTE,
@@ -244,4 +271,4 @@ def classify_source(argument: str) -> InputSource:
             title_hint="",
             video_id=video_id,
         )
-    raise ValueError(f"{_INVALID_SOURCE_MESSAGE}: {argument!r}")
+    raise ValueError(f"{_INVALID_SOURCE_MESSAGE}: {_echo_safe(argument)}")

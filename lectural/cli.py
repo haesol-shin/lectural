@@ -369,11 +369,6 @@ def _failure_source(source: InputSource) -> dict | None:
     return None if source.kind is SourceKind.REMOTE else source.safe_as_dict()
 
 
-def _emit_json(payload: dict) -> None:
-    json.dump(payload, sys.stdout, ensure_ascii=False, separators=(",", ":"))
-    sys.stdout.write("\n")
-
-
 def _extract_main(args: argparse.Namespace) -> int:
     """Run one source through the public extraction contract."""
     from . import extract
