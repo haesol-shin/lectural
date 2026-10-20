@@ -10,6 +10,7 @@ class YouTubeHandler:
     has_video = True
     caption_capable = True
     citation_kind = CitationKind.YOUTUBE
+    stt_fallback_code = None  # acquire_speech records why captions were not used
 
     def probe(self, source: InputSource) -> media.SourceMetadata:
         metadata = media.fetch_video_metadata(source.locator)
