@@ -920,7 +920,8 @@ def test_materialize_sweeps_stale_scratch_before_fetching(temp_root, monkeypatch
 
     monkeypatch.setattr(remote, "fetch", fake_fetch)
     with remote.materialize(cli.classify_source(f"https://media.example.invalid/{PATH_TOKEN}")) as ready:
-        assert [path.name for path in temp_root.iterdir()] == [Path(ready.scratch_dir).name]
+        expected = [Path(ready.scratch_dir).name] + ([] if remote.fcntl else [stale.name])
+        assert sorted(path.name for path in temp_root.iterdir()) == sorted(expected)
     assert list(temp_root.iterdir()) == ([] if remote.fcntl else [stale])
 
 
