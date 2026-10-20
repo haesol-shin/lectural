@@ -102,12 +102,15 @@ def _extract_source(
     skip_ocr: bool = False,
     source: InputSource | None = None,
     metadata=None,
+    work_dir: str | None = None,
     resources: ResourceSampler,
 ) -> dict:
     """Extract speech and visual evidence into ``output_dir`` and write v2 JSON.
 
     The directory is expected to be new or pre-created by the caller. This
     function never writes notes, synthesis handoff, or notes coverage files.
+    Generated audio goes to ``work_dir`` when given (fetched URL sources keep
+    every media-derived file out of the bundle), otherwise to ``output_dir``.
     """
     from . import acquisition, media, visual
     from .coverage import gap_check, scene_coverage
@@ -126,7 +129,7 @@ def _extract_source(
     ocr_failed = False
 
     with resources.stage("speech"):
-        track = acquisition.acquire_speech(source, out_dir, force_stt=force_stt, model=model)
+        track = acquisition.acquire_speech(source, work_dir or out_dir, force_stt=force_stt, model=model)
         duration = _positive_finite_duration(metadata.duration, track.meta.get("duration"))
         speech_spans = (
             detect_speech_spans(track.meta.get("audio_path", os.path.join(out_dir, "audio.wav")), duration)
@@ -291,6 +294,8 @@ def _extract_source(
     )
     evidence.write_json(manifest, os.path.join(out_dir, "evidence.json"))
     return {"output_dir": out_dir, "manifest": manifest}
+
+
 def extract_source(
     source_argument: str,
     output_dir: str,
@@ -301,24 +306,35 @@ def extract_source(
     skip_ocr: bool = False,
     source: InputSource | None = None,
     metadata=None,
+    work_dir: str | None = None,
 ) -> dict:
-    """Extract speech and visual evidence into a directory and write v2 JSON."""
-    resources = ResourceSampler().start()
-    try:
-        return _extract_source(
-            source_argument,
-            output_dir,
-            force_stt,
-            model,
-            keep_frames=keep_frames,
-            skip_ocr=skip_ocr,
-            source=source,
-            metadata=metadata,
-            resources=resources,
-        )
-    except BaseException:
-        resources.abort()
-        raise
+    """Extract speech and visual evidence into a directory and write v2 JSON.
+
+    A remote URL source is fetched into a temporary directory that is removed
+    when extraction ends, whether it succeeds or fails.  Callers that already
+    materialized a remote source pass its scratch directory as ``work_dir``.
+    """
+    from . import remote
+
+    source = source or classify_source(source_argument)
+    with remote.materialize(source) as ready:
+        resources = ResourceSampler().start()
+        try:
+            return _extract_source(
+                source_argument,
+                output_dir,
+                force_stt,
+                model,
+                keep_frames=keep_frames,
+                skip_ocr=skip_ocr,
+                source=ready.source,
+                metadata=metadata,
+                work_dir=ready.scratch_dir or work_dir,
+                resources=resources,
+            )
+        except BaseException:
+            resources.abort()
+            raise
 
 
 

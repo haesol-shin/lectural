@@ -17,11 +17,13 @@ lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--
 lectural doctor [--fix] [--plugin] [--json]
 ```
 
-`<source>` is one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
+`<source>` is one supported YouTube URL/ID, one public `http`/`https` media URL, or an existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
+
+A non-YouTube `http(s)` URL is fetched without cookies or credentials. A response with a `video/*` or `audio/*` content type is the media; any other response is resolved by yt-dlp (user configuration ignored, cookies disabled, no playlists) to one progressive `http(s)` format, which LecturAL then downloads itself. Every request LecturAL makes follows redirects only to `http(s)` targets. Other schemes (`file:`, `data:`, `ftp:`, …) are rejected before output creation. The download and any audio derived from it live only in a private temporary directory removed after success and failure. The fetched file is then processed exactly like a local file. Personal-study use only; following the source platform's or institution's rules is the user's responsibility.
 
 Multiple `notes` inputs are processed sequentially. Each source reserves a unique slug directory under `--out`, adding a numeric suffix when a directory already exists; evidence-bundle inputs keep their existing directory.
 
-The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The `notes` command creates those notes artifacts after extraction, or rebuilds them from a supplied evidence bundle. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind.
+The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The `notes` command creates those notes artifacts after extraction, or rebuilds them from a supplied evidence bundle. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind. For a fetched URL, `source.argument` is only `scheme://host`; the URL path, query, port, and user information never appear in JSON, stdout, stderr, or the notes run state.
 
 ## Doctor
 
@@ -48,7 +50,9 @@ The JSON report retains `schema_version`, `items`, `overall_status`, and `exit_c
 
 Extraction envelope `status` is `ok`, `partial`, or `error`; inspect and verify use `ok` or `error`. Error entries contain only a bounded `code` and safe `message`; they never contain an exception, source path, credential, token, cookie, environment value, or internal state path. The evidence manifest itself has no duplicate top-level status: use `result.extraction.status`.
 
-When no extraction manifest could be produced, `result` is a bounded failure result rather than an evidence manifest. Its `source` is null or a minimal safe descriptor; artifact paths are null when output creation did not occur. The failure-result shape is defined by `extract.schema.json`.
+When no extraction manifest could be produced, `result` is a bounded failure result rather than an evidence manifest. Its `source` is null or a minimal safe descriptor (always null for a fetched URL); artifact paths are null when output creation did not occur. The failure-result shape is defined by `extract.schema.json`.
+
+A URL fetch failure removes the still-empty output directory and reports one of these codes with exit `2`: `SOURCE_UNAUTHORIZED` (HTTP 401/403/407 or a login-required page), `SOURCE_REDIRECT_REJECTED` (a redirect to a non-`http(s)` target), or `SOURCE_UNAVAILABLE` (unreachable host, other HTTP error, truncated download, or no single progressive `http(s)` media format). An unsupported scheme is `SOURCE_INVALID`.
 
 Exit codes for `extract` are:
 
@@ -56,7 +60,7 @@ Exit codes for `extract` are:
 | ---: | --- |
 | `0` | extraction `pass` |
 | `1` | extraction `warn` or `fail` after a JSON response was produced |
-| `2` | invalid source or output requires user action; JSON response produced |
+| `2` | invalid source, unreachable or non-public URL, or output requires user action; JSON response produced |
 
 Argument-parser failures before a command can be identified use argparse's stderr path. Normal responses and processable failures keep stdout as a single JSON document.
 
@@ -81,7 +85,7 @@ Exit codes:
 lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--json]
 ```
 
-`verify` reports `schema`, `containment`, `artifacts`, `frame_hashes`, `identifiers`, `timestamps`, `completeness`, and `source` checks. Each check has a `name` and `status` (`pass`, `fail`, or `skipped`), with an optional bounded code and path-free detail. The source check is `skipped` unless `--source` is supplied; for a local file it compares a streamed SHA-256, and for YouTube it compares the video ID. `result` is `{ "valid": boolean, "checks": [...] }`; the common envelope status is `ok` for valid bundles and `error` otherwise. The response schema is [verify.schema.json](verify.schema.json).
+`verify` reports `schema`, `containment`, `artifacts`, `frame_hashes`, `identifiers`, `timestamps`, `completeness`, and `source` checks. Each check has a `name` and `status` (`pass`, `fail`, or `skipped`), with an optional bounded code and path-free detail. The source check is `skipped` unless `--source` is supplied; for a local file it compares a streamed SHA-256, and for YouTube it compares the video ID. `verify` never fetches: a generic media URL fails the source check with `SOURCE_INVALID`. `result` is `{ "valid": boolean, "checks": [...] }`; the common envelope status is `ok` for valid bundles and `error` otherwise. The response schema is [verify.schema.json](verify.schema.json).
 
 Exit codes:
 
@@ -113,7 +117,7 @@ Manifest paths are stored as absolute paths. For copied or moved bundles, `inspe
 
 On success, `result` is the same evidence manifest written to `<out>/evidence.json`. Its top-level fields are `schema_version`, `contract_version`, `tool`, `tool_version`, `generated_at`, `source`, `speech`, `transcript`, `frames`, `artifacts`, `extraction`, `resources`, and `failure`.
 
-- `source.id` is `sha256:<hex>` for a local input, computed as a streamed SHA-256 of the source file, or `youtube:<video_id>` for YouTube. `source.kind` is `youtube`, `local_video`, or `local_audio`; `source.title`, `duration_sec`, and nullable `resolution` describe the probed source.
+- `source.id` is `sha256:<hex>` for a local input or fetched URL, computed as a streamed SHA-256 of the (downloaded) media file, or `youtube:<video_id>` for YouTube. `source.kind` is `youtube`, `local_video`, or `local_audio`; a fetched URL is `local_video` when the file has a video stream and `local_audio` otherwise, with `speech.fallback.code` `local_source`. `source.title`, `duration_sec`, and nullable `resolution` describe the probed source; a fetched URL's title is the extractor title only when it cannot echo the URL path or query, otherwise the host.
 - `speech` records caption/STT provenance, spoken language when known, model, and a nullable bounded fallback code: `captions_unavailable`, `captions_unusable`, `captions_language_mismatch`, `captions_language_unverified`, `forced_stt`, or `local_source`. Exception text is never part of the manifest.
 - YouTube caption selection rejects auto-translated tracks (including any caption URL with `tlang`). Manual tracks are preferred over original `-orig` ASR tracks only among tracks matching the spoken language; language preferences never authorize translations. Uploader-declared yt-dlp `language` metadata only orders candidate tracks and never verifies spoken language, even when it agrees with the caption label. Before accepting captions, LecturAL always runs a faster-whisper language probe on at most the first 30 seconds of audio; no detected speech or probability below 0.8 is unverified. A detected language matching the original label permits captions and is recorded in `speech.language`.
 - If a caption label disagrees with the detected spoken language, LecturAL first reselects an original track matching the detected language. If none matches, LecturAL transcribes the audio instead of relabeling unverified caption text (`speech.source: stt`, `speech.fallback.code: captions_language_mismatch`). An inconclusive probe uses `captions_language_unverified`; translated-only listings use `captions_unavailable`. STT records its detected language, retaining the probe language if STT supplies none.

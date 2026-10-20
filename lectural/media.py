@@ -97,12 +97,19 @@ def _probe_local_audio(source: InputSource) -> SourceMetadata:
     return SourceMetadata(title=source.title_hint)
 
 
+def _require_materialized(source: InputSource, *_args) -> None:
+    # Remote URLs are fetched by ``remote.materialize`` into a local file first;
+    # the media boundary never touches the network for them.
+    raise ValueError("Remote sources must be materialized before media resolution")
+
+
 # Keep each SourceKind explicit: adding a source kind must update all three
 # boundaries rather than silently taking a generic fallback.
 _PROBE_RESOLVERS = {
     SourceKind.YOUTUBE: _probe_youtube,
     SourceKind.LOCAL_VIDEO: _probe_local_video,
     SourceKind.LOCAL_AUDIO: _probe_local_audio,
+    SourceKind.REMOTE: _require_materialized,
 }
 
 
@@ -163,6 +170,7 @@ _AUDIO_RESOLVERS = {
     SourceKind.YOUTUBE: _resolve_audio_youtube,
     SourceKind.LOCAL_VIDEO: _resolve_audio_local_video,
     SourceKind.LOCAL_AUDIO: _resolve_audio_local_audio,
+    SourceKind.REMOTE: _require_materialized,
 }
 
 
@@ -209,6 +217,7 @@ _VIDEO_RESOLVERS = {
     SourceKind.YOUTUBE: _resolve_video_youtube,
     SourceKind.LOCAL_VIDEO: _resolve_video_local_video,
     SourceKind.LOCAL_AUDIO: _resolve_video_local_audio,
+    SourceKind.REMOTE: _require_materialized,
 }
 
 

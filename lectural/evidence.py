@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import json
 import math
 import os
+import re
 from typing import Iterable
 
 from . import __version__
@@ -29,8 +30,10 @@ class ContractError(ValueError):
 _FAILURE_MESSAGES = {
     "OUTPUT_EXISTS": "The output directory already exists; choose a new --out path.",
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
-    "SOURCE_INVALID": "The source is not a supported YouTube URL or local media file.",
+    "SOURCE_INVALID": "The source is not a supported YouTube URL, public http(s) media URL, or local media file.",
     "SOURCE_UNAVAILABLE": "The source could not be accessed for extraction.",
+    "SOURCE_UNAUTHORIZED": "The source URL requires a login or is not public; only public URLs are supported.",
+    "SOURCE_REDIRECT_REJECTED": "The source URL redirected to a location that is not http or https.",
     "OCR_FAILED": "Requested OCR failed; visual evidence frames were retained when available.",
     "TIMESTAMP_INVALID": "Extraction produced invalid or inconsistent timestamps.",
     "SPEECH_INCOMPLETE": "Speech coverage contains an untranscribed interval.",
@@ -176,16 +179,22 @@ def _artifact_paths(output_dir: str, paths: dict[str, str | None]) -> dict[str, 
     return result
 
 
+_URL_ORIGIN = re.compile(r"https?://[^/?#@\s\\]+")
+
+
 def _safe_source(source: dict) -> dict:
     """Return the public source identity and bounded display metadata."""
     kind = source.get("kind")
     citation = source.get("citation") if isinstance(source.get("citation"), dict) else {}
     safe_citation = {"kind": citation.get("kind")}
+    raw_argument = str(source.get("argument") or "local-media")
     if kind == "youtube" and citation.get("video_id"):
         safe_citation["video_id"] = citation["video_id"]
         argument = f"https://youtu.be/{citation['video_id']}"
+    elif _URL_ORIGIN.fullmatch(raw_argument):
+        # A fetched URL keeps only its scheme://host origin.
+        argument = raw_argument
     else:
-        raw_argument = str(source.get("argument") or "local-media")
         argument = os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
     raw_resolution = source.get("resolution")
     resolution = raw_resolution if isinstance(raw_resolution, dict) else {}

@@ -4,6 +4,9 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ## [Unreleased]
 
+### Added
+- Accept public `http(s)` media URLs as sources without cookies: media is fetched into a temporary directory that is removed after success and failure, redirects are followed only to `http(s)`, evidence and messages record only the URL scheme and host, and the result is transcribed like a local file (first slice of #45; cookies remain future work)
+
 ### Fixed
 - Reject translated YouTube captions and preserve spoken-language evidence when selecting original tracks
 - Always verify caption language against an audio-language probe, treating uploader metadata only as a selection hint and falling back to STT with explicit language-mismatch or unverified-language codes

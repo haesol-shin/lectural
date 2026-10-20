@@ -4,7 +4,7 @@
 
 LecturAL turns video and audio into complete, deterministic, timestamp-addressable evidence that agents can verify and reuse.
 
-Give it a YouTube URL or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
+Give it a YouTube URL, a public `http(s)` media URL, or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
 
 ## Install
 
@@ -43,6 +43,18 @@ lectural verify ./lecture-evidence --source ./lecture.mp4
 ```
 
 `extract` builds the bundle in a new directory; if `./lecture-evidence` already exists, choose a fresh name such as `./lecture-evidence-2` and use that name for the following commands. Never delete an existing bundle just to rerun extraction. `inspect` shows a readable inventory. `verify` checks structure, artifact containment, frame hashes, identifiers, timestamps, recomputed completeness, and, with `--source`, that the bundle came from that media; exit `0` means valid. It is not fact-checking.
+
+### Public media URLs
+
+```bash
+lectural extract "https://media.example.org/talk" --out ./talk-evidence --json
+```
+
+Any public `http` or `https` URL that is either a direct video/audio file or a page yt-dlp can resolve to a single progressive `http(s)` file is accepted; `file:`, `data:`, and other schemes are rejected, and redirects are followed only to `http(s)` targets. No cookies or logins are used, so private or login-only media fails with `SOURCE_UNAUTHORIZED`. Streams that exist only as HLS/DASH fragments are not supported yet.
+
+The media is downloaded to a private temporary directory, processed like a local file, and deleted afterwards whether extraction succeeds or fails; transcription audio derived from it is kept there too. The bundle records only the URL's scheme and host (for example `https://media.example.org`), never its path or query, and the same applies to printed errors and run state. Captions are a YouTube-only feature, so these sources are always transcribed.
+
+Use this only for your own personal study. Do not redistribute fetched media or derived evidence. You are responsible for following the terms and rules of the platform or institution that hosts the media; LecturAL does not bypass DRM or other access controls.
 
 ## Commands at a glance
 
@@ -105,7 +117,7 @@ LecturAL ships one shared skill, [`skills/lectural/SKILL.md`](https://github.com
 
 **No captions?** YouTube captions are used when they are usable; otherwise LecturAL transcribes the audio. Local files are always transcribed. `evidence.json` records which path ran in `speech.source` and `speech.fallback.code`.
 
-**Does a local run need yt-dlp?** No; only YouTube sources use it. The preflight still checks all runtime tools, so `doctor --fix` may offer to install it for future YouTube runs.
+**Does a local run need yt-dlp?** No; only YouTube sources and media URLs that point to a web page instead of a media file use it. The preflight still checks all runtime tools, so `doctor --fix` may offer to install it for future runs.
 
 **What does `--skip-ocr` do?** Keeps the scene frames and skips OCR; the OCR state is recorded as `skipped`.
 

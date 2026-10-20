@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from lectural.source import CitationKind, SourceKind, classify_source, extract_video_id
+from lectural.source import CitationKind, SourceKind, classify_source, extract_video_id, public_source_label
 
 
 @pytest.mark.parametrize("suffix", [".mp4", ".webm", ".mkv", ".WAV"])
@@ -65,8 +65,7 @@ def test_extract_video_id_stays_pure_and_rejects_malformed_values(tmp_path: Path
     assert extract_video_id("not a url") is None
     assert extract_video_id("too-short") is None
     with pytest.raises(ValueError, match="YouTube URL/ID"):
-        classify_source("https://example.com/watch?v=dQw4w9WgXcQ")
-
+        classify_source("ftp://example.com/watch?v=dQw4w9WgXcQ")
 
     with pytest.raises(FileNotFoundError, match="missing.wav"):
         classify_source(str(tmp_path / "missing.wav"))
@@ -132,3 +131,56 @@ def test_tilde_path_uses_isolated_expanduser_environment_without_symlink(
     assert source.locator == str(target.resolve())
     assert source.kind is SourceKind.LOCAL_VIDEO
     assert source.title_hint == "lecture"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://media.example.invalid/secret-path-token/lecture.mp4?sig=query-token-value",
+        "http://media.example.invalid/watch?v=dQw4w9WgXcQ",
+        "HTTPS://Media.Example.Invalid./clip",
+    ],
+)
+def test_public_http_urls_classify_as_remote_with_origin_only(value: str):
+    source = classify_source(value)
+    assert source.kind is SourceKind.REMOTE
+    assert source.origin == f"{value.split(':', 1)[0].lower()}://media.example.invalid"
+    assert source.caption_capable is False
+    assert source.citation_kind is CitationKind.TRANSCRIPT
+    for descriptor in (source.as_dict(), source.safe_as_dict()):
+        assert descriptor["argument"] == source.origin
+        assert "token" not in str(descriptor) and "watch" not in str(descriptor)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "file:///private/secret-path-token/lecture.mp4",
+        "data:video/mp4;base64,c2VjcmV0LXBhdGgtdG9rZW4=",
+        "ftp://media.example.invalid/secret-path-token/lecture.mp4",
+        "javascript:secret-path-token",
+        "https:///secret-path-token/lecture.mp4",
+    ],
+)
+def test_non_http_urls_are_rejected_without_echoing_the_url(value: str):
+    with pytest.raises(ValueError) as excinfo:
+        classify_source(value)
+    assert "secret-path-token" not in str(excinfo.value)
+    assert "c2VjcmV0" not in str(excinfo.value)
+
+
+def test_youtube_hosts_never_become_remote_sources():
+    with pytest.raises(ValueError, match="YouTube URL/ID"):
+        classify_source("https://www.youtube.com/playlist?list=secret-list-token")
+    assert classify_source("https://youtu.be/dQw4w9WgXcQ?si=token").kind is SourceKind.YOUTUBE
+
+
+def test_public_source_label_keeps_local_and_youtube_and_reduces_urls(tmp_path: Path):
+    local = tmp_path / "lecture.mp4"
+    local.write_bytes(b"x")
+    assert public_source_label(str(local)) == str(local)
+    assert public_source_label("dQw4w9WgXcQ") == "dQw4w9WgXcQ"
+    youtube = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    assert public_source_label(youtube) == youtube
+    assert public_source_label("https://cdn.example.invalid/a/secret?sig=token") == "https://cdn.example.invalid"
+    assert public_source_label("data:video/mp4;base64,AAAA") == "data:"

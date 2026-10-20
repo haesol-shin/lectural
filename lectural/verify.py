@@ -13,7 +13,7 @@ from . import __version__
 from .bundle import Bundle, BundleError, load_bundle
 from .config import EXTRACTION_CONTRACT_VERSION, EXTRACTION_SCHEMA_VERSION
 from .coverage import gap_check, scene_coverage
-from .source import classify_source
+from .source import SourceKind, classify_source
 
 
 _SEGMENT_ID = re.compile(r"^s[0-9]{4,}$")
@@ -497,6 +497,9 @@ def _verify_source(bundle: Bundle, argument: str) -> tuple[bool, str, str]:
         classified = classify_source(argument)
     except (FileNotFoundError, TypeError, ValueError):
         return False, "SOURCE_INVALID", "The supplied source is not a supported file or YouTube identifier."
+    if classified.kind is SourceKind.REMOTE:
+        # Verification never fetches; compare the fetched file instead.
+        return False, "SOURCE_INVALID", "A generic media URL cannot be verified without fetching it; supply a local file."
     expected = f"youtube:{classified.video_id}" if classified.video_id else ""
     return expected == source["id"], "SOURCE_MISMATCH", "The supplied source does not match the recorded identity."
 
