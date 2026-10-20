@@ -1605,3 +1605,15 @@ def test_missing_relative_local_path_keeps_unavailable_contract(tmp_path, monkey
     assert code == 2
     assert json.loads(out)["errors"] == [evidence.failure("SOURCE_UNAVAILABLE")]
     assert not (tmp_path / "bundle").exists()
+
+
+def test_existing_relative_directory_keeps_invalid_source_contract(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    path = Path("archive.v1/lecture.mp4")
+    path.mkdir(parents=True)
+    with pytest.raises(ValueError):
+        cli.classify_source(str(path))
+    code, out, err = _run_cli(["extract", str(path), "--out", "bundle"], capsys)
+    assert code == 2
+    assert json.loads(out)["errors"] == [evidence.failure("SOURCE_INVALID")]
+    assert not (tmp_path / "bundle").exists()

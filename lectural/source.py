@@ -133,7 +133,8 @@ def classify_source(argument: str) -> InputSource:
     if not exists_as_regular_file and is_url_like(argument) and not (
         is_youtube_url(argument) and extract_video_id(argument)
     ):
-        if suffix in _SUPPORTED_SUFFIXES and not has_url_scheme(argument) and not argument.startswith("//"):
+        if (suffix in _SUPPORTED_SUFFIXES and not has_url_scheme(argument)
+                and not argument.startswith("//") and not os.path.isdir(expanded)):
             raise FileNotFoundError("Local source does not exist")
         raise ValueError("Input must be a YouTube URL/ID or an existing supported local file")
     if exists_as_regular_file:
