@@ -17,11 +17,45 @@ lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--
 lectural doctor [--fix] [--plugin] [--json]
 ```
 
-`<source>` is one supported YouTube URL/ID or existing local `.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and then passed to the notes consumer; bundle inputs regenerate notes in place without re-extraction. `--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and `--keep-frames` are extraction-only options and are rejected for bundle inputs.
+`<source>` is one supported YouTube URL/ID, public HTTP(S) media/page URL, or existing local
+`.mp4`, `.webm`, `.mkv`, or `.wav` file. Each `<input>` to `notes` is either such a source or an
+existing evidence-bundle directory containing `evidence.json`. Source inputs are extracted and passed
+to the notes consumer; bundle inputs regenerate notes in place without re-extraction.
+`--out` chooses the output root for source inputs. `--force-stt`, `--model`, `--skip-ocr`, and
+`--keep-frames` are extraction-only options and are rejected for bundle inputs.
 
 Multiple `notes` inputs are processed sequentially. Each source reserves a unique slug directory under `--out`, adding a numeric suffix when a directory already exists; evidence-bundle inputs keep their existing directory.
 
 The `extract` command rejects the requested output path when it already exists, even when it is empty. It creates the path only after source syntax is valid. Every manifest artifact path is absolute and resolves below the new output directory. `extract` writes `evidence.json`, `transcript.md`, and (for video sources) retained frames; it does not write `notes.md`, `synthesis_input.json`, or `coverage.json`. The `notes` command creates those notes artifacts after extraction, or rebuilds them from a supplied evidence bundle. Local source paths are not copied into the public JSON; `source.argument` contains only a filename, kind, and citation kind.
+
+### Public URL preparation
+
+Generic URLs are downloaded once before extraction; output-exists checks precede network I/O.
+Fetch failure does not create an output directory. The Python `extract_source` API remains
+local/YouTube-only; Python URL callers enter `fetch.prepare_source` and pass its `source` and `work_dir`.
+Existing local files and YouTube inputs pass through without generic fetching.
+
+Only unauthenticated HTTP(S) is supported, including every redirect. Page resolution uses
+`yt-dlp>=2026.8.19` without user configuration, cookies, or browser sessions. It prefers progressive
+media, then separate HTTP(S) video/audio merged locally. Segmented HLS/DASH video is unsupported.
+This is not IP-range isolation: loopback addresses remain valid. Follow source rules; personal study only.
+
+Fetched sources remain `local_video` or `local_audio`, with SHA-256 identity of acquired/merged bytes,
+STT with `local_source` fallback, and transcript citations. Titles contain only the host; arguments
+contain only `scheme://host` without userinfo, port, path, query, or fragment. No new source kind,
+serialized origin field, or schema version is introduced.
+Media and derived audio stay outside the bundle in private scratch until preparation exits.
+Success, ordinary failure, Ctrl-C and main-thread SIGTERM close scratch and restore signal handlers.
+POSIX runs sweep same-user, unlocked, real scratch directories older than one hour; non-POSIX does not.
+SIGKILL cleanup waits for a later URL run; failed deletion emits a bounded warning.
+
+URL preparation errors exit `2` with null source and all four artifact paths null:
+`SOURCE_INVALID`, `SOURCE_REDIRECT_REJECTED`, `SOURCE_LOGIN_REQUIRED`, `SOURCE_ACCESS_DENIED`,
+or `SOURCE_UNAVAILABLE`. Failure messages agree across `failure`, `errors`, and extraction reasons.
+Login/access failures may append a fixed update hint when yt-dlp is more than 90 days old.
+A missing resolver package/networking hook exits `1` as `EXTRACTION_FAILED`, without an output directory.
+Post-fetch extraction failures also exit `1` with null source; diagnostics never expose scratch paths.
+
 
 ## Doctor
 
@@ -82,6 +116,9 @@ lectural verify <bundle-directory-or-evidence.json> [--source <file-or-URL>] [--
 ```
 
 `verify` reports `schema`, `containment`, `artifacts`, `frame_hashes`, `identifiers`, `timestamps`, `completeness`, and `source` checks. Each check has a `name` and `status` (`pass`, `fail`, or `skipped`), with an optional bounded code and path-free detail. The source check is `skipped` unless `--source` is supplied; for a local file it compares a streamed SHA-256, and for YouTube it compares the video ID. `result` is `{ "valid": boolean, "checks": [...] }`; the common envelope status is `ok` for valid bundles and `error` otherwise. The response schema is [verify.schema.json](verify.schema.json).
+
+Generic URL `--source` values fail `SOURCE_INVALID` without fetching. Omit `--source` to verify the
+bundle offline, or supply an owner-held local copy of the acquired bytes for SHA-256 comparison.
 
 Exit codes:
 
