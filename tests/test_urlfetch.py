@@ -1534,3 +1534,74 @@ def test_notes_consumer_exception_is_bounded_after_scratch_closes(
     text = captured.out + captured.err + json.dumps(results) + _tree_text(tmp_path)
     _assert_no_tokens(text)
     assert "lectural-fetch-" not in text
+
+
+def test_origin_only_notes_input_still_bounds_pipeline_diagnostics(
+    temp_root,
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
+    from lectural import extract
+
+    seen = {}
+    _install_fake_pipeline(monkeypatch, seen)
+
+    def fake_fetch(_url, dest):
+        path = Path(dest) / "media.mp4"
+        path.write_bytes(MEDIA_BYTES)
+        return assets.FetchedMedia(str(path), True)
+
+    def broken(*args, source, **kwargs):
+        print(source.locator)
+        print(source.locator, file=sys.stderr)
+        raise RuntimeError(source.locator)
+
+    monkeypatch.setattr(fetch, "fetch_url", fake_fetch)
+    monkeypatch.setattr(extract, "extract_source", broken)
+    state = tmp_path / "state.json"
+    results = cli.run(
+        ["https://media.example.invalid"],
+        str(tmp_path / "notes"),
+        runstate_file=str(state),
+    )
+    captured = capsys.readouterr()
+    assert results[0]["error"] == evidence.failure("EXTRACTION_FAILED")["message"]
+    text = captured.out + captured.err + json.dumps(results) + state.read_text()
+    assert "lectural-fetch-" not in text
+    assert list(temp_root.iterdir()) == []
+
+
+@pytest.mark.parametrize("pipeline_fails", [False, True])
+def test_notes_preserves_bounded_cleanup_warning(
+    server,
+    temp_root,
+    probe_by_suffix,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    pipeline_fails,
+):
+    seen = {}
+    _install_fake_pipeline(monkeypatch, seen, fail_speech=pipeline_fails)
+    monkeypatch.setattr(scratch.shutil, "rmtree", lambda *args, **kwargs: None)
+    results = cli.run(
+        [server + VIDEO_PATH],
+        str(tmp_path / "notes"),
+        runstate_file=str(tmp_path / "state.json"),
+    )
+    captured = capsys.readouterr()
+    assert results[0]["overall_pass"] is not pipeline_fails
+    assert "lectural: could not remove temporary media directory" in captured.err
+    assert "lectural-fetch-" not in captured.out + captured.err + json.dumps(results)
+    assert len(list(temp_root.iterdir())) == 1
+
+
+def test_missing_relative_local_path_keeps_unavailable_contract(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        cli.classify_source("archive.v1/missing.mp4")
+    code, out, err = _run_cli(["extract", "archive.v1/missing.mp4", "--out", "bundle"], capsys)
+    assert code == 2
+    assert json.loads(out)["errors"] == [evidence.failure("SOURCE_UNAVAILABLE")]
+    assert not (tmp_path / "bundle").exists()

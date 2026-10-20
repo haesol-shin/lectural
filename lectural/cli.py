@@ -29,6 +29,7 @@ from .config import DEFAULT_STT_MODEL
 from .source import classify_source
 from . import fetch
 from .fetch.errors import RemoteSourceError
+from .fetch.scratch import CLEANUP_WARNING
 from .urlpolicy import public_source_label, remote_url_origin
 
 
@@ -270,10 +271,14 @@ def run(
     results: list[dict] = []
     for index, source_argument in enumerate(sources):
         out_dir = os.path.join(out_root, f"video_{index + 1:02d}")  # provisional
+        label = public_source_label(source_argument)
+        private = label != source_argument or (
+            not os.path.isfile(os.path.expanduser(source_argument)) and remote_url_origin(source_argument)
+        )
+        diagnostics = io.StringIO()
         try:
-            private = public_source_label(source_argument) != source_argument
-            with (redirect_stdout(io.StringIO()) if private else nullcontext()), (
-                redirect_stderr(io.StringIO()) if private else nullcontext()
+            with (redirect_stdout(diagnostics) if private else nullcontext()), (
+                redirect_stderr(diagnostics) if private else nullcontext()
             ):
                 result = _call_processor(source_argument, out_dir)
             result_output_dir = result.get("output_dir")
@@ -296,10 +301,9 @@ def run(
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001 - record + continue
-            label = public_source_label(source_argument)
             error_message = (
                 exc.safe_message if isinstance(exc, RemoteSourceError) else
-                evidence.failure("EXTRACTION_FAILED")["message"] if label != source_argument else
+                evidence.failure("EXTRACTION_FAILED")["message"] if private else
                 _run_error_message(exc)
             )
             runstate.update_run(
@@ -316,6 +320,9 @@ def run(
                     "error": error_message,
                 }
             )
+        finally:
+            if private and CLEANUP_WARNING in diagnostics.getvalue().splitlines():
+                print(CLEANUP_WARNING, file=sys.stderr)
     return results
 
 

@@ -16,6 +16,7 @@ except ImportError:
     fcntl = None
 
 PREFIX = "lectural-fetch-"
+CLEANUP_WARNING = "lectural: could not remove temporary media directory"
 
 
 def _lock(path: str) -> int | None:
@@ -33,7 +34,7 @@ def _lock(path: str) -> int | None:
 def _remove(path: str) -> None:
     shutil.rmtree(path, ignore_errors=True)
     if os.path.lexists(path):
-        print("lectural: could not remove temporary media directory", file=sys.stderr)
+        print(CLEANUP_WARNING, file=sys.stderr)
 
 
 def sweep_stale_scratch(root: str | None = None, *, now: float | None = None) -> list[str]:

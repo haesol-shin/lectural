@@ -56,6 +56,10 @@ def is_youtube_url(value: str) -> bool:
 def remote_url_origin(value: str) -> str | None:
     return url_origin(value) if is_http_url(value) and not is_youtube_url(value) else None
 
+
+def has_url_scheme(value: str) -> bool:
+    return bool(_SCHEME.match(value) and not _DRIVE.match(value))
+
 def is_url_like(value: str) -> bool:
     if _DRIVE.match(value):
         return False
