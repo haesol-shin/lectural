@@ -411,7 +411,7 @@ def _extract_main(args: argparse.Namespace) -> int:
         # The fetch failed before any artifact existed; release the empty --out.
         with contextlib.suppress(OSError):
             os.rmdir(output_dir)
-        _emit_json(evidence.build_failure_response(exc.code))
+        _emit_json(evidence.build_failure_response(exc.code, message=exc.safe_message))
         return 2
     except evidence.ContractError as exc:
         if diagnostics.getvalue().strip():

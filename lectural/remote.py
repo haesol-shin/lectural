@@ -4,39 +4,62 @@ Only public URLs are supported: no cookie file, no credentials, and no user
 configuration that could add them.  Every request follows redirects only to
 ``http``/``https`` targets:
 
-* LecturAL's own requests (the first request and the media download) use an
+* LecturAL's own requests (the first request and every media download) use an
   opener that has only HTTP/HTTPS handlers and rejects other redirect targets.
-* yt-dlp resolves a page URL to one progressive ``http(s)`` media URL
-  in-process, with its request director limited to a urllib handler that
-  speaks only HTTP/HTTPS and checks every redirect target before following it.
+* yt-dlp resolves a page URL to ``http(s)`` media URLs in-process, with its
+  request director limited to a urllib handler that speaks only HTTP/HTTPS and
+  checks every redirect target before following it.  yt-dlp never downloads
+  media itself.
+
+A page resolves to one progressive file with video and audio or, failing that,
+to a video-only and an audio-only ``http(s)`` stream that ffmpeg merges from
+local files (no network protocols, no playlist demuxers).  HLS/DASH fragment
+protocols are not fetched: yt-dlp's fragment downloaders can hand a manifest
+to ffmpeg, whose network requests would bypass the redirect checks.
 
 Fetched media and audio derived from it live only in a private temporary
-directory that ``materialize`` removes after success and failure.  Errors are
-bounded codes; the URL path/query and tool output are never surfaced, and the
-title of a fetched source is its host.
+directory that ``materialize`` removes after success, failure, Ctrl-C and
+SIGTERM; directories left by a killed run are swept by a later URL run.
+Errors are bounded codes; the URL path/query and tool output are never
+surfaced, and the title of a fetched source is its host.
 """
 
 from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass
+from datetime import date
 import http.client
 import json
 import mimetypes
 import os
 import re
 import shutil
+import signal
+import stat
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 from typing import Iterator
 import urllib.error
 import urllib.request
 from urllib.parse import urljoin, urlsplit
 
+try:
+    import fcntl
+except ImportError:  # Windows: no advisory locks, so no stale-directory sweep.
+    fcntl = None
+
 from .deps import DependencyError, require_binary
 from .evidence import ContractError, failure
 from .source import InputSource, SourceKind
+
+LOGIN_REQUIRED = "SOURCE_LOGIN_REQUIRED"
+ACCESS_DENIED = "SOURCE_ACCESS_DENIED"
+UNAVAILABLE = "SOURCE_UNAVAILABLE"
+REDIRECT_REJECTED = "SOURCE_REDIRECT_REJECTED"
 
 _ALLOWED_SCHEMES = ("http", "https")
 _ALLOWED_PROTOCOLS = ("http", "https")
@@ -48,21 +71,58 @@ _USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 )
-# Single progressive files only: no merge, no HLS/DASH fragments.
-_FORMAT_SELECTOR = "b[protocol=https]/b[protocol=http]/ba[protocol=https]/ba[protocol=http]"
-_UNAUTHORIZED_HINTS = (
-    "http error 401", "http error 403", "http error 407", "login", "log in",
-    "sign in", "cookies", "private", "authentication", "members-only",
+_HTTP_PROTOCOL = "[protocol~='^https?$']"
+# Visual evidence needs video and audio: one progressive file, else a
+# video-only + audio-only pair merged locally, else audio when the page has no
+# video at all.  A speech-only mode (#44) would select ``ba`` first.
+_FORMAT_SELECTOR = f"b{_HTTP_PROTOCOL}/bv{_HTTP_PROTOCOL}+ba{_HTTP_PROTOCOL}/ba{_HTTP_PROTOCOL}"
+# Demuxers ffmpeg may use on fetched files; playlist/manifest demuxers (HLS,
+# DASH, concat) are excluded because they open further URLs or files.
+_FFMPEG_INPUT_GUARD = (
+    "-protocol_whitelist", "file",
+    "-format_whitelist", "mov,matroska,mp3,aac,ogg,wav,flac,mpegts,flv,avi,asf,mpeg",
+)
+_LOGIN_PATH = re.compile(r"/(?:login|log-in|signin|sign-in|sign_in)(?:[/.?]|$)", re.IGNORECASE)
+_LOGIN_HINTS = (
+    "http error 401", "http error 407", "login", "log in", "logged in", "logged-in", "sign in",
+    "cookies", "authentication", "registered users", "members-only",
+)
+_URL_IN_TEXT = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://\S*")
+_DENIED_HINTS = ("http error 403", "forbidden", "private", "access denied")
+_YTDLP_MAX_AGE_DAYS = 90
+_YTDLP_UPDATE_HINT = (
+    "The installed yt-dlp is more than 90 days old, and an outdated yt-dlp can make public media "
+    'look private; update it (for example `uv pip install -U "yt-dlp"`) and retry.'
 )
 _DROPPED_HEADERS = {"cookie", "authorization", "proxy-authorization"}
 _YTDLP_HINT = 'Install run extras: `uv pip install "lectural[run]"` (a yt-dlp Python package with request handlers).'
+_SCRATCH_PREFIX = "lectural-fetch-"
+_STALE_SCRATCH_AGE_SEC = 60 * 60
+
+
+def _ytdlp_outdated(version: str | None = None, today: date | None = None) -> bool:
+    """Return whether the installed yt-dlp release is older than 90 days."""
+    if version is None:
+        try:
+            from yt_dlp.version import __version__ as version
+        except ImportError:
+            return False
+    try:
+        year, month, day = (int(part) for part in str(version).split(".")[:3])
+        released = date(year, month, day)
+    except ValueError:
+        return False
+    return ((today or date.today()) - released).days > _YTDLP_MAX_AGE_DAYS
 
 
 class RemoteSourceError(ContractError):
     """A bounded remote-source failure whose message never contains the URL."""
 
     def __init__(self, code: str):
-        super().__init__(code, failure(code)["message"])
+        message = failure(code)["message"]
+        if code in (LOGIN_REQUIRED, ACCESS_DENIED) and _ytdlp_outdated():
+            message = f"{message} {_YTDLP_UPDATE_HINT}"
+        super().__init__(code, message)
 
 
 @dataclass(frozen=True)
@@ -96,7 +156,7 @@ class _HttpOnlyRedirectHandler(urllib.request.HTTPRedirectHandler):
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         if _scheme(urljoin(req.full_url, newurl)) not in _ALLOWED_SCHEMES:
-            raise RemoteSourceError("SOURCE_REDIRECT_REJECTED")
+            raise RemoteSourceError(REDIRECT_REJECTED)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
@@ -116,17 +176,24 @@ def _opener() -> urllib.request.OpenerDirector:
     return opener
 
 
+def _status_code(status: int) -> str:
+    if status in (401, 407):
+        return LOGIN_REQUIRED
+    if status == 403:
+        return ACCESS_DENIED
+    return UNAVAILABLE
+
+
 def _bounded(exc: BaseException) -> RemoteSourceError:
     if isinstance(exc, RemoteSourceError):
         return exc
     if isinstance(exc, urllib.error.HTTPError):
         exc.close()
-        if exc.code in (401, 403, 407):
-            return RemoteSourceError("SOURCE_UNAUTHORIZED")
         if 300 <= exc.code < 400 and "loop" not in str(exc.msg).lower():
             # urllib refuses non-http(s)/ftp redirect targets before our handler runs.
-            return RemoteSourceError("SOURCE_REDIRECT_REJECTED")
-    return RemoteSourceError("SOURCE_UNAVAILABLE")
+            return RemoteSourceError(REDIRECT_REJECTED)
+        return RemoteSourceError(_status_code(exc.code))
+    return RemoteSourceError(UNAVAILABLE)
 
 
 def _open(url: str, headers: dict[str, str] | None = None):
@@ -139,14 +206,28 @@ def _open(url: str, headers: dict[str, str] | None = None):
         raise _bounded(exc) from None
 
 
+def _redirected_to_login(requested: str, response) -> bool:
+    final = response.geturl()
+    if not isinstance(final, str) or final == requested:
+        return False
+    try:
+        return bool(_LOGIN_PATH.search(urlsplit(final).path))
+    except ValueError:
+        return False
+
+
 def _content_type(response) -> str:
     return (response.headers.get_content_type() or "").lower()
 
 
-def _media_filename(content_type: str, ext: str | None = None) -> str:
+def _is_media(content_type: str) -> bool:
+    return content_type.split("/", 1)[0] in ("video", "audio")
+
+
+def _media_filename(content_type: str, ext: str | None = None, stem: str = "media") -> str:
     suffix = f".{ext}" if ext and re.fullmatch(r"[A-Za-z0-9]{1,8}", ext) else None
     suffix = suffix or mimetypes.guess_extension(content_type) or ".media"
-    return f"media{suffix}"
+    return f"{stem}{suffix}"
 
 
 def _stream_to_file(response, path: str) -> None:
@@ -160,7 +241,7 @@ def _stream_to_file(response, path: str) -> None:
     size = os.path.getsize(path)
     # http.client returns a short body silently when the peer closes early.
     if size == 0 or (declared and declared.strip().isdigit() and size != int(declared)):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE")
+        raise RemoteSourceError(UNAVAILABLE)
 
 
 class _SilentLogger:
@@ -211,6 +292,34 @@ def _http_only_ytdlp(rejected: list[bool]):
     return HttpOnlyYoutubeDL
 
 
+def _http_status(exc: BaseException) -> int | None:
+    """Find an HTTP status in a yt-dlp error chain (DownloadError -> ExtractorError -> HTTPError)."""
+    seen: set[int] = set()
+    current: object = exc
+    while isinstance(current, BaseException) and id(current) not in seen:
+        seen.add(id(current))
+        status = getattr(current, "status", None)
+        if isinstance(status, int) and 100 <= status < 600:
+            return status
+        exc_info = getattr(current, "exc_info", None)
+        nested = getattr(current, "cause", None) or (exc_info[1] if isinstance(exc_info, tuple) and len(exc_info) > 1 else None)
+        current = nested or current.__cause__ or current.__context__
+    return None
+
+
+def _classify_ytdlp_error(exc: BaseException) -> str:
+    status = _http_status(exc)
+    if status in (401, 403, 407):
+        return _status_code(status)
+    # yt-dlp messages quote the URL, whose path may contain words like "private".
+    text = _URL_IN_TEXT.sub(" ", str(exc)).lower()
+    if any(hint in text for hint in _LOGIN_HINTS):
+        return LOGIN_REQUIRED
+    if any(hint in text for hint in _DENIED_HINTS):
+        return ACCESS_DENIED
+    return UNAVAILABLE
+
+
 def _ytdlp_extract_info(url: str) -> dict:
     """Run yt-dlp extraction for ``url`` without cookies, config, or output."""
     rejected: list[bool] = []
@@ -232,72 +341,218 @@ def _ytdlp_extract_info(url: str) -> dict:
             info = ydl.sanitize_info(ydl.extract_info(url, download=False))
     except Exception as exc:  # noqa: BLE001 - extractor errors embed the URL; classify only.
         if rejected:
-            raise RemoteSourceError("SOURCE_REDIRECT_REJECTED") from None
-        text = str(exc).lower()
-        code = "SOURCE_UNAUTHORIZED" if any(hint in text for hint in _UNAUTHORIZED_HINTS) else "SOURCE_UNAVAILABLE"
-        raise RemoteSourceError(code) from None
+            raise RemoteSourceError(REDIRECT_REJECTED) from None
+        raise RemoteSourceError(_classify_ytdlp_error(exc)) from None
     if rejected:
-        raise RemoteSourceError("SOURCE_REDIRECT_REJECTED")
+        raise RemoteSourceError(REDIRECT_REJECTED)
     return info if isinstance(info, dict) else {}
 
 
-def _resolve_with_ytdlp(url: str) -> dict:
-    """Return yt-dlp's single selected progressive format for ``url``."""
+def _may_have_video(fmt: dict) -> bool:
+    return fmt.get("vcodec") != "none"
+
+
+def _resolve_with_ytdlp(url: str) -> list[dict]:
+    """Return the ``http(s)`` formats yt-dlp selected for ``url`` (one, or a video+audio pair)."""
     info = _ytdlp_extract_info(url)
-    if info.get("entries") is not None or info.get("requested_formats"):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE")
-    media_url = info.get("url")
-    if (
-        not isinstance(media_url, str)
-        or _scheme(media_url) not in _ALLOWED_SCHEMES
-        or str(info.get("protocol") or "").lower() not in _ALLOWED_PROTOCOLS
+    if info.get("entries") is not None:
+        raise RemoteSourceError(UNAVAILABLE)
+    selected = info.get("requested_formats") or [info]
+    if not isinstance(selected, list) or not 1 <= len(selected) <= 2:
+        raise RemoteSourceError(UNAVAILABLE)
+    for fmt in selected:
+        media_url = fmt.get("url") if isinstance(fmt, dict) else None
+        if (
+            not isinstance(media_url, str)
+            or _scheme(media_url) not in _ALLOWED_SCHEMES
+            or str(fmt.get("protocol") or "").lower() not in _ALLOWED_PROTOCOLS
+        ):
+            raise RemoteSourceError(UNAVAILABLE)
+    if not any(_may_have_video(fmt) for fmt in selected) and any(
+        isinstance(fmt, dict) and _may_have_video(fmt) for fmt in info.get("formats") or []
     ):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE")
-    return info
+        # The page has video, but only in a form that is not fetched (for example
+        # HLS/DASH fragments); audio alone would silently drop visual evidence.
+        raise RemoteSourceError(UNAVAILABLE)
+    return selected
 
 
-def _has_video_stream(path: str) -> bool:
-    """Return whether ``path`` has a real video stream (not cover art)."""
+def _probe(path: str) -> bool:
+    """Return whether ``path`` has a real video stream (not cover art).
+
+    Only local files in an allowed container are opened; a playlist or
+    manifest is rejected before any other ffmpeg step sees it.
+    """
     require_binary("ffprobe")
     try:
         proc = subprocess.run(
             [
-                "ffprobe", "-hide_banner", "-loglevel", "error", "-show_entries",
+                "ffprobe", "-hide_banner", "-loglevel", "error", *_FFMPEG_INPUT_GUARD, "-show_entries",
                 "stream=codec_type:stream_disposition=attached_pic", "-of", "json", path,
             ],
             check=True, capture_output=True, text=True,
         )
         streams = json.loads(proc.stdout).get("streams") or []
     except (OSError, subprocess.SubprocessError, ValueError):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE") from None
+        raise RemoteSourceError(UNAVAILABLE) from None
     kinds = [stream.get("codec_type") for stream in streams]
     if not any(kind in ("audio", "video") for kind in kinds):
-        raise RemoteSourceError("SOURCE_UNAVAILABLE")
+        raise RemoteSourceError(UNAVAILABLE)
     return any(
         stream.get("codec_type") == "video" and not (stream.get("disposition") or {}).get("attached_pic")
         for stream in streams
     )
 
 
-def fetch(url: str, dest_dir: str) -> FetchedMedia:
-    """Download the media behind a public ``http(s)`` URL into ``dest_dir``."""
-    response = _open(url)
-    content_type = _content_type(response)
-    if content_type.split("/", 1)[0] in ("video", "audio"):
-        path = os.path.join(dest_dir, _media_filename(content_type))
-        _stream_to_file(response, path)
-    else:
-        response.close()
-        info = _resolve_with_ytdlp(url)
+def _merge(video_path: str, audio_path: str, dest_dir: str) -> str:
+    """Merge a local video-only and audio-only file without re-encoding."""
+    require_binary("ffmpeg")
+    merged = os.path.join(dest_dir, "media.mkv")
+    try:
+        subprocess.run(
+            [
+                "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error",
+                *_FFMPEG_INPUT_GUARD, "-i", video_path, *_FFMPEG_INPUT_GUARD, "-i", audio_path,
+                "-map", "0:v:0", "-map", "1:a:0", "-c", "copy", "-f", "matroska", "-y", merged,
+            ],
+            check=True, capture_output=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        raise RemoteSourceError(UNAVAILABLE) from None
+    for path in (video_path, audio_path):
+        os.remove(path)
+    return merged
+
+
+def _download_formats(formats: list[dict], dest_dir: str) -> FetchedMedia:
+    """Download yt-dlp's selected formats with LecturAL's checked opener."""
+    paths = []
+    for index, fmt in enumerate(formats):
         headers = {
             str(key): str(value)
-            for key, value in (info.get("http_headers") or {}).items()
+            for key, value in (fmt.get("http_headers") or {}).items()
             if str(key).lower() not in _DROPPED_HEADERS
         }
-        media_response = _open(info["url"], headers)
-        path = os.path.join(dest_dir, _media_filename(_content_type(media_response), info.get("ext")))
-        _stream_to_file(media_response, path)
-    return FetchedMedia(path=path, has_video=_has_video_stream(path))
+        response = _open(fmt["url"], headers)
+        stem = "media" if len(formats) == 1 else f"stream{index}"
+        path = os.path.join(dest_dir, _media_filename(_content_type(response), fmt.get("ext"), stem))
+        _stream_to_file(response, path)
+        paths.append(path)
+    if len(paths) == 1:
+        return FetchedMedia(path=paths[0], has_video=_probe(paths[0]))
+    video_path, audio_path = paths
+    if not _probe(video_path):
+        raise RemoteSourceError(UNAVAILABLE)
+    _probe(audio_path)  # an allowed local container with a media stream
+    return FetchedMedia(path=_merge(video_path, audio_path, dest_dir), has_video=True)
+
+
+def fetch(url: str, dest_dir: str) -> FetchedMedia:
+    """Download the media behind a public ``http(s)`` URL into ``dest_dir``."""
+    first_failure: RemoteSourceError | None = None
+    try:
+        response = _open(url)
+    except RemoteSourceError as exc:
+        if exc.code != ACCESS_DENIED:
+            raise
+        # A 403 to a plain request may be a block on non-browser clients;
+        # page resolution decides between that and private media.
+        first_failure, response = exc, None
+    if response is not None:
+        content_type = _content_type(response)
+        if _is_media(content_type):
+            path = os.path.join(dest_dir, _media_filename(content_type))
+            _stream_to_file(response, path)
+            return FetchedMedia(path=path, has_video=_probe(path))
+        if _redirected_to_login(url, response):
+            first_failure = RemoteSourceError(LOGIN_REQUIRED)
+        response.close()
+    try:
+        formats = _resolve_with_ytdlp(url)
+    except RemoteSourceError as exc:
+        if first_failure is None or exc.code in (LOGIN_REQUIRED, ACCESS_DENIED, REDIRECT_REJECTED):
+            raise
+        raise first_failure from None
+    return _download_formats(formats, dest_dir)
+
+
+def _owned_by_user(info: os.stat_result) -> bool:
+    getuid = getattr(os, "getuid", None)
+    return getuid is not None and info.st_uid == getuid()
+
+
+def _lock_scratch(path: str) -> int | None:
+    """Hold an exclusive lock on ``path`` while this run uses it."""
+    if fcntl is None:
+        return None
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        # Unlockable file system: the sweep cannot lock it either and skips it.
+        os.close(fd)
+        return None
+    return fd
+
+
+def sweep_stale_scratch(root: str | None = None, *, now: float | None = None) -> list[str]:
+    """Remove ``lectural-fetch-*`` directories left by runs that were killed.
+
+    A directory is removed only when it is a real directory owned by this
+    user, older than one hour, and not locked by a live run (the kernel drops
+    a killed run's lock).  POSIX only.
+    """
+    if fcntl is None:
+        return []
+    root = root or tempfile.gettempdir()
+    cutoff = (time.time() if now is None else now) - _STALE_SCRATCH_AGE_SEC
+    removed = []
+    try:
+        entries = list(os.scandir(root))
+    except OSError:
+        return []
+    for entry in entries:
+        if not entry.name.startswith(_SCRATCH_PREFIX):
+            continue
+        try:
+            info = os.lstat(entry.path)
+            if not stat.S_ISDIR(info.st_mode) or not _owned_by_user(info) or info.st_mtime > cutoff:
+                continue
+            fd = os.open(entry.path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0))
+        except OSError:
+            continue
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            continue  # a live run holds it
+        try:
+            shutil.rmtree(entry.path, ignore_errors=True)
+        finally:
+            os.close(fd)
+        if not os.path.lexists(entry.path):
+            removed.append(entry.path)
+    return removed
+
+
+@contextlib.contextmanager
+def _terminate_as_exit() -> Iterator[None]:
+    """Turn the first SIGTERM into ``SystemExit(143)`` so ``finally`` blocks run."""
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    received: list[int] = []
+
+    def _handler(signum, _frame):
+        if not received:
+            received.append(signum)
+            raise SystemExit(128 + signum)
+
+    previous = signal.signal(signal.SIGTERM, _handler)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
 
 
 @contextlib.contextmanager
@@ -310,25 +565,35 @@ def materialize(source: InputSource) -> Iterator[Materialized]:
         yield Materialized(source, None)
         return
     origin = source.origin or "url"
-    scratch_dir = tempfile.mkdtemp(prefix="lectural-fetch-")
-    try:
-        fetched = fetch(source.locator, scratch_dir)
-        yield Materialized(
-            InputSource(
-                argument=origin,
-                kind=SourceKind.LOCAL_VIDEO if fetched.has_video else SourceKind.LOCAL_AUDIO,
-                locator=fetched.path,
-                # Page titles can quote the URL path or query; the host cannot.
-                title_hint=origin.split("://", 1)[-1],
-                video_id=None,
-                origin=origin,
-            ),
-            scratch_dir,
-        )
-    finally:
-        shutil.rmtree(scratch_dir, ignore_errors=True)
-        if os.path.exists(scratch_dir):
-            print(f"lectural: could not remove temporary media directory {scratch_dir}", file=sys.stderr)
+    sweep_stale_scratch()
+    with _terminate_as_exit():
+        scratch_dir = None
+        lock_fd = None
+        try:
+            scratch_dir = tempfile.mkdtemp(prefix=_SCRATCH_PREFIX)
+            lock_fd = _lock_scratch(scratch_dir)
+            fetched = fetch(source.locator, scratch_dir)
+            yield Materialized(
+                InputSource(
+                    argument=origin,
+                    kind=SourceKind.LOCAL_VIDEO if fetched.has_video else SourceKind.LOCAL_AUDIO,
+                    locator=fetched.path,
+                    # Page titles can quote the URL path or query; the host cannot.
+                    title_hint=origin.split("://", 1)[-1],
+                    video_id=None,
+                    origin=origin,
+                ),
+                scratch_dir,
+            )
+        finally:
+            if scratch_dir is not None:
+                shutil.rmtree(scratch_dir, ignore_errors=True)
+            if lock_fd is not None:
+                os.close(lock_fd)
+            if scratch_dir is not None and os.path.exists(scratch_dir):
+                print(f"lectural: could not remove temporary media directory {scratch_dir}", file=sys.stderr)
 
 
-__all__ = ["FetchedMedia", "Materialized", "RemoteSourceError", "fetch", "materialize"]
+__all__ = [
+    "FetchedMedia", "Materialized", "RemoteSourceError", "fetch", "materialize", "sweep_stale_scratch",
+]

@@ -6,6 +6,12 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 
 ### Added
 - Accept public `http(s)` media URLs as sources without cookies: media is fetched into a temporary directory that is removed after success and failure, redirects are followed only to `http(s)`, evidence and messages record only the URL scheme and host, and the result is transcribed like a local file (first slice of #45; cookies remain future work)
+- Fetch pages that offer only separate `http(s)` video and audio streams by merging them locally with ffmpeg; HLS/DASH fragment-only video stays unsupported
+- Report URL access failures as `SOURCE_LOGIN_REQUIRED`, `SOURCE_ACCESS_DENIED` (retried once through page resolution), or `SOURCE_UNAVAILABLE`, with an update hint when yt-dlp is more than 90 days old
+- Remove fetched media on Ctrl-C and SIGTERM, and sweep unlocked `lectural-fetch-*` directories older than one hour left by killed runs
+
+### Changed
+- The `[run]` extra and `lectural doctor` require `yt-dlp>=2026.8.19`; older releases fail on some public short-video pages
 
 ### Fixed
 - Reject translated YouTube captions and preserve spoken-language evidence when selecting original tracks

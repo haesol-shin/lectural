@@ -32,7 +32,11 @@ _FAILURE_MESSAGES = {
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
     "SOURCE_INVALID": "The source is not a supported YouTube URL, public http(s) media URL, or local media file.",
     "SOURCE_UNAVAILABLE": "The source could not be accessed for extraction.",
-    "SOURCE_UNAUTHORIZED": "The source URL requires a login or is not public; only public URLs are supported.",
+    "SOURCE_LOGIN_REQUIRED": "The source URL requires a login; only public URLs are supported.",
+    "SOURCE_ACCESS_DENIED": (
+        "The source URL refused access: the media may be private, or the site may block "
+        "programmatic downloads; only public URLs are supported."
+    ),
     "SOURCE_REDIRECT_REJECTED": "The source URL redirected to a location that is not http or https.",
     "OCR_FAILED": "Requested OCR failed; visual evidence frames were retained when available.",
     "TIMESTAMP_INVALID": "Extraction produced invalid or inconsistent timestamps.",
@@ -333,9 +337,21 @@ def build_extract_response(evidence: dict) -> dict:
     }
 
 
-def build_failure_response(code: str, *, output_dir: str | None = None, source: dict | None = None) -> dict:
-    """Build a bounded response when extraction fails before a v2 manifest."""
+def build_failure_response(
+    code: str,
+    *,
+    output_dir: str | None = None,
+    source: dict | None = None,
+    message: str | None = None,
+) -> dict:
+    """Build a bounded response when extraction fails before a v2 manifest.
+
+    ``message`` replaces the code's constant message only with another
+    constant, input-free text (for example a code message plus a fixed hint).
+    """
     item = failure(code)
+    if message:
+        item["message"] = message
     result = {
         "contract_version": EXTRACTION_CONTRACT_VERSION,
         "source": _safe_source(source) if source else None,
@@ -345,7 +361,7 @@ def build_failure_response(code: str, *, output_dir: str | None = None, source: 
             "frames_dir": None,
             "output_dir": output_dir,
         },
-        "extraction": {"status": "fail", "reasons": [reason(code)]},
+        "extraction": {"status": "fail", "reasons": [dict(item)]},
         "failure": item,
     }
     return {
