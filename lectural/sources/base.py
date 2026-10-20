@@ -24,3 +24,6 @@ class SourceHandler(Protocol):
 
     def resolve_video(self, source: InputSource, out_dir: str) -> str | None:
         """Return the video path used for frames, or ``None`` without video."""
+
+    def source_id(self, source: InputSource) -> str:
+        """Return the stable evidence id: ``youtube:<id>`` or ``sha256:<hex>``."""

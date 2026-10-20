@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import math
 import os
 
@@ -10,7 +9,8 @@ from . import evidence
 from .acquisition import fill_segment_ends
 from .config import DEFAULT_STT_MODEL, OCR_RELIABLE_CONFIDENCE_THRESHOLD
 from .resources import ResourceSampler
-from .source import InputSource, SourceKind, classify_source
+from .source import InputSource, classify_source
+from .sources import handler_for
 from .synthesis import render_transcript_md, write_text
 
 
@@ -23,20 +23,6 @@ def _positive_finite_duration(*values: object) -> float:
         if math.isfinite(duration) and duration > 0:
             return duration
     return 0.0
-
-
-def _sha256_file(path: str) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _source_id(source: InputSource) -> str:
-    if source.kind is SourceKind.YOUTUBE:
-        return f"youtube:{source.video_id}"
-    return f"sha256:{_sha256_file(source.locator)}"
 
 
 def _directory_bytes(root: str) -> int:
@@ -79,7 +65,7 @@ def _frame_items(frames: list, out_dir: str, ocr_status: str) -> tuple[list[dict
             "id": frame_id,
             "start": round(float(frame.timestamp), 3),
             "path": path,
-            "sha256": _sha256_file(path),
+            "sha256": evidence.sha256_file(path),
             "width": frame.meta.get("width"),
             "height": frame.meta.get("height"),
             "ocr": {
@@ -114,6 +100,7 @@ def _extract_source(
     from .vad import detect_speech_spans
 
     source = source or classify_source(source_argument)
+    handler = handler_for(source)
     metadata = metadata or media.probe_source(source)
     out_dir = os.path.realpath(os.path.abspath(output_dir))
     os.makedirs(out_dir, exist_ok=True)
@@ -171,19 +158,15 @@ def _extract_source(
             frame_items, frame_ids = _frame_items(representative_frames, out_dir, ocr_status)
     else:
         frame_items, frame_ids = [], {}
-        if source.kind is not SourceKind.LOCAL_AUDIO:
-            raise ValueError(f"Unsupported source kind: {source.kind!r}")
 
     title = metadata.title or track.meta.get("title") or metadata.video_id or source.video_id or source.title_hint or "video"
     source_data = source.safe_as_dict()
     source_data.update({
-        "id": _source_id(source),
+        "id": handler.source_id(source),
         "title": title,
         "duration_sec": round(duration, 3),
         "resolution": source_resolution,
     })
-    if source.kind is SourceKind.YOUTUBE:
-        source_data["citation"] = {"kind": "youtube", "video_id": source.video_id}
     segment_items = [
         {"id": f"s{index:04d}", "start": round(float(segment.t), 3),
          "end": round(float(segment.end), 3), "text": segment.text}
@@ -242,8 +225,8 @@ def _extract_source(
         failure_info = None
 
     fallback_code = track.meta.get("fallback_code")
-    if fallback_code is None and speech_source == "stt" and source.kind is not SourceKind.YOUTUBE:
-        fallback_code = "local_source"
+    if fallback_code is None and speech_source == "stt":
+        fallback_code = handler.stt_fallback_code
     allowed_fallbacks = {"captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"}
     fallback = {"code": fallback_code} if fallback_code in allowed_fallbacks else None
     speech = {

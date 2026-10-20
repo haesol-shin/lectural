@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .. import media
+from .. import evidence, media
 from ..source import CitationKind, InputSource
 
 # Local files carry no captions, so STT is their only speech source.
@@ -12,6 +12,10 @@ _STT_FALLBACK_CODE = "local_source"
 def _probe(source: InputSource) -> media.SourceMetadata:
     # Duration comes from the decoded speech track; the file name is the title.
     return media.SourceMetadata(title=source.title_hint)
+
+
+def _source_id(source: InputSource) -> str:
+    return f"sha256:{evidence.sha256_file(source.locator)}"
 
 
 class LocalVideoHandler:
@@ -29,6 +33,9 @@ class LocalVideoHandler:
     def resolve_video(self, source: InputSource, out_dir: str) -> str:
         return source.locator
 
+    def source_id(self, source: InputSource) -> str:
+        return _source_id(source)
+
 
 class LocalAudioHandler:
     has_video = False
@@ -44,3 +51,6 @@ class LocalAudioHandler:
 
     def resolve_video(self, source: InputSource, out_dir: str) -> None:
         return None
+
+    def source_id(self, source: InputSource) -> str:
+        return _source_id(source)

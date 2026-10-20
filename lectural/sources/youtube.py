@@ -25,3 +25,6 @@ class YouTubeHandler:
 
     def resolve_video(self, source: InputSource, out_dir: str) -> str:
         return media._download_video(source.locator, out_dir)
+
+    def source_id(self, source: InputSource) -> str:
+        return f"youtube:{source.video_id}"
