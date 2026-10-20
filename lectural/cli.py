@@ -91,7 +91,8 @@ class _LecturalArgumentParser(argparse.ArgumentParser):
         for value in sorted(values, key=len, reverse=True):
             label = public_source_label(value)
             if value and label != value:
-                message = message.replace(value, label)
+                # Some diagnostics render the value with repr(), escaping quotes.
+                message = message.replace(repr(value), repr(label)).replace(value, label)
         super().error(message)
 
 

@@ -636,6 +636,7 @@ def test_invalid_url_like_inputs_never_reach_run_state_or_stderr(tmp_path, monke
         ["verify", "bundle", "--json", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
         ["inspect", f"--bogus=https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}", "bundle"],
         ["extract", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        ["extract", "https://a.example.invalid", "--out", "x", f"--skip-ocr=https://b.example.invalid/{PATH_TOKEN}/a'b\"c?sig={QUERY_TOKEN}"],
     ],
 )
 def test_parser_errors_do_not_echo_url_tokens(capsys, argv):
@@ -923,29 +924,32 @@ def test_materialize_sweeps_stale_scratch_before_fetching(temp_root, monkeypatch
     assert list(temp_root.iterdir()) == ([] if remote.fcntl else [stale])
 
 
-@pytest.mark.parametrize("fetched", [False, True])
-def test_login_wall_redirect_only_yields_media_from_a_site_extractor(server, temp_root, probe_by_suffix, monkeypatch, fetched):
+def test_login_wall_redirect_still_accepts_media_a_site_extractor_resolves(server, temp_root, probe_by_suffix, monkeypatch):
     factory, calls = _fake_youtube_dl({"url": server + VIDEO_PATH, "protocol": "http", "ext": "mp4"})
     monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
-    monkeypatch.setattr(remote, "_site_extractor_claims", lambda _url: fetched)
-    source = cli.classify_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}")
-    if fetched:
-        with remote.materialize(source) as ready:
-            assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
-    else:
-        with pytest.raises(remote.RemoteSourceError) as excinfo:
-            with remote.materialize(source):
-                pass
-        assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
-    assert len(calls) == (1 if fetched else 0)
+    with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}")) as ready:
+        assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
+    assert len(calls) == 1
     assert list(temp_root.iterdir()) == []
+
+
+def test_real_ytdlp_without_generic_refuses_delegation_to_generic(server, temp_root):
+    pytest.importorskip("yt_dlp")
+    # A site extractor's fallback is url_result(url, "Generic"), i.e. extract_info(ie_key="Generic").
+    youtube_dl = remote._http_only_ytdlp([])
+    page = f"{server}/accounts/login/"
+    with youtube_dl({"quiet": True, "logger": remote._SilentLogger(), "allowed_extractors": ["default", "-generic"]}) as ydl:
+        with pytest.raises(Exception, match="No suitable extractor"):
+            ydl.extract_info(page, download=False, ie_key="Generic")
+    with youtube_dl({"quiet": True, "logger": remote._SilentLogger()}) as ydl:
+        assert ydl.extract_info(page, download=False, ie_key="Generic")
+    assert _Handler.hits.get(f"/{PATH_TOKEN}/intro.mp4") is None
 
 
 @pytest.mark.parametrize("ytdlp_error", ["ERROR: [Site] abc: This video is private", "ERROR: Unsupported URL"])
 def test_login_wall_redirect_stays_login_required_when_resolution_fails(server, temp_root, monkeypatch, ytdlp_error):
     factory, _calls = _fake_youtube_dl(RuntimeError(ytdlp_error))
     monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
-    monkeypatch.setattr(remote, "_site_extractor_claims", lambda _url: True)
     with pytest.raises(remote.RemoteSourceError) as excinfo:
         with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/to-login")):
             pass
@@ -977,9 +981,3 @@ def test_real_probe_accepts_self_contained_direct_audio(server, temp_root, tmp_p
         assert ready.source.kind.value == "local_audio"
         assert Path(ready.source.locator).read_bytes() == audio.read_bytes()
     assert list(temp_root.iterdir()) == []
-
-
-def test_real_ytdlp_site_extractor_check_distinguishes_site_pages():
-    pytest.importorskip("yt_dlp")
-    assert remote._site_extractor_claims("https://www.youtube.com/watch?v=aqz-KE-bpKQ") is True
-    assert remote._site_extractor_claims("https://media.example.invalid/lecture") is False

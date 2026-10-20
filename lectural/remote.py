@@ -320,8 +320,12 @@ def _classify_ytdlp_error(exc: BaseException) -> str:
     return UNAVAILABLE
 
 
-def _ytdlp_extract_info(url: str) -> dict:
-    """Run yt-dlp extraction for ``url`` without cookies, config, or output."""
+def _ytdlp_extract_info(url: str, *, allow_generic: bool = True) -> dict:
+    """Run yt-dlp extraction for ``url`` without cookies, config, or output.
+
+    Without ``allow_generic`` the generic extractor is not loaded, so neither
+    the URL nor any URL an extractor delegates to it can be extracted generically.
+    """
     rejected: list[bool] = []
     youtube_dl = _http_only_ytdlp(rejected)
     params = {
@@ -336,6 +340,8 @@ def _ytdlp_extract_info(url: str) -> dict:
         "cookiefile": None,
         "cookiesfrombrowser": None,
     }
+    if not allow_generic:
+        params["allowed_extractors"] = ["default", "-generic"]
     try:
         with youtube_dl(params) as ydl:
             info = ydl.sanitize_info(ydl.extract_info(url, download=False))
@@ -346,15 +352,6 @@ def _ytdlp_extract_info(url: str) -> dict:
     if rejected:
         raise RemoteSourceError(REDIRECT_REJECTED)
     return info if isinstance(info, dict) else {}
-
-
-def _site_extractor_claims(url: str) -> bool:
-    """Return whether a yt-dlp extractor other than the generic one matches ``url``."""
-    try:
-        from yt_dlp.extractor import gen_extractor_classes
-    except ImportError:
-        return False
-    return any(ie.ie_key() != "Generic" and ie.suitable(url) for ie in gen_extractor_classes())
 
 
 def _may_have_video(fmt: dict) -> bool:
@@ -476,12 +473,11 @@ def fetch(url: str, dest_dir: str) -> FetchedMedia:
         response.close()
         if _redirected_to_login(url, response):
             login_wall = True
-    if login_wall and not _site_extractor_claims(url):
-        # Generic page extraction would follow the redirect and return whatever
-        # the login page embeds; only a site extractor resolves the original media.
-        raise RemoteSourceError(LOGIN_REQUIRED)
     try:
-        info = _ytdlp_extract_info(url)
+        # After a login-page redirect, generic page extraction (including a site
+        # extractor's fallback to it) would return whatever the login page
+        # embeds; only a site extractor may resolve the original media.
+        info = _ytdlp_extract_info(url, allow_generic=not login_wall)
     except RemoteSourceError as exc:
         if login_wall and exc.code != REDIRECT_REJECTED:
             raise RemoteSourceError(LOGIN_REQUIRED) from None
