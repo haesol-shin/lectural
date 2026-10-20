@@ -165,12 +165,14 @@ def test_public_http_urls_classify_as_remote_with_origin_only(value: str):
         "file://youtube.com/watch?v=dQw4w9WgXcQ&secret-path-token",
         "data:v=dQw4w9WgXcQ&secret-path-token",
         "x://media.example.invalid/secret-path-token?sig=1",
+        "x:v=dQw4w9WgXcQ&secret-path-token",
         # A URL typed without a scheme is invalid and not echoed either.
         "media.example.invalid/secret-path-token?sig=1",
+        "media.example.invalid/secret-path-token/lecture.mp4",
     ],
 )
 def test_non_http_urls_are_rejected_without_echoing_the_url(value: str):
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises((ValueError, FileNotFoundError)) as excinfo:
         classify_source(value)
     assert "secret-path-token" not in str(excinfo.value)
     assert "c2VjcmV0" not in str(excinfo.value)
@@ -196,3 +198,11 @@ def test_public_source_label_keeps_local_and_youtube_and_reduces_urls(tmp_path: 
     assert public_source_label("ftp://youtu.be/dQw4w9WgXcQ") == "ftp://youtu.be"
     assert public_source_label("x://media.example.invalid/secret?sig=1") == "x://media.example.invalid"
     assert public_source_label("media.example.invalid/secret?sig=1") == "media.example.invalid"
+    assert public_source_label("x:secret-path-token") == "x:"
+
+
+def test_windows_drive_paths_are_not_url_schemes():
+    with pytest.raises(FileNotFoundError, match="missing.mp4"):
+        classify_source("C:/missing/missing.mp4")
+    with pytest.raises(FileNotFoundError, match="missing.wav"):
+        classify_source("C:\\missing\\missing.wav")

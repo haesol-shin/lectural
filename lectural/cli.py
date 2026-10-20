@@ -81,7 +81,7 @@ class _LecturalArgumentParser(argparse.ArgumentParser):
         argv = self.input_argv
         if argv and _looks_like_source(argv[0]):
             message = (
-                f"unknown command {argv[0]!r}; to generate notes use: "
+                f"unknown command {public_source_label(argv[0])!r}; to generate notes use: "
                 "lectural notes <source>"
             )
         super().error(message)

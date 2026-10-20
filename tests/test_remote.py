@@ -437,11 +437,52 @@ def _connection_attempted(sock: socket.socket) -> bool:
     return True
 
 
-def test_real_ytdlp_resolves_html5_page_through_checked_download(server, temp_root, probe_by_suffix):
+def test_real_ytdlp_resolves_html5_page_through_checked_download(server, temp_root, probe_by_suffix, capfd):
     pytest.importorskip("yt_dlp")
     with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/html5?ref={QUERY_TOKEN}")) as ready:
         assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
+        assert ready.source.title_hint == "127.0.0.1"
     assert list(temp_root.iterdir()) == []
+    captured = capfd.readouterr()
+    _assert_no_tokens(captured.out, captured.err)
+
+
+def test_ytdlp_without_request_director_hook_fails_closed(monkeypatch):
+    import sys
+    import types
+
+    fake = types.ModuleType("yt_dlp")
+    fake.YoutubeDL = type("YoutubeDL", (), {})
+    networking = types.ModuleType("yt_dlp.networking")
+    urllib_module = types.ModuleType("yt_dlp.networking._urllib")
+    urllib_module.UrllibRH = type("UrllibRH", (), {})
+    for name, module in (("yt_dlp", fake), ("yt_dlp.networking", networking), ("yt_dlp.networking._urllib", urllib_module)):
+        monkeypatch.setitem(sys.modules, name, module)
+    with pytest.raises(remote.DependencyError):
+        remote._http_only_ytdlp([])
+
+
+def test_invalid_url_like_inputs_never_reach_run_state_or_stderr(tmp_path, monkeypatch, capsys):
+    runstate_path = tmp_path / "runstate.json"
+    monkeypatch.setenv("LECTURAL_RUNSTATE", str(runstate_path))
+    inputs = [
+        f"media.example.invalid/{PATH_TOKEN}/lecture.mp4",
+        f"x:{PATH_TOKEN}",
+        f"ftp://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}",
+    ]
+    exit_code, out, err = _run_cli(["notes", *inputs, "--out", str(tmp_path / "out")], capsys)
+    assert exit_code == 2
+    state = runstate_path.read_text(encoding="utf-8")
+    assert [run["status"] for run in json.loads(state)["runs"]] == ["failed"] * 3
+    _assert_no_tokens(out, err, state)
+
+
+def test_unknown_command_hint_does_not_echo_url_tokens(capsys):
+    with pytest.raises(SystemExit):
+        cli.main([f"https://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"])
+    captured = capsys.readouterr()
+    assert "lectural notes" in captured.err
+    _assert_no_tokens(captured.out, captured.err)
 
 
 @pytest.mark.parametrize("route", ["page-to-ftp", "html5-to-ftp"])

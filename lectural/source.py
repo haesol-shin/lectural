@@ -38,10 +38,13 @@ _SUPPORTED_VIDEO_SUFFIXES = (".mp4", ".webm", ".mkv")
 _SUPPORTED_AUDIO_SUFFIXES = (".wav",)
 _SUPPORTED_SUFFIXES = _SUPPORTED_VIDEO_SUFFIXES + _SUPPORTED_AUDIO_SUFFIXES
 _REMOTE_SCHEMES = ("http", "https")
-# A URL scheme: any scheme followed by ``//``, or a dot-free scheme of two or
-# more characters (``data:``, ``javascript:``).  One letter without ``//`` is a
-# Windows drive, and a dotted name without ``//`` is a ``host:port`` form.
-_SCHEME_RE = re.compile(r"^(?:([A-Za-z][A-Za-z0-9+.-]*):(?=//)|([A-Za-z][A-Za-z0-9+-]+):)")
+# A URL scheme: any scheme followed by ``//``, a dot-free scheme of two or more
+# characters (``data:``, ``javascript:``), or one letter not followed by a path
+# separator (``x:v=...``).  ``C:\`` / ``C:/`` is a Windows drive, and a dotted
+# name without ``//`` is a ``host:port`` form.
+_SCHEME_RE = re.compile(
+    r"^(?:([A-Za-z][A-Za-z0-9+.-]*):(?=//)|([A-Za-z][A-Za-z0-9+-]+):|([A-Za-z]):(?![/\\]))"
+)
 _YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"}
 _INVALID_SOURCE_MESSAGE = (
     "Input must be a YouTube URL/ID, a public http(s) media URL, "
@@ -70,7 +73,7 @@ def _is_youtube_url(value: str) -> bool:
 
 def _url_scheme(value: str) -> str | None:
     match = _SCHEME_RE.match(value.strip())
-    return (match.group(1) or match.group(2)).lower() if match else None
+    return next(group for group in match.groups() if group).lower() if match else None
 
 
 def url_origin(value: str) -> str:
@@ -261,7 +264,7 @@ def classify_source(argument: str) -> InputSource:
         )
 
     if suffix in _SUPPORTED_SUFFIXES:
-        raise FileNotFoundError(f"Local source does not exist: {argument!r}")
+        raise FileNotFoundError(f"Local source does not exist: {_echo_safe(argument)}")
 
     if is_youtube:
         return InputSource(
