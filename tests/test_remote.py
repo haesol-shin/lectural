@@ -477,11 +477,19 @@ def test_invalid_url_like_inputs_never_reach_run_state_or_stderr(tmp_path, monke
     _assert_no_tokens(out, err, state)
 
 
-def test_unknown_command_hint_does_not_echo_url_tokens(capsys):
+@pytest.mark.parametrize(
+    "argv",
+    [
+        [f"https://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        [f"ftp://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        ["extract", "https://a.example.invalid/x", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}", "--out", "x"],
+    ],
+)
+def test_parser_errors_do_not_echo_url_tokens(capsys, argv):
     with pytest.raises(SystemExit):
-        cli.main([f"https://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"])
+        cli.main(argv)
     captured = capsys.readouterr()
-    assert "lectural notes" in captured.err
+    assert "error:" in captured.err
     _assert_no_tokens(captured.out, captured.err)
 
 

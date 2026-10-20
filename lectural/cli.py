@@ -79,11 +79,16 @@ class _LecturalArgumentParser(argparse.ArgumentParser):
 
     def error(self, message: str) -> None:
         argv = self.input_argv
-        if argv and _looks_like_source(argv[0]):
+        if argv and (_looks_like_source(argv[0]) or public_source_label(argv[0]) != argv[0]):
             message = (
                 f"unknown command {public_source_label(argv[0])!r}; to generate notes use: "
                 "lectural notes <source>"
             )
+        # argparse quotes offending values; a URL keeps only its origin.
+        for value in argv:
+            label = public_source_label(value)
+            if label != value:
+                message = message.replace(value, label)
         super().error(message)
 
 
