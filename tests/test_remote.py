@@ -76,7 +76,11 @@ class _Handler(BaseHTTPRequestHandler):
         elif path == f"/{PATH_TOKEN}/to-login":
             self._send(302, headers={"Location": f"/accounts/login/?next=/{PATH_TOKEN}"})
         elif path == "/accounts/login/":
-            self._send(200, b"<html><body><form>sign in</form></body></html>", "text/html")
+            # A login wall that embeds an unrelated public video.
+            self._send(200, f'<html><body><form>sign in</form><video src="/{PATH_TOKEN}/intro.mp4"></video></body></html>'.encode(), "text/html")
+        elif path == f"/{PATH_TOKEN}/intro.mp4":
+            self.hits[path] = self.hits.get(path, 0) + 1
+            self._send(200, MEDIA_BYTES, "video/mp4")
         elif path in self.served:
             content_type, body = self.served[path]
             self._send(200, body, content_type)
@@ -627,6 +631,11 @@ def test_invalid_url_like_inputs_never_reach_run_state_or_stderr(tmp_path, monke
         [f"https://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
         [f"ftp://media.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
         ["extract", "https://a.example.invalid/x", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}", "--out", "x"],
+        ["extract", "https://a.example.invalid", "--out", "x", f"--skip-ocr=https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        ["notes", "https://a.example.invalid", f"--keep-frames=https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        ["verify", "bundle", "--json", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
+        ["inspect", f"--bogus=https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}", "bundle"],
+        ["extract", f"https://b.example.invalid/{PATH_TOKEN}?sig={QUERY_TOKEN}"],
     ],
 )
 def test_parser_errors_do_not_echo_url_tokens(capsys, argv):
@@ -912,3 +921,65 @@ def test_materialize_sweeps_stale_scratch_before_fetching(temp_root, monkeypatch
     with remote.materialize(cli.classify_source(f"https://media.example.invalid/{PATH_TOKEN}")) as ready:
         assert [path.name for path in temp_root.iterdir()] == [Path(ready.scratch_dir).name]
     assert list(temp_root.iterdir()) == ([] if remote.fcntl else [stale])
+
+
+@pytest.mark.parametrize("fetched", [False, True])
+def test_login_wall_redirect_only_yields_media_from_a_site_extractor(server, temp_root, probe_by_suffix, monkeypatch, fetched):
+    factory, calls = _fake_youtube_dl({"url": server + VIDEO_PATH, "protocol": "http", "ext": "mp4"})
+    monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
+    monkeypatch.setattr(remote, "_site_extractor_claims", lambda _url: fetched)
+    source = cli.classify_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}")
+    if fetched:
+        with remote.materialize(source) as ready:
+            assert Path(ready.source.locator).read_bytes() == MEDIA_BYTES
+    else:
+        with pytest.raises(remote.RemoteSourceError) as excinfo:
+            with remote.materialize(source):
+                pass
+        assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
+    assert len(calls) == (1 if fetched else 0)
+    assert list(temp_root.iterdir()) == []
+
+
+@pytest.mark.parametrize("ytdlp_error", ["ERROR: [Site] abc: This video is private", "ERROR: Unsupported URL"])
+def test_login_wall_redirect_stays_login_required_when_resolution_fails(server, temp_root, monkeypatch, ytdlp_error):
+    factory, _calls = _fake_youtube_dl(RuntimeError(ytdlp_error))
+    monkeypatch.setattr(remote, "_http_only_ytdlp", factory)
+    monkeypatch.setattr(remote, "_site_extractor_claims", lambda _url: True)
+    with pytest.raises(remote.RemoteSourceError) as excinfo:
+        with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/to-login")):
+            pass
+    assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
+
+
+def test_real_ytdlp_never_fetches_video_embedded_in_a_login_wall(server, temp_root, probe_by_suffix, capfd):
+    pytest.importorskip("yt_dlp")
+    with pytest.raises(remote.RemoteSourceError) as excinfo:
+        with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}")):
+            pass
+    assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
+    assert _Handler.hits.get(f"/{PATH_TOKEN}/intro.mp4") is None
+    assert list(temp_root.iterdir()) == []
+    captured = capfd.readouterr()
+    _assert_no_tokens(captured.out, captured.err)
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None, reason="needs ffmpeg")
+@pytest.mark.parametrize(("suffix", "content_type", "codec"), [(".aiff", "audio/aiff", "pcm_s16be"), (".mp3", "audio/mpeg", "libmp3lame"), (".wav", "audio/wav", "pcm_s16le")])
+def test_real_probe_accepts_self_contained_direct_audio(server, temp_root, tmp_path, suffix, content_type, codec):
+    audio = tmp_path / f"talk{suffix}"
+    subprocess.run(
+        ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=d=1", "-c:a", codec, str(audio)],
+        check=True,
+    )
+    _Handler.served = {f"/{PATH_TOKEN}/talk-real": (content_type, audio.read_bytes())}
+    with remote.materialize(cli.classify_source(f"{server}/{PATH_TOKEN}/talk-real?sig={QUERY_TOKEN}")) as ready:
+        assert ready.source.kind.value == "local_audio"
+        assert Path(ready.source.locator).read_bytes() == audio.read_bytes()
+    assert list(temp_root.iterdir()) == []
+
+
+def test_real_ytdlp_site_extractor_check_distinguishes_site_pages():
+    pytest.importorskip("yt_dlp")
+    assert remote._site_extractor_claims("https://www.youtube.com/watch?v=aqz-KE-bpKQ") is True
+    assert remote._site_extractor_claims("https://media.example.invalid/lecture") is False

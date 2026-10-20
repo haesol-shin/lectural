@@ -73,21 +73,24 @@ def _reserve_output_dir(
 
 
 class _LecturalArgumentParser(argparse.ArgumentParser):
-    """Root parser with a useful hint when a source is used as a command."""
+    """Parser that never echoes a URL beyond its origin; the root adds a command hint."""
 
     input_argv: list[str] = []
+    is_root = False
 
     def error(self, message: str) -> None:
         argv = self.input_argv
-        if argv and (_looks_like_source(argv[0]) or public_source_label(argv[0]) != argv[0]):
+        if self.is_root and argv and (_looks_like_source(argv[0]) or public_source_label(argv[0]) != argv[0]):
             message = (
                 f"unknown command {public_source_label(argv[0])!r}; to generate notes use: "
                 "lectural notes <source>"
             )
-        # argparse quotes offending values; a URL keeps only its origin.
-        for value in argv:
+        # argparse quotes offending values, including the part after `--option=`;
+        # a URL keeps only its origin.  Longest first so no fragment survives.
+        values = set(argv) | {token.split("=", 1)[1] for token in argv if token.startswith("-") and "=" in token}
+        for value in sorted(values, key=len, reverse=True):
             label = public_source_label(value)
-            if label != value:
+            if value and label != value:
                 message = message.replace(value, label)
         super().error(message)
 
@@ -117,6 +120,7 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
         ),
     )
     parser.input_argv = argv
+    parser.is_root = True
     parser.add_argument("--version", action="store_true", help="Show the LecturAL version")
     parser.add_argument("--json", dest="version_json", action="store_true", help=argparse.SUPPRESS)
     commands = parser.add_subparsers(dest="command")
@@ -196,6 +200,8 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
     doctor_parser.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
     doctor_parser.add_argument("--plugin", action="store_true", help="Also validate plugin files and manifests")
     doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
+    for subparser in commands.choices.values():
+        subparser.input_argv = argv
     return parser
 
 

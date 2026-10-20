@@ -80,7 +80,7 @@ _FORMAT_SELECTOR = f"b{_HTTP_PROTOCOL}/bv{_HTTP_PROTOCOL}+ba{_HTTP_PROTOCOL}/ba{
 # DASH, concat) are excluded because they open further URLs or files.
 _FFMPEG_INPUT_GUARD = (
     "-protocol_whitelist", "file",
-    "-format_whitelist", "mov,matroska,mp3,aac,ogg,wav,flac,mpegts,flv,avi,asf,mpeg",
+    "-format_whitelist", "mov,matroska,mp3,aac,ogg,wav,w64,flac,aiff,caf,mpegts,flv,avi,asf,mpeg",
 )
 _LOGIN_PATH = re.compile(r"/(?:login|log-in|signin|sign-in|sign_in)(?:[/.?]|$)", re.IGNORECASE)
 _LOGIN_HINTS = (
@@ -348,13 +348,21 @@ def _ytdlp_extract_info(url: str) -> dict:
     return info if isinstance(info, dict) else {}
 
 
+def _site_extractor_claims(url: str) -> bool:
+    """Return whether a yt-dlp extractor other than the generic one matches ``url``."""
+    try:
+        from yt_dlp.extractor import gen_extractor_classes
+    except ImportError:
+        return False
+    return any(ie.ie_key() != "Generic" and ie.suitable(url) for ie in gen_extractor_classes())
+
+
 def _may_have_video(fmt: dict) -> bool:
     return fmt.get("vcodec") != "none"
 
 
-def _resolve_with_ytdlp(url: str) -> list[dict]:
-    """Return the ``http(s)`` formats yt-dlp selected for ``url`` (one, or a video+audio pair)."""
-    info = _ytdlp_extract_info(url)
+def _selected_formats(info: dict) -> list[dict]:
+    """Return the ``http(s)`` formats yt-dlp selected (one, or a video+audio pair)."""
     if info.get("entries") is not None:
         raise RemoteSourceError(UNAVAILABLE)
     selected = info.get("requested_formats") or [info]
@@ -450,6 +458,7 @@ def _download_formats(formats: list[dict], dest_dir: str) -> FetchedMedia:
 def fetch(url: str, dest_dir: str) -> FetchedMedia:
     """Download the media behind a public ``http(s)`` URL into ``dest_dir``."""
     first_failure: RemoteSourceError | None = None
+    login_wall = False
     try:
         response = _open(url)
     except RemoteSourceError as exc:
@@ -464,16 +473,22 @@ def fetch(url: str, dest_dir: str) -> FetchedMedia:
             path = os.path.join(dest_dir, _media_filename(content_type))
             _stream_to_file(response, path)
             return FetchedMedia(path=path, has_video=_probe(path))
-        if _redirected_to_login(url, response):
-            first_failure = RemoteSourceError(LOGIN_REQUIRED)
         response.close()
+        if _redirected_to_login(url, response):
+            login_wall = True
+    if login_wall and not _site_extractor_claims(url):
+        # Generic page extraction would follow the redirect and return whatever
+        # the login page embeds; only a site extractor resolves the original media.
+        raise RemoteSourceError(LOGIN_REQUIRED)
     try:
-        formats = _resolve_with_ytdlp(url)
+        info = _ytdlp_extract_info(url)
     except RemoteSourceError as exc:
+        if login_wall and exc.code != REDIRECT_REJECTED:
+            raise RemoteSourceError(LOGIN_REQUIRED) from None
         if first_failure is None or exc.code in (LOGIN_REQUIRED, ACCESS_DENIED, REDIRECT_REJECTED):
             raise
         raise first_failure from None
-    return _download_formats(formats, dest_dir)
+    return _download_formats(_selected_formats(info), dest_dir)
 
 
 def _owned_by_user(info: os.stat_result) -> bool:
