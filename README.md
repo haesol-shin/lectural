@@ -4,11 +4,7 @@
 
 LecturAL turns video and audio into complete, deterministic, timestamp-addressable evidence that agents can verify and reuse.
 
-Give it a YouTube URL, public HTTP(S) media/page URL, or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file.
-It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations,
-and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of
-re-watching the media. Lecture and slide-style video works especially well because its spoken explanations
-and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
+Give it a YouTube URL, public HTTP(S) media/page URL, or a local `.mp4`, `.webm`, `.mkv`, or `.wav` file. It writes an evidence bundle: timestamped transcript segments, selected scene frames with OCR annotations, and a completeness verdict. Agents and scripts cite that evidence by ID and timestamp instead of re-watching the media. Lecture and slide-style video works especially well because its spoken explanations and visible text can both be captured. Study notes are one consumer of the evidence, not the product itself.
 
 ## Install
 
@@ -50,18 +46,9 @@ lectural verify ./lecture-evidence --source ./lecture.mp4
 
 ### Public media URLs
 
-`extract` and source-mode `notes` accept unauthenticated HTTP(S) media files and supported public pages.
-No cookies, browser sessions, or login are used. Page resolution requires `yt-dlp>=2026.8.19`;
-downloads are checked at every redirect. Progressive media is preferred, with separate HTTP(S) video
-and audio streams merged locally when needed. Segmented HLS/DASH video and DRM bypass are unsupported.
+`extract` and source-mode `notes` accept unauthenticated HTTP(S) media files and supported public pages. No cookies, browser sessions, or login are used. Page resolution requires `yt-dlp>=2026.8.19`; downloads are checked at every redirect. Progressive media is preferred, with separate HTTP(S) video and audio streams merged locally when needed. Segmented HLS/DASH video and DRM bypass are unsupported.
 
-Fetched media and derived audio stay in private scratch and are removed after success, failure,
-Ctrl-C, or main-thread SIGTERM. On POSIX, a later URL run sweeps unlocked scratch older than one hour
-left by killed runs. Non-POSIX stale recovery and immediate SIGKILL cleanup are not supported.
-Bundles use local video/audio kinds, a SHA-256 of the acquired file, transcript citations, and only the
-source's scheme and host as metadata. Source paths, query tokens, ports, and credentials are omitted.
-`verify --source` does not refetch generic URLs: omit it or use a local copy of the same acquired bytes.
-Use public sources for personal study only, follow the source's rules, and do not redistribute media.
+Fetched media and derived audio stay in private scratch and are removed after success, failure, Ctrl-C, or main-thread SIGTERM. On POSIX, a later URL run sweeps unlocked scratch older than one hour left by killed runs. Non-POSIX stale recovery and immediate SIGKILL cleanup are not supported. Bundles use local video/audio kinds, a SHA-256 of the acquired file, transcript citations, and only the source's scheme and host as metadata. Source paths, query tokens, ports, and credentials are omitted. `verify --source` does not refetch generic URLs: omit it or use a local copy of the same acquired bytes. Use public sources for personal study only, follow the source's rules, and do not redistribute media.
 
 ## Commands at a glance
 
@@ -124,8 +111,7 @@ LecturAL ships one shared skill, [`skills/lectural/SKILL.md`](https://github.com
 
 **No captions?** YouTube captions are used when they are usable; otherwise LecturAL transcribes the audio. Local files are always transcribed. `evidence.json` records which path ran in `speech.source` and `speech.fallback.code`.
 
-**Does a local run need yt-dlp?** No. YouTube sources and public-page resolution use it;
-direct public media files do not. Preflight still checks all runtime tools for readiness.
+**Does a local run need yt-dlp?** No. YouTube sources and public-page resolution use it; direct public media files do not. Preflight still checks all runtime tools for readiness.
 
 **What does `--skip-ocr` do?** Keeps the scene frames and skips OCR; the OCR state is recorded as `skipped`.
 
