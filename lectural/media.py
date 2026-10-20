@@ -136,7 +136,7 @@ def resolve_audio(source: InputSource, out_dir: str) -> str:
     return handler_for(source).resolve_audio(source, out_dir)
 
 
-def _download_video(url: str, out_dir: str) -> str:
+def download_video(url: str, out_dir: str) -> str:
     """Download YouTube video for frame extraction."""
     assert_acquisition_ready()
     os.makedirs(out_dir, exist_ok=True)
