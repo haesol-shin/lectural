@@ -61,7 +61,7 @@ A squash-merge commit message additionally carries a scope naming the functional
 - Merge only with maintainer approval.
 - Merge strategy:
   - **Squash and merge** (default): one PR becomes one `main` entry, easy to read and revert. The squash commit message MUST be the Conventional Commit PR title, because it becomes the `main` history entry.
-    The squash body is rewritten, not the default list of branch commits: 2-4 `- ` lines describing the final change as it lands, with no fixup, review-response or plan commits and no `* ` commit headers.
+    Supply the subject and body explicitly instead of GitHub's generated commit list: the subject is the PR title plus `(#<number>)`; the body is one to four `- ` bullets, each one delivered outcome, behavior or contract change, or compatibility constraint, without intermediate commits, review history, verification results or file lists. Add a `BREAKING CHANGE: <description>` footer only for an incompatible public contract change.
   - **Rebase and merge**: only when the branch holds independently meaningful Conventional Commits that must stay separate in `main`.
   - Avoid merge commits; keep `main` linear.
 
