@@ -1,8 +1,10 @@
-"""Source-specific metadata, audio, and video resolution.
+"""External media tools (yt-dlp, ffmpeg, ffprobe) and the source asset seam.
 
-The shared pipeline consumes these operations rather than deciding whether an
-input is a downloaded asset or an in-place local file.  Local media is never
-copied or modified; only generated ``out_dir/audio.wav`` may be written.
+``probe_source``, ``resolve_audio``, and ``resolve_video`` are what the shared
+pipeline calls and tests patch; they delegate to the per-kind handlers in
+``lectural.sources``, imported lazily because those handlers call back into the
+tool wrappers here.  Local media is never copied or modified; only generated
+``out_dir/audio.wav`` may be written.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ import subprocess
 import sys
 
 from .deps import assert_acquisition_ready, require_binary
-from .source import InputSource, SourceKind, extract_video_id
+from .source import InputSource, extract_video_id
 
 
 @dataclass(frozen=True)
@@ -80,36 +82,11 @@ def fetch_video_metadata(url: str) -> dict:
     return metadata
 
 
-def _probe_youtube(source: InputSource) -> SourceMetadata:
-    metadata = fetch_video_metadata(source.locator)
-    return SourceMetadata(
-        title=metadata.get("title") or source.video_id or "",
-        duration=metadata.get("duration"),
-        video_id=metadata.get("video_id") or source.video_id,
-    )
-
-
-def _probe_local_video(source: InputSource) -> SourceMetadata:
-    return SourceMetadata(title=source.title_hint)
-
-
-def _probe_local_audio(source: InputSource) -> SourceMetadata:
-    return SourceMetadata(title=source.title_hint)
-
-
-# Keep each SourceKind explicit: adding a source kind must update all three
-# boundaries rather than silently taking a generic fallback.
-_PROBE_RESOLVERS = {
-    SourceKind.YOUTUBE: _probe_youtube,
-    SourceKind.LOCAL_VIDEO: _probe_local_video,
-    SourceKind.LOCAL_AUDIO: _probe_local_audio,
-}
-
-
 def probe_source(source: InputSource) -> SourceMetadata:
-    """Resolve source metadata using the source-kind-specific handler."""
-    resolver = _PROBE_RESOLVERS[source.kind]
-    return resolver(source)
+    """Resolve source metadata through the source's handler."""
+    from .sources import handler_for
+
+    return handler_for(source).probe(source)
 
 
 def download_audio(url: str, out_dir: str) -> str:
@@ -133,22 +110,15 @@ def download_audio(url: str, out_dir: str) -> str:
     return wav
 
 
-def _resolve_audio_youtube(source: InputSource, out_dir: str) -> str:
-    return download_audio(source.locator, out_dir)
-
-
-def _resolve_audio_local_audio(source: InputSource, out_dir: str) -> str:
-    return source.locator
-
-
-def _resolve_audio_local_video(source: InputSource, out_dir: str) -> str:
+def extract_audio(path: str, out_dir: str) -> str:
+    """Extract the audio track of a local video into a generated WAV file."""
     require_binary("ffmpeg")
     os.makedirs(out_dir, exist_ok=True)
     audio_path = os.path.join(out_dir, "audio.wav")
     subprocess.run(
         [
             "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
-            "-y", "-i", source.locator, "-vn", "-acodec", "pcm_s16le", audio_path,
+            "-y", "-i", path, "-vn", "-acodec", "pcm_s16le", audio_path,
         ],
         check=True,
         capture_output=True,
@@ -159,19 +129,14 @@ def _resolve_audio_local_video(source: InputSource, out_dir: str) -> str:
     return audio_path
 
 
-_AUDIO_RESOLVERS = {
-    SourceKind.YOUTUBE: _resolve_audio_youtube,
-    SourceKind.LOCAL_VIDEO: _resolve_audio_local_video,
-    SourceKind.LOCAL_AUDIO: _resolve_audio_local_audio,
-}
-
-
 def resolve_audio(source: InputSource, out_dir: str) -> str:
     """Resolve a source to an audio path for STT."""
-    return _AUDIO_RESOLVERS[source.kind](source, out_dir)
+    from .sources import handler_for
+
+    return handler_for(source).resolve_audio(source, out_dir)
 
 
-def _download_video(url: str, out_dir: str) -> str:
+def download_video(url: str, out_dir: str) -> str:
     """Download YouTube video for frame extraction."""
     assert_acquisition_ready()
     os.makedirs(out_dir, exist_ok=True)
@@ -193,28 +158,11 @@ def _download_video(url: str, out_dir: str) -> str:
     raise RuntimeError("Video download did not produce a video file")
 
 
-def _resolve_video_youtube(source: InputSource, out_dir: str) -> str:
-    return _download_video(source.locator, out_dir)
-
-
-def _resolve_video_local_video(source: InputSource, out_dir: str) -> str:
-    return source.locator
-
-
-def _resolve_video_local_audio(source: InputSource, out_dir: str) -> None:
-    return None
-
-
-_VIDEO_RESOLVERS = {
-    SourceKind.YOUTUBE: _resolve_video_youtube,
-    SourceKind.LOCAL_VIDEO: _resolve_video_local_video,
-    SourceKind.LOCAL_AUDIO: _resolve_video_local_audio,
-}
-
-
 def resolve_video(source: InputSource, out_dir: str) -> str | None:
     """Resolve the source video path, or ``None`` for audio-only input."""
-    return _VIDEO_RESOLVERS[source.kind](source, out_dir)
+    from .sources import handler_for
+
+    return handler_for(source).resolve_video(source, out_dir)
 
 
 def probe_video_resolution(video_path: str) -> tuple[int | None, int | None]:

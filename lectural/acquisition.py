@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 
 from .config import DEFAULT_STT_MODEL
 from .deps import require_binary
-from .source import InputSource, SourceKind
+from .source import InputSource
 
 
 @dataclass
@@ -206,13 +206,15 @@ def acquire_speech(
 ) -> SpeechTrack:
     """Acquire captions when supported, otherwise transcribe resolved audio."""
     from . import media
+    from .sources import handler_for
 
+    handler = handler_for(source)
     source_meta = source.as_dict()
     fallback_reason: str | None = None
-    fallback_code: str | None = "local_source" if source.kind is not SourceKind.YOUTUBE else None
+    fallback_code: str | None = handler.stt_fallback_code
     audio_path: str | None = None
     detected: str | None = None
-    if source.kind is SourceKind.YOUTUBE and not force_stt:
+    if handler.caption_capable and not force_stt:
         video_id = source.video_id
         if not video_id:
             raise ValueError(f"Could not extract a YouTube video id from: {source.argument!r}")
@@ -258,9 +260,7 @@ def acquire_speech(
             RuntimeWarning,
             stacklevel=2,
         )
-    elif source.kind not in (SourceKind.YOUTUBE, SourceKind.LOCAL_VIDEO, SourceKind.LOCAL_AUDIO):
-        raise ValueError(f"Unsupported source kind: {source.kind!r}")
-    elif force_stt and source.kind is SourceKind.YOUTUBE:
+    elif force_stt and handler.caption_capable:
         fallback_code = "forced_stt"
         fallback_reason = "force_stt requested"
         warnings.warn(

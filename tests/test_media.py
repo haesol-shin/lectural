@@ -106,12 +106,6 @@ def test_local_video_extracts_only_generated_audio_and_never_uses_ytdlp(monkeypa
     assert path.read_bytes() == b"original-video"
 
 
-def test_all_source_kinds_have_explicit_resolver_entries():
-    assert set(media._PROBE_RESOLVERS) == set(SourceKind)
-    assert set(media._AUDIO_RESOLVERS) == set(SourceKind)
-    assert set(media._VIDEO_RESOLVERS) == set(SourceKind)
-
-
 def test_probe_video_resolution_uses_processed_file(monkeypatch):
     calls = []
     monkeypatch.setattr(media, "require_binary", lambda name: calls.append(name))
