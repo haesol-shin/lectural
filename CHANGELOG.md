@@ -7,8 +7,7 @@ All notable changes to LecturAL are documented here. The format is based on [Kee
 ### Added
 - Accept public HTTP(S) media URLs without cookies; segmented HLS/DASH video is unsupported.
 - Fetch separate HTTP(S) video and audio streams when needed.
-- Report URL failures as `SOURCE_LOGIN_REQUIRED`, `SOURCE_ACCESS_DENIED`,
-  `SOURCE_REDIRECT_REJECTED`, or `SOURCE_UNAVAILABLE`.
+- Report URL failures as `SOURCE_LOGIN_REQUIRED`, `SOURCE_ACCESS_DENIED`, `SOURCE_REDIRECT_REJECTED`, or `SOURCE_UNAVAILABLE`.
 
 ### Fixed
 - Reject translated YouTube captions and preserve spoken-language evidence when selecting original tracks
