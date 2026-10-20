@@ -15,7 +15,7 @@ checks their structural and completeness integrity, and notes consumes them.
 from __future__ import annotations
 
 import argparse
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr, nullcontext
 import io
 import inspect
 import json
@@ -27,6 +27,9 @@ from . import evidence
 from . import runstate
 from .config import DEFAULT_STT_MODEL
 from .source import classify_source
+from . import fetch
+from .fetch.errors import RemoteSourceError
+from .urlpolicy import public_source_label, remote_url_origin
 
 
 def slugify(title: str, fallback: str = "video") -> str:
@@ -80,9 +83,14 @@ class _LecturalArgumentParser(argparse.ArgumentParser):
         argv = self.input_argv
         if argv and _looks_like_source(argv[0]):
             message = (
-                f"unknown command {argv[0]!r}; to generate notes use: "
+                f"unknown command {public_source_label(argv[0])!r}; to generate notes use: "
                 "lectural notes <source>"
             )
+        for token in sorted(argv, key=len, reverse=True):
+            value = token.split("=", 1)[1] if token.startswith("--") and "=" in token else token
+            label = public_source_label(value)
+            if label != value:
+                message = message.replace(repr(value), repr(label)).replace(value, label)
         super().error(message)
 
 
@@ -111,6 +119,7 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
         ),
     )
     parser.input_argv = argv
+    _LecturalArgumentParser.input_argv = argv
     parser.add_argument("--version", action="store_true", help="Show the LecturAL version")
     parser.add_argument("--json", dest="version_json", action="store_true", help=argparse.SUPPRESS)
     commands = parser.add_subparsers(dest="command")
@@ -120,7 +129,7 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
         help="Extract a source into a versioned evidence bundle",
         description="Extract speech and visual evidence into a versioned bundle; does not generate notes.",
     )
-    extract_parser.add_argument("source", help="One YouTube URL/ID or local media file")
+    extract_parser.add_argument("source", help="One YouTube URL/ID, public HTTP(S) URL, or local media file")
     extract_parser.add_argument("--out", required=True, help="New, empty output directory")
     extract_parser.add_argument("--force-stt", action="store_true", help=argparse.SUPPRESS)
     extract_parser.add_argument("--model", default=DEFAULT_STT_MODEL, help=argparse.SUPPRESS)
@@ -138,7 +147,7 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
     notes_parser.add_argument(
         "inputs",
         nargs="+",
-        help="YouTube URL/ID, local media file, or evidence bundle directory (processed sequentially)",
+        help="YouTube URL/ID, public HTTP(S) URL, local file, or evidence bundle (processed sequentially)",
     )
     notes_parser.add_argument(
         "--out",
@@ -257,12 +266,16 @@ def run(
             kwargs["reserved_output_dirs"] = reserved_output_dirs
         return processor(source_argument, out_dir, force_stt, model, **kwargs)
 
-    runstate.start_session(sources, runstate_file)
+    runstate.start_session([public_source_label(value) for value in sources], runstate_file)
     results: list[dict] = []
     for index, source_argument in enumerate(sources):
         out_dir = os.path.join(out_root, f"video_{index + 1:02d}")  # provisional
         try:
-            result = _call_processor(source_argument, out_dir)
+            private = public_source_label(source_argument) != source_argument
+            with (redirect_stdout(io.StringIO()) if private else nullcontext()), (
+                redirect_stderr(io.StringIO()) if private else nullcontext()
+            ):
+                result = _call_processor(source_argument, out_dir)
             result_output_dir = result.get("output_dir")
             if not isinstance(result_output_dir, str) or not result_output_dir:
                 raise ValueError("Processor returned no output directory")
@@ -283,7 +296,12 @@ def run(
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001 - record + continue
-            error_message = _run_error_message(exc)
+            label = public_source_label(source_argument)
+            error_message = (
+                exc.safe_message if isinstance(exc, RemoteSourceError) else
+                evidence.failure("EXTRACTION_FAILED")["message"] if label != source_argument else
+                _run_error_message(exc)
+            )
             runstate.update_run(
                 index,
                 status="failed",
@@ -293,7 +311,7 @@ def run(
             results.append(
                 {
                     "output_dir": out_dir,
-                    "source": source_argument,
+                    "source": label,
                     "overall_pass": False,
                     "error": error_message,
                 }
@@ -324,28 +342,20 @@ def _extract_then_notes_processor(
 
     from . import extract, media, notes
 
-    source = classify_source(source_argument)
-    metadata = media.probe_source(source)
-    fallback_title = metadata.video_id or source.video_id or source.title_hint or "video"
-    title = metadata.title or fallback_title
-    out_root = os.path.dirname(out_dir_hint) or "."
-    out_dir = _reserve_output_dir(
-        out_root,
-        title,
-        fallback=fallback_title,
-        reserved_output_dirs=reserved_output_dirs,
-    )
-    os.makedirs(out_dir, exist_ok=True)
-    result = extract.extract_source(
-        source_argument,
-        out_dir,
-        force_stt=force_stt,
-        model=model,
-        keep_frames=keep_frames,
-        skip_ocr=skip_ocr,
-        source=source,
-        metadata=metadata,
-    )
+    with fetch.prepare_source(source_argument) as prepared:
+        source = prepared.source
+        metadata = media.probe_source(source)
+        fallback_title = metadata.video_id or source.video_id or source.title_hint or "video"
+        title = metadata.title or fallback_title
+        out_root = os.path.dirname(out_dir_hint) or "."
+        out_dir = _reserve_output_dir(
+            out_root, title, fallback=fallback_title, reserved_output_dirs=reserved_output_dirs,
+        )
+        os.makedirs(out_dir, exist_ok=True)
+        result = extract.extract_source(
+            source.argument, out_dir, force_stt=force_stt, model=model, keep_frames=keep_frames,
+            skip_ocr=skip_ocr, source=source, metadata=metadata, work_dir=prepared.work_dir,
+        )
     notes_result = notes.generate_notes(out_dir)
     return {
         **notes_result,
@@ -364,8 +374,10 @@ def _extract_main(args: argparse.Namespace) -> int:
     """Run one source through the public extraction contract."""
     from . import extract
 
+    remote = not os.path.isfile(os.path.expanduser(args.source)) and remote_url_origin(args.source)
     try:
-        source = classify_source(args.source)
+        if not remote:
+            classify_source(args.source)
     except FileNotFoundError:
         _emit_json(evidence.build_failure_response("SOURCE_UNAVAILABLE"))
         return 2
@@ -373,50 +385,44 @@ def _extract_main(args: argparse.Namespace) -> int:
         _emit_json(evidence.build_failure_response("SOURCE_INVALID"))
         return 2
 
-    try:
-        output_dir = evidence.prepare_empty_output(args.out)
-    except evidence.ContractError as exc:
-        _emit_json(evidence.build_failure_response(exc.code))
-        return 2
-
+    output_dir = None
+    source = None
+    extracting = False
     diagnostics = io.StringIO()
     try:
-        with redirect_stdout(diagnostics):
-            result = extract.extract_source(
-                args.source,
-                output_dir,
-                force_stt=args.force_stt,
-                model=args.model,
-                skip_ocr=args.skip_ocr,
-                source=source,
-            )
+        evidence.check_new_output(args.out)
+        with fetch.prepare_source(args.source) as prepared:
+            source = prepared.source
+            output_dir = evidence.prepare_empty_output(args.out)
+            extracting = True
+            with redirect_stdout(diagnostics), (redirect_stderr(diagnostics) if remote else nullcontext()):
+                result = extract.extract_source(
+                    source.argument, output_dir, force_stt=args.force_stt, model=args.model,
+                    skip_ocr=args.skip_ocr, source=source, work_dir=prepared.work_dir,
+                )
+            response = evidence.build_extract_response(result["manifest"])
     except evidence.ContractError as exc:
-        if diagnostics.getvalue().strip():
-            print(diagnostics.getvalue(), file=sys.stderr, end="")
         _emit_json(evidence.build_failure_response(
-            exc.code,
-            output_dir=output_dir,
-            source=source.safe_as_dict(),
+            exc.code, output_dir=output_dir,
+            source=source.safe_as_dict() if source and not remote else None,
+            message=exc.safe_message if isinstance(exc, RemoteSourceError) else None,
+        ))
+        return 1 if extracting else 2
+    except Exception as exc:
+        if not remote:
+            error_output = _captured_stderr(exc)
+            if error_output:
+                print(error_output[-500:], file=sys.stderr)
+        _emit_json(evidence.build_failure_response(
+            "EXTRACTION_FAILED", output_dir=output_dir,
+            source=source.safe_as_dict() if source and not remote else None,
         ))
         return 1
-    except Exception as exc:  # noqa: BLE001 - never expose traceback or source details
-        if diagnostics.getvalue().strip():
+    finally:
+        if not remote and diagnostics.getvalue().strip():
             print(diagnostics.getvalue(), file=sys.stderr, end="")
-        error_output = _captured_stderr(exc)
-        if error_output:
-            print(error_output[-500:], file=sys.stderr)
-        _emit_json(evidence.build_failure_response(
-            "EXTRACTION_FAILED",
-            output_dir=output_dir,
-            source=source.safe_as_dict(),
-        ))
-        return 1
-    if diagnostics.getvalue().strip():
-        print(diagnostics.getvalue(), file=sys.stderr, end="")
-
-    manifest = result["manifest"]
-    _emit_json(evidence.build_extract_response(manifest))
-    return 0 if manifest["extraction"]["status"] == "pass" else 1
+    _emit_json(response)
+    return 0 if result["manifest"]["extraction"]["status"] == "pass" else 1
 
 
 def _inspect_main(args: argparse.Namespace) -> int:
