@@ -17,9 +17,7 @@ from lectural.urlpolicy import public_source_label, url_origin
     ],
 )
 def test_public_http_urls_prepare_as_local_with_origin_only(value: str, monkeypatch):
-    monkeypatch.setattr(
-        fetch, "fetch_url", lambda url, dest: FetchedMedia(str(Path(dest) / "media.mp4"), True)
-    )
+    monkeypatch.setattr(fetch, "fetch_url", lambda url, dest: FetchedMedia(str(Path(dest) / "media.mp4"), True))
     with fetch.prepare_source(value) as ready:
         source = ready.source
     assert source.kind is SourceKind.LOCAL_VIDEO
@@ -86,9 +84,7 @@ def test_public_source_label_keeps_local_and_youtube_and_reduces_urls(tmp_path: 
     assert public_source_label("dQw4w9WgXcQ") == "dQw4w9WgXcQ"
     youtube = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     assert public_source_label(youtube) == youtube
-    assert (
-        public_source_label("https://cdn.example.invalid/a/secret?sig=token") == "https://cdn.example.invalid"
-    )
+    assert public_source_label("https://cdn.example.invalid/a/secret?sig=token") == "https://cdn.example.invalid"
     assert public_source_label("data:video/mp4;base64,AAAA") == "data:"
     assert public_source_label("ftp://youtu.be/dQw4w9WgXcQ") == "ftp://youtu.be"
     assert public_source_label("x://media.example.invalid/secret?sig=1") == "x://media.example.invalid"
@@ -103,6 +99,7 @@ def test_windows_drive_paths_are_not_url_schemes():
         classify_source("C:\\missing\\missing.wav")
 
 
+# fmt: off
 @pytest.mark.parametrize(
     ("value", "origin"),
     [
@@ -113,6 +110,7 @@ def test_windows_drive_paths_are_not_url_schemes():
         ("http://user:secret@[2001:db8::1]:8765/private?tok=secret#secret", "http://[2001:db8::1]"),
     ],
 )
+# fmt: on
 def test_origin_omits_credentials_port_path_query_and_fragment(value, origin, monkeypatch):
     monkeypatch.setattr(fetch, "fetch_url", lambda url, dest: FetchedMedia(str(Path(dest) / "media"), False))
     assert url_origin(value) == public_source_label(value) == origin

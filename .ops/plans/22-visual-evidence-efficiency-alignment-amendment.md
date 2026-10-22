@@ -22,13 +22,21 @@ Run all alignment work for one `dedupe_frames` invocation in a short-lived, dedi
 Use exactly:
 
 ```python
-cv2.ORB_create(nfeatures=1000, scaleFactor=1.2, nlevels=8,
-    edgeThreshold=31, firstLevel=0, WTA_K=2,
-    scoreType=cv2.ORB_HARRIS_SCORE, patchSize=31, fastThreshold=20)
+cv2.ORB_create(
+    nfeatures=1000,
+    scaleFactor=1.2,
+    nlevels=8,
+    edgeThreshold=31,
+    firstLevel=0,
+    WTA_K=2,
+    scoreType=cv2.ORB_HARRIS_SCORE,
+    patchSize=31,
+    fastThreshold=20,
+)
 cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False).knnMatch(..., k=2)
-cv2.estimateAffinePartial2D(src, dst, method=cv2.RANSAC,
-    ransacReprojThreshold=3.0, maxIters=2000,
-    confidence=0.99, refineIters=10)
+cv2.estimateAffinePartial2D(
+    src, dst, method=cv2.RANSAC, ransacReprojThreshold=3.0, maxIters=2000, confidence=0.99, refineIters=10
+)
 ```
 
 Sort matches by `(queryIdx, trainIdx, distance)` and retain only rows with exactly two neighbors and `m.distance < 0.75 * n.distance`. The affine maps reference coordinates to candidate coordinates. Reject a missing/non-finite matrix, non-positive determinant or scale, and every gate below. Partial affine is intentional: translation, rotation, and uniform scale model pan/zoom without allowing shear/perspective to invent agreement.

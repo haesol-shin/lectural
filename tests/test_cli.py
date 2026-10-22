@@ -22,18 +22,27 @@ def test_output_dir_for():
     assert cli.output_dir_for("./output", "OS Lecture") == os.path.join("./output", "OS-Lecture")
 
 
-
-
 def test_parse_args_notes_and_mixed_batch():
     source = cli.parse_args(["notes", "https://youtu.be/dQw4w9WgXcQ"])
     assert source.command == "notes"
     assert source.inputs == ["https://youtu.be/dQw4w9WgXcQ"]
     assert source.force_stt is None and source.model is None
     assert source.keep_frames is None and source.skip_ocr is None
-    batch = cli.parse_args([
-        "notes", "dQw4w9WgXcQ", "./lecture.mp4", "sound.wav", "--force-stt",
-        "--model", "small", "--out", "./o", "--keep-frames", "--skip-ocr",
-    ])
+    batch = cli.parse_args(
+        [
+            "notes",
+            "dQw4w9WgXcQ",
+            "./lecture.mp4",
+            "sound.wav",
+            "--force-stt",
+            "--model",
+            "small",
+            "--out",
+            "./o",
+            "--keep-frames",
+            "--skip-ocr",
+        ]
+    )
     assert batch.inputs == ["dQw4w9WgXcQ", "./lecture.mp4", "sound.wav"]
     assert batch.force_stt is True and batch.model == "small" and batch.out == "./o"
     assert batch.keep_frames is True and batch.skip_ocr is True
@@ -53,14 +62,17 @@ def test_help_works_for_root_and_subcommands():
         cli.parse_args([])
     assert no_args.value.code == 2
 
+
 def test_bare_source_reports_notes_hint(tmp_path, capsys):
     source = tmp_path / "lecture.mp4"
     source.write_bytes(b"media")
     with pytest.raises(SystemExit) as exit_info:
         cli.main([str(source)])
     assert exit_info.value.code == 2
-    assert capsys.readouterr().err.strip().endswith(
-        f"unknown command {str(source)!r}; to generate notes use: lectural notes <source>"
+    assert (
+        capsys.readouterr()
+        .err.strip()
+        .endswith(f"unknown command {str(source)!r}; to generate notes use: lectural notes <source>")
     )
 
 
@@ -93,7 +105,9 @@ def _fake_processor(source, out_dir, force_stt, model, *, keep_frames=False, ski
 
 def test_run_mixed_sources_preserves_order_and_source_state(tmp_path):
     rs = tmp_path / "runstate.json"
-    results = cli.run(["u-A", "./lecture.mp4", "sound.wav"], processor=_fake_processor, runstate_file=str(rs), skip_ocr=True)
+    results = cli.run(
+        ["u-A", "./lecture.mp4", "sound.wav"], processor=_fake_processor, runstate_file=str(rs), skip_ocr=True
+    )
     assert [result["received"][0] for result in results] == ["u-A", "./lecture.mp4", "sound.wav"]
     assert all(result["received"][-1] is True for result in results)
     state = json.loads(rs.read_text(encoding="utf-8"))
@@ -109,7 +123,13 @@ def test_run_continues_after_one_source_failure(tmp_path):
         calls.append(source)
         if source == "bad":
             raise RuntimeError("boom")
-        return {"output_dir": out_dir, "coverage_json": "c", "notes_md": "n", "transcript_md": "t", "overall_pass": True}
+        return {
+            "output_dir": out_dir,
+            "coverage_json": "c",
+            "notes_md": "n",
+            "transcript_md": "t",
+            "overall_pass": True,
+        }
 
     results = cli.run(["good", "bad", "last"], processor=processor, runstate_file=str(rs))
     assert calls == ["good", "bad", "last"]
@@ -120,7 +140,9 @@ def test_run_continues_after_one_source_failure(tmp_path):
 
 def test_main_forwards_skip_ocr_and_exit_code(monkeypatch):
     captured = {}
-    monkeypatch.setattr(cli, "run", lambda *args, **kwargs: captured.update(kwargs) or [{"output_dir": "x", "overall_pass": True}])
+    monkeypatch.setattr(
+        cli, "run", lambda *args, **kwargs: captured.update(kwargs) or [{"output_dir": "x", "overall_pass": True}]
+    )
     assert cli.main(["notes", "./deck.mp4", "--skip-ocr"]) == 0
     assert captured["skip_ocr"] is True
     monkeypatch.setattr(cli, "run", lambda *args, **kwargs: [{"output_dir": "x", "overall_pass": False}])
@@ -160,7 +182,11 @@ def _install_default_processor_fakes(
         audio = Path(out_dir) / "audio.wav"
         audio.write_bytes(b"audio")
         return acquisition.SpeechTrack(
-            [acquisition.Segment(0.0, "첫 번째 문장입니다"), acquisition.Segment(30.0, "두 번째 문장입니다"), acquisition.Segment(60.0, "세 번째 문장입니다")],
+            [
+                acquisition.Segment(0.0, "첫 번째 문장입니다"),
+                acquisition.Segment(30.0, "두 번째 문장입니다"),
+                acquisition.Segment(60.0, "세 번째 문장입니다"),
+            ],
             "caption" if source_kind is SourceKind.YOUTUBE else "stt",
             meta={"audio_path": str(audio), "duration": stt_duration},
         )
@@ -168,7 +194,9 @@ def _install_default_processor_fakes(
     monkeypatch.setattr(acquisition, "acquire_speech", fake_acquire)
     monkeypatch.setattr(media, "probe_video_resolution", lambda _path: (1280, 720))
     if source_kind is not SourceKind.LOCAL_AUDIO:
-        monkeypatch.setattr(media, "resolve_video", lambda source, out_dir: calls.append(("video", source, out_dir)) or source.locator)
+        monkeypatch.setattr(
+            media, "resolve_video", lambda source, out_dir: calls.append(("video", source, out_dir)) or source.locator
+        )
 
         def fake_extract(video_path, frames_dir):
             calls.append(("extract", video_path, frames_dir))
@@ -195,8 +223,12 @@ def _install_default_processor_fakes(
 
 
 def test_extract_then_notes_youtube_uses_ocr_and_youtube_citation(monkeypatch, tmp_path):
-    calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="운영체제 1강", duration=120.0, source_kind=SourceKind.YOUTUBE)
-    result = cli._extract_then_notes_processor("https://youtu.be/dQw4w9WgXcQ", str(tmp_path / "video_01"), False, "tiny")
+    calls = _install_default_processor_fakes(
+        monkeypatch, tmp_path, title="운영체제 1강", duration=120.0, source_kind=SourceKind.YOUTUBE
+    )
+    result = cli._extract_then_notes_processor(
+        "https://youtu.be/dQw4w9WgXcQ", str(tmp_path / "video_01"), False, "tiny"
+    )
     out = Path(result["output_dir"])
     assert result["output_dir"] == str(tmp_path / "운영체제-1강")
     assert calls[0][1].kind is SourceKind.YOUTUBE
@@ -209,11 +241,15 @@ def test_extract_then_notes_youtube_uses_ocr_and_youtube_citation(monkeypatch, t
 
 
 def test_extract_then_notes_local_video_skip_ocr_keeps_deduplicated_frames(monkeypatch, tmp_path):
-    calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO)
+    calls = _install_default_processor_fakes(
+        monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO
+    )
     monkeypatch.setattr("lectural.ocr.ocr_frames", lambda *_args: (_ for _ in ()).throw(AssertionError("OCR called")))
     source_path = tmp_path / "deck.mp4"
     source_path.write_bytes(b"source")
-    result = cli._extract_then_notes_processor(str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
+    result = cli._extract_then_notes_processor(
+        str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
+    )
     out = Path(result["output_dir"])
     handoff = json.loads((out / "synthesis_input.json").read_text(encoding="utf-8"))
     coverage_payload = json.loads((out / "coverage.json").read_text(encoding="utf-8"))
@@ -230,7 +266,9 @@ def test_extract_then_notes_local_video_skip_ocr_keeps_deduplicated_frames(monke
 
 
 def test_reliability_gates_synthesis_but_preserves_evidence(monkeypatch, tmp_path):
-    calls = _install_default_processor_fakes(monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO)
+    calls = _install_default_processor_fakes(
+        monkeypatch, tmp_path, title="deck", duration=120.0, source_kind=SourceKind.LOCAL_VIDEO
+    )
     source_path = tmp_path / "deck.mp4"
     source_path.write_bytes(b"source")
 
@@ -254,8 +292,12 @@ def test_reliability_gates_synthesis_but_preserves_evidence(monkeypatch, tmp_pat
 def test_local_wav_processor_skips_visual_and_has_not_applicable_scene(monkeypatch, tmp_path):
     path = tmp_path / "recording.wav"
     path.write_bytes(b"source")
-    _install_default_processor_fakes(monkeypatch, tmp_path, title="recording", duration=30.0, source_kind=SourceKind.LOCAL_AUDIO)
-    monkeypatch.setattr(visual, "extract_candidate_frames", lambda *_args: (_ for _ in ()).throw(AssertionError("visual called")))
+    _install_default_processor_fakes(
+        monkeypatch, tmp_path, title="recording", duration=30.0, source_kind=SourceKind.LOCAL_AUDIO
+    )
+    monkeypatch.setattr(
+        visual, "extract_candidate_frames", lambda *_args: (_ for _ in ()).throw(AssertionError("visual called"))
+    )
     result = cli._extract_then_notes_processor(str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
     out = Path(result["output_dir"])
     coverage_payload = json.loads((out / "coverage.json").read_text(encoding="utf-8"))
@@ -266,9 +308,7 @@ def test_local_wav_processor_skips_visual_and_has_not_applicable_scene(monkeypat
     assert "frames/" not in notes
 
 
-def test_local_wav_processor_keeps_visual_coverage_not_applicable_without_duration(
-    monkeypatch, tmp_path
-):
+def test_local_wav_processor_keeps_visual_coverage_not_applicable_without_duration(monkeypatch, tmp_path):
     path = tmp_path / "recording.wav"
     path.write_bytes(b"source")
     _install_default_processor_fakes(
@@ -285,12 +325,8 @@ def test_local_wav_processor_keeps_visual_coverage_not_applicable_without_durati
         "extract_candidate_frames",
         lambda *_args: (_ for _ in ()).throw(AssertionError("visual called")),
     )
-    result = cli._extract_then_notes_processor(
-        str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
-    )
-    coverage_payload = json.loads(
-        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
-    )
+    result = cli._extract_then_notes_processor(str(path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True)
+    coverage_payload = json.loads((Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8"))
 
     assert coverage_payload["duration_sec"] == 0.0
     assert coverage_payload["scene_coverage"]["duration_valid"] is False
@@ -322,9 +358,7 @@ def test_default_video_processor_uses_valid_stt_duration_when_metadata_is_unusab
     result = cli._extract_then_notes_processor(
         str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
     )
-    coverage_payload = json.loads(
-        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
-    )
+    coverage_payload = json.loads((Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8"))
 
     assert coverage_payload["duration_sec"] == 42.0
     assert coverage_payload["scene_coverage"]["duration_valid"] is True
@@ -352,9 +386,7 @@ def test_default_video_processor_fails_closed_when_both_durations_are_invalid(
     result = cli._extract_then_notes_processor(
         str(source_path), str(tmp_path / "video_01"), False, "tiny", skip_ocr=True
     )
-    coverage_payload = json.loads(
-        (Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8")
-    )
+    coverage_payload = json.loads((Path(result["output_dir"]) / "coverage.json").read_text(encoding="utf-8"))
 
     assert result["overall_pass"] is False
     assert coverage_payload["duration_sec"] == 0.0
@@ -435,7 +467,9 @@ def test_main_dispatches_doctor_json(monkeypatch, capsys):
         "run",
         lambda fix=False, plugin=False: captured.update(fix=fix, plugin=plugin) or report,
     )
-    monkeypatch.setattr(doctor, "print_report", lambda actual, json_output=False: print("json" if json_output else "text"))
+    monkeypatch.setattr(
+        doctor, "print_report", lambda actual, json_output=False: print("json" if json_output else "text")
+    )
     assert cli.main(["doctor", "--fix", "--plugin", "--json"]) == 0
     assert captured == {"fix": True, "plugin": True}
     assert capsys.readouterr().out.strip() == "json"

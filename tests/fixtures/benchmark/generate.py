@@ -36,6 +36,7 @@ from typing import Any
 # Data Models & Schemas
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ReviewNote:
     reviewer: str
@@ -74,6 +75,7 @@ class SlideDefinition:
     def authored_text(self) -> str:
         """Full authored text of the slide: title followed by body lines."""
         return "\n".join([self.title] + [ln for ln in self.lines if ln]).strip()
+
 
 @dataclass
 class FixtureSpec:
@@ -326,6 +328,7 @@ SPECS: dict[str, FixtureSpec] = {
 # TTS Speech Synthesis (Offline SAPI5 via pyttsx3)
 # ---------------------------------------------------------------------------
 
+
 def synthesize_utterance_pyttsx3(
     text: str,
     voice_filter: str,
@@ -333,11 +336,11 @@ def synthesize_utterance_pyttsx3(
     rate: int = 145,
 ) -> float:
     """Synthesize one utterance to a WAV file using pyttsx3.
-    
+
     Returns duration in seconds.
     """
     import pyttsx3  # lazy import
-    
+
     engine = pyttsx3.init()
     voices = engine.getProperty("voices")
     selected_voice = None
@@ -348,31 +351,43 @@ def synthesize_utterance_pyttsx3(
     if selected_voice:
         engine.setProperty("voice", selected_voice)
     engine.setProperty("rate", rate)
-    
+
     temp_wav = out_wav.with_name(f"{out_wav.stem}_temp.wav")
     engine.save_to_file(text, str(temp_wav))
     engine.runAndWait()
     del engine
-    
+
     # Read duration and standardize audio
     with wave.open(str(temp_wav), "rb") as w:
         params = w.getparams()
         frames = w.readframes(w.getnframes())
-    
+
     duration = len(frames) / (params.nchannels * params.sampwidth * params.framerate)
-    
+
     # Standardize to 16kHz mono 16-bit PCM for consistent downstream STT & VAD
     subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(temp_wav),
-            "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
-            str(out_wav)
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-nostats",
+            "-y",
+            "-i",
+            str(temp_wav),
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-c:a",
+            "pcm_s16le",
+            str(out_wav),
         ],
         check=True,
         capture_output=True,
     )
     temp_wav.unlink(missing_ok=True)
-    
+
     with wave.open(str(out_wav), "rb") as w:
         duration = w.getnframes() / w.getframerate()
     return duration
@@ -401,47 +416,47 @@ def assemble_speech_track(
     trailing_silence: float = 1.0,
 ) -> tuple[float, list[list[float]]]:
     """Concatenate utterance WAVs with exact silence gaps.
-    
+
     Pure logic over audio frames.
     Returns (total_duration_sec, speech_spans).
     """
     sample_rate = 16000
     channels = 1
     bytes_per_sample = 2  # 16-bit
-    
+
     speech_spans: list[list[float]] = []
     combined_audio = io.BytesIO()
-    
+
     current_time = 0.0
-    
+
     def write_silence(duration_sec: float) -> None:
         nonlocal current_time
         num_samples = int(round(duration_sec * sample_rate))
         silence_bytes = b"\x00" * (num_samples * bytes_per_sample * channels)
         combined_audio.write(silence_bytes)
         current_time += duration_sec
-    
+
     # Lead-in silence
     write_silence(lead_in_silence)
-    
+
     for i, (utt_path, dur) in enumerate(utterance_files):
         with wave.open(str(utt_path), "rb") as w:
             frames = w.readframes(w.getnframes())
             actual_dur = w.getnframes() / w.getframerate()
-        
+
         start_time = round(current_time, 3)
         combined_audio.write(frames)
         current_time += actual_dur
         end_time = round(current_time, 3)
         speech_spans.append([start_time, end_time])
-        
+
         if i < len(utterance_files) - 1:
             write_silence(interval_silence)
         else:
             write_silence(trailing_silence)
-    
+
     total_duration = round(current_time, 3)
-    
+
     # Write combined WAV
     out_wav.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(out_wav), "wb") as w:
@@ -449,7 +464,7 @@ def assemble_speech_track(
         w.setsampwidth(bytes_per_sample)
         w.setframerate(sample_rate)
         w.writeframes(combined_audio.getvalue())
-    
+
     return total_duration, speech_spans
 
 
@@ -457,14 +472,15 @@ def assemble_speech_track(
 # Slide Rendering (PIL)
 # ---------------------------------------------------------------------------
 
+
 def get_best_font(size: int):
     """Return the best available TrueType font for Korean and Latin typography."""
     from PIL import ImageFont
-    
+
     font_candidates = [
-        "C:/Windows/Fonts/malgun.ttf",       # Malgun Gothic (Windows KO/EN standard)
-        "C:/Windows/Fonts/segoeui.ttf",     # Segoe UI
-        "C:/Windows/Fonts/arial.ttf",        # Arial
+        "C:/Windows/Fonts/malgun.ttf",  # Malgun Gothic (Windows KO/EN standard)
+        "C:/Windows/Fonts/segoeui.ttf",  # Segoe UI
+        "C:/Windows/Fonts/arial.ttf",  # Arial
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
     ]
@@ -485,19 +501,19 @@ def render_slide(
 ) -> None:
     """Render a single 1280x720 slide using PIL with crisp typography."""
     from PIL import Image, ImageDraw
-    
+
     # Title slides use a presentation hero header banner
     is_title = "title" in slide_def.filename
-    
+
     img = Image.new("RGB", (width, height), color=(248, 249, 250))
     draw = ImageDraw.Draw(img)
-    
+
     title_font = get_best_font(44)
     body_font = get_best_font(28)
     note_font = get_best_font(20)
-    
+
     dx, dy = slide_def.shift_xy
-    
+
     if is_title:
         # Dark hero header banner across top 240px
         draw.rectangle([0, 0, width, 230], fill=(30, 41, 59))
@@ -505,7 +521,7 @@ def render_slide(
         draw.text((100 + dx, 80 + dy), slide_def.title, fill=(255, 255, 255), font=title_font)
         # Accent underline
         draw.line([(100 + dx, 155 + dy), (width - 100, 155 + dy)], fill=(56, 189, 248), width=3)
-        
+
         # Subtitle / author lines below header
         y_body = 300 + dy
         for line in slide_def.lines:
@@ -516,22 +532,22 @@ def render_slide(
         # Content slide layout
         x_margin = 100 + dx
         y_title = 80 + dy
-        
+
         # Accent bar
         draw.rectangle([x_margin - 20, y_title, x_margin - 8, y_title + 50], fill=(41, 98, 255))
         draw.text((x_margin, y_title), slide_def.title, fill=(33, 37, 41), font=title_font)
-        
+
         # Divider line
         y_divider = y_title + 70
         draw.line([(x_margin - 20, y_divider), (width - 100, y_divider)], fill=(222, 226, 230), width=2)
-        
+
         # Body lines
         y_body = y_divider + 40
         for line in slide_def.lines:
             draw.ellipse([x_margin, y_body + 10, x_margin + 8, y_body + 18], fill=(41, 98, 255))
             draw.text((x_margin + 25, y_body), line, fill=(52, 58, 64), font=body_font)
             y_body += 55
-    
+
     # Optional footer / note
     if slide_def.notes:
         draw.text((100 + dx, height - 70 + dy), slide_def.notes, fill=(108, 117, 125), font=note_font)
@@ -543,15 +559,16 @@ def render_slide(
 # Visual Degradation (Augraphy with PIL Fallback)
 # ---------------------------------------------------------------------------
 
+
 def degrade_image_pil_fallback(img_path: Path, out_path: Path, level: str = "l1") -> None:
     """Apply visual degradation using PIL ImageFilter / ImageEnhance.
-    
+
     Documented fallback when Augraphy is not available in the sandbox.
     Level 'l1': moderate Gaussian blur (radius=1.5), slight contrast reduction (0.85).
     Level 'l2': heavy Gaussian blur (radius=3.0), contrast reduction (0.70), brightness jitter (1.15).
     """
     from PIL import Image, ImageEnhance, ImageFilter
-    
+
     with Image.open(img_path) as img:
         out = img.convert("RGB")
         if level == "l1":
@@ -569,9 +586,11 @@ def apply_visual_degradation(img_path: Path, out_path: Path, level: str = "l1") 
     """Apply visual degradation using PIL ImageFilter / ImageEnhance."""
     degrade_image_pil_fallback(img_path, out_path, level=level)
 
+
 # ---------------------------------------------------------------------------
 # Audio Degradation (Audiomentations with FFmpeg Fallback)
 # ---------------------------------------------------------------------------
+
 
 def apply_audio_degradation(
     in_wav: Path,
@@ -587,16 +606,31 @@ def apply_audio_degradation(
         f"volume=enable='between(t,{gap_start},{gap_start + gap_duration})':volume=0"
     )
     cmd = [
-        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(in_wav),
-        "-filter_complex", filter_str,
-        "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le",
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-y",
+        "-i",
+        str(in_wav),
+        "-filter_complex",
+        filter_str,
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-c:a",
+        "pcm_s16le",
         str(out_wav),
     ]
     subprocess.run(cmd, check=True, capture_output=True)
 
+
 # ---------------------------------------------------------------------------
 # Video Assembly & 360p Re-encode (FFmpeg)
 # ---------------------------------------------------------------------------
+
 
 def assemble_video_from_slides(
     slide_files: list[Path],
@@ -623,30 +657,66 @@ def assemble_video_from_slides(
         f.write(f"duration {last_dur:.2f}\n")
         # Demuxer requires repeating last file
         f.write(f"file {last_rel_path}\n")
-    
+
     cmd = [
-        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y",
-        "-f", "concat", "-safe", "0",
-        "-i", concat_file.name,
-        "-i", audio_wav.name,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "2",
-        "-c:a", "aac", "-b:a", "128k",
-        "-shortest", out_mp4.name,
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-y",
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        concat_file.name,
+        "-i",
+        audio_wav.name,
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-r",
+        "2",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-shortest",
+        out_mp4.name,
     ]
     subprocess.run(cmd, check=True, capture_output=True, cwd=str(parent_dir))
     concat_file.unlink(missing_ok=True)
 
+
 def produce_360p_reencode(in_mp4: Path, out_360p_mp4: Path) -> None:
     """Produce a 360p-equivalent low-bitrate re-encode of video.
-    
+
     Command:
     ffmpeg -hide_banner -loglevel error -nostats -y -i <in> -vf scale=640:360 -b:v 250k -maxrate 300k -bufsize 500k -c:a aac -b:a 64k <out>
     """
     cmd = [
-        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats", "-y", "-i", str(in_mp4),
-        "-vf", "scale=640:360",
-        "-b:v", "250k", "-maxrate", "300k", "-bufsize", "500k",
-        "-c:a", "aac", "-b:a", "64k",
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-y",
+        "-i",
+        str(in_mp4),
+        "-vf",
+        "scale=640:360",
+        "-b:v",
+        "250k",
+        "-maxrate",
+        "300k",
+        "-bufsize",
+        "500k",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "64k",
         str(out_360p_mp4),
     ]
     subprocess.run(cmd, check=True, capture_output=True)
@@ -655,6 +725,7 @@ def produce_360p_reencode(in_mp4: Path, out_360p_mp4: Path) -> None:
 # ---------------------------------------------------------------------------
 # Caption Generation (WebVTT)
 # ---------------------------------------------------------------------------
+
 
 def format_vtt_timestamp(seconds: float) -> str:
     """Format float seconds to HH:MM:SS.mmm WebVTT timestamp. Pure."""
@@ -673,7 +744,7 @@ def generate_usable_vtt(
     out_vtt: Path,
 ) -> str:
     """Generate a usable WebVTT caption file matching speech spans.
-    
+
     Passes lectural.acquisition.captions_are_usable heuristic (>=3 segments, >=20 chars).
     """
     lines = ["WEBVTT", ""]
@@ -691,17 +762,11 @@ def generate_usable_vtt(
 
 def generate_unusable_vtt(out_vtt: Path) -> str:
     """Generate a deliberately sparse/malformed WebVTT caption file.
-    
+
     Fails lectural.acquisition.captions_are_usable heuristic (len < 3 segments, < 20 chars).
     Triggers caption-fallback branch to STT in acquisition.
     """
-    content = (
-        "WEBVTT\n\n"
-        "00:00:01.000 --> 00:00:02.000\n"
-        "[Music]\n\n"
-        "00:00:05.000 --> 00:00:06.000\n"
-        "Hi\n"
-    )
+    content = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n[Music]\n\n00:00:05.000 --> 00:00:06.000\nHi\n"
     out_vtt.parent.mkdir(parents=True, exist_ok=True)
     out_vtt.write_text(content, encoding="utf-8")
     return content
@@ -711,6 +776,7 @@ def generate_unusable_vtt(out_vtt: Path) -> str:
 # Fixture Generation Pipeline
 # ---------------------------------------------------------------------------
 
+
 def generate_fixture_set(
     spec: FixtureSpec,
     base_dir: Path,
@@ -719,17 +785,17 @@ def generate_fixture_set(
 ) -> dict[str, Any]:
     """Generate all artifacts for a single fixture specification."""
     random.seed(seed)
-    
+
     fixture_dir = base_dir / spec.fixture_id
     fixture_dir.mkdir(parents=True, exist_ok=True)
     scratch_dir = fixture_dir / ".scratch"
     slides_dir = fixture_dir / "slides"
     slides_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # 1. Author Script (Ground Truth Text)
     script_text = " ".join(spec.sentences)
     (fixture_dir / "script.txt").write_text(script_text, encoding="utf-8")
-    
+
     # 2. Synthesize Utterances & Assemble Audio
     utt_files = synthesize_utterances(spec.sentences, spec.voice_token, scratch_dir)
     audio_wav = fixture_dir / "audio.wav"
@@ -740,7 +806,7 @@ def generate_fixture_set(
         interval_silence=1.0,
         trailing_silence=1.0,
     )
-    
+
     # 3. Degrade Audio (Noise + Silence Gap)
     audio_degraded_wav = fixture_dir / "audio_degraded.wav"
     apply_audio_degradation(
@@ -750,20 +816,20 @@ def generate_fixture_set(
         gap_duration=0.5,
         noise_level=0.02,
     )
-    
+
     # 4. Render Slides & Slide Degradation Variants
     rendered_slide_paths: list[Path] = []
     for s_def in spec.slides:
         s_path = slides_dir / s_def.filename
         render_slide(s_def, s_path)
         rendered_slide_paths.append(s_path)
-    
+
     # Render degraded slides from slide 4
     degraded_l1_path = slides_dir / "slide_degraded_l1.png"
     degraded_l2_path = slides_dir / "slide_degraded_l2.png"
     apply_visual_degradation(rendered_slide_paths[4], degraded_l1_path, level="l1")
     apply_visual_degradation(rendered_slide_paths[4], degraded_l2_path, level="l2")
-    
+
     # 5. Slide change timestamps (for ground truth frame recall)
     # Distinct slide transitions occur at:
     # 0.0s (Slide 0: Title)
@@ -772,7 +838,7 @@ def generate_fixture_set(
     # 13.0s (Slide 3: Incremental base)
     # 18.0s (Slide 4: Incremental extended)
     slide_change_timestamps = [0.0, 5.0, 13.0, 18.0]
-    
+
     # 6. Video Assembly & 360p Re-encode
     video_mp4 = fixture_dir / "video.mp4"
     video_360p_mp4 = fixture_dir / "video_360p.mp4"
@@ -785,16 +851,16 @@ def generate_fixture_set(
             total_audio_dur,
         )
         produce_360p_reencode(video_mp4, video_360p_mp4)
-    
+
     # 7. WebVTT Captions
     captions_usable_vtt = fixture_dir / "captions_usable.vtt"
     captions_unusable_vtt = fixture_dir / "captions_unusable.vtt"
     generate_usable_vtt(spec.sentences, speech_spans, captions_usable_vtt)
     generate_unusable_vtt(captions_unusable_vtt)
-    
+
     # Default captions.vtt links to usable captions
     (fixture_dir / "captions.vtt").write_text(captions_usable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
-    
+
     # 8. Ground Truth JSON (Schema compliant)
     slides_text: dict[str, str] = {}
     for s in spec.slides:
@@ -831,7 +897,7 @@ def generate_fixture_set(
     gt_dict = asdict(gt_data)
     (fixture_dir / "gt.json").write_text(json.dumps(gt_dict, indent=2, ensure_ascii=False), encoding="utf-8")
     (fixture_dir / "ground_truth.json").write_text(json.dumps(gt_dict, indent=2, ensure_ascii=False), encoding="utf-8")
-    
+
     # 9. Also produce the unusable-caption companion directory for harness convenience
     unusable_dir = base_dir / f"{spec.fixture_id}_unusable"
     unusable_dir.mkdir(parents=True, exist_ok=True)
@@ -858,8 +924,12 @@ def generate_fixture_set(
         near_duplicate_timestamps=near_duplicate_timestamps,
         incremental_timestamps=incremental_timestamps,
     )
-    (unusable_dir / "gt.json").write_text(json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
-    (unusable_dir / "ground_truth.json").write_text(json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
+    (unusable_dir / "gt.json").write_text(
+        json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    (unusable_dir / "ground_truth.json").write_text(
+        json.dumps(asdict(unusable_gt_data), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     (unusable_dir / "captions.vtt").write_text(captions_unusable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
     (unusable_dir / "audio.wav").write_bytes(audio_wav.read_bytes())
     if not skip_video and video_mp4.exists():
@@ -891,8 +961,12 @@ def generate_fixture_set(
         near_duplicate_timestamps=near_duplicate_timestamps,
         incremental_timestamps=incremental_timestamps,
     )
-    (force_stt_dir / "gt.json").write_text(json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
-    (force_stt_dir / "ground_truth.json").write_text(json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8")
+    (force_stt_dir / "gt.json").write_text(
+        json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    (force_stt_dir / "ground_truth.json").write_text(
+        json.dumps(asdict(force_stt_gt_data), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     (force_stt_dir / "captions.vtt").write_text(captions_usable_vtt.read_text(encoding="utf-8"), encoding="utf-8")
     (force_stt_dir / "audio.wav").write_bytes(audio_wav.read_bytes())
     if audio_degraded_wav.exists():
@@ -914,13 +988,14 @@ def generate_fixture_set(
         for p in scratch_dir.glob("*"):
             p.unlink()
         scratch_dir.rmdir()
-    
+
     return gt_dict
 
 
 # ---------------------------------------------------------------------------
 # CLI Entrypoint
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate benchmark fixtures for LecturAL")
@@ -949,13 +1024,13 @@ def main() -> None:
         help="Skip FFmpeg video rendering (audio and slides only)",
     )
     args = parser.parse_args()
-    
+
     lang_to_spec_id = {
         "en": "en_terms_01",
         "ko": "ko_terms_01",
         "mixed": "mixed_terms_01",
     }
-    
+
     print(f"Generating benchmark fixtures in {args.out_dir} (seed={args.seed})...")
     for lang in args.languages:
         spec_id = lang_to_spec_id[lang]
@@ -966,7 +1041,7 @@ def main() -> None:
         print(f" - Speech spans: {gt['speech_spans']}")
         print(f" - Slide change timestamps: {gt['slide_change_timestamps']}")
         print(f" - Key fields: {len(gt['key_fields'])} fields")
-    
+
     print("Benchmark fixture generation complete!")
 
 

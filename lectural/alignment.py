@@ -103,10 +103,7 @@ def opencv_provenance(cv2) -> dict[str, Any]:
     cv_version = str(getattr(cv2, "__version__", ""))
     module_path = getattr(cv2, "__file__", None)
     provider_exact = providers == expected
-    versions_match = all(
-        versions[name] == locked
-        for name, locked in OPENCV_LOCKED_PROVIDER_VERSIONS.items()
-    )
+    versions_match = all(versions[name] == locked for name, locked in OPENCV_LOCKED_PROVIDER_VERSIONS.items())
     return {
         "expected_providers": expected,
         "provider_candidates": providers,
@@ -201,9 +198,9 @@ def _box_mean(values, np, win: int = MASK_EROSION_SIZE):
     cumulative = np.pad(cumulative, ((1, 0), (1, 0)), mode="constant")
     height, width = values.shape
     total = (
-        cumulative[win:win + height, win:win + width]
-        - cumulative[:height, win:win + width]
-        - cumulative[win:win + height, :width]
+        cumulative[win : win + height, win : win + width]
+        - cumulative[:height, win : win + width]
+        - cumulative[win : win + height, :width]
         + cumulative[:height, :width]
     )
     return total / (win * win)
@@ -282,13 +279,13 @@ def _inlier_geometry(src, np, cv2, reference_shape: tuple[int, int]) -> dict[str
     eigenvalues = np.linalg.eigvalsh(covariance)
     largest = float(eigenvalues[-1])
     smallest = float(eigenvalues[0])
-    out["eigenvalue_ratio"] = (
-        max(0.0, smallest) / largest if largest > 0.0 and math.isfinite(largest) else 0.0
-    )
+    out["eigenvalue_ratio"] = max(0.0, smallest) / largest if largest > 0.0 and math.isfinite(largest) else 0.0
     return out
 
 
-def _support_and_ssim(source, destination, transform, cv2, np, *, pixel_delta: int | None = None) -> tuple[float, float | str, dict[str, float] | None]:
+def _support_and_ssim(
+    source, destination, transform, cv2, np, *, pixel_delta: int | None = None
+) -> tuple[float, float | str, dict[str, float] | None]:
     """Warp one direction and return pre-erosion coverage and masked SSIM."""
     dest_height, dest_width = destination.shape[:2]
     source_height, source_width = source.shape[:2]
@@ -313,7 +310,9 @@ def _support_and_ssim(source, destination, transform, cv2, np, *, pixel_delta: i
     eroded = cv2.erode(support, kernel, iterations=1)
     source_gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY).astype(np.float64)
     destination_gray = cv2.cvtColor(destination, cv2.COLOR_BGR2GRAY).astype(np.float64)
-    content = None if pixel_delta is None else _content_change_metrics(warped, destination, eroded, cv2, np, pixel_delta)
+    content = (
+        None if pixel_delta is None else _content_change_metrics(warped, destination, eroded, cv2, np, pixel_delta)
+    )
     return coverage, _masked_ssim(source_gray, destination_gray, eroded, np), content
 
 
@@ -362,12 +361,7 @@ def _pending_or_failure(
 def _affine_is_finite(matrix: Any) -> bool:
     if not isinstance(matrix, list) or len(matrix) != 2:
         return False
-    return all(
-        isinstance(row, list)
-        and len(row) == 3
-        and all(_finite(value) for value in row)
-        for row in matrix
-    )
+    return all(isinstance(row, list) and len(row) == 3 and all(_finite(value) for value in row) for row in matrix)
 
 
 def evaluate_alignment_metadata(
@@ -410,7 +404,12 @@ def evaluate_alignment_metadata(
         failure = _pending_or_failure("ratio_matches", complete=complete)
         if failure is not None:
             return failure
-    elif not _finite(ratio_count) or float(ratio_count) < 2 or not _finite(ratio_matches) or float(ratio_matches) < _threshold(thresholds, "ratio_matches_min", 2.0):
+    elif (
+        not _finite(ratio_count)
+        or float(ratio_count) < 2
+        or not _finite(ratio_matches)
+        or float(ratio_matches) < _threshold(thresholds, "ratio_matches_min", 2.0)
+    ):
         return {"result": "not_same", "first_failed_gate": "ratio_matches"}
 
     affine = metadata.get("affine")
@@ -434,14 +433,8 @@ def evaluate_alignment_metadata(
         or not _finite(scale)
         or float(determinant) <= 0.0
         or float(scale) <= 0.0
-        or (
-            _threshold(thresholds, "scale_min") is not None
-            and float(scale) < _threshold(thresholds, "scale_min")
-        )
-        or (
-            _threshold(thresholds, "scale_max") is not None
-            and float(scale) > _threshold(thresholds, "scale_max")
-        )
+        or (_threshold(thresholds, "scale_min") is not None and float(scale) < _threshold(thresholds, "scale_min"))
+        or (_threshold(thresholds, "scale_max") is not None and float(scale) > _threshold(thresholds, "scale_max"))
     ):
         return {"result": "not_same", "first_failed_gate": "matrix"}
 
@@ -451,9 +444,8 @@ def evaluate_alignment_metadata(
         failure = _pending_or_failure("inliers", complete=complete)
         if failure is not None:
             return failure
-    elif (
-        not _gate_min(inlier_count, _threshold(thresholds, "inlier_count_min", 1.0))
-        or not _gate_min(inlier_ratio, _threshold(thresholds, "inlier_ratio_min", 0.0))
+    elif not _gate_min(inlier_count, _threshold(thresholds, "inlier_count_min", 1.0)) or not _gate_min(
+        inlier_ratio, _threshold(thresholds, "inlier_ratio_min", 0.0)
     ):
         return {"result": "not_same", "first_failed_gate": "inliers"}
 
@@ -463,9 +455,8 @@ def evaluate_alignment_metadata(
         failure = _pending_or_failure("residual", complete=complete)
         if failure is not None:
             return failure
-    elif (
-        not _gate_max(residual_median, _threshold(thresholds, "residual_median_max"))
-        or not _gate_max(residual_p95, _threshold(thresholds, "residual_p95_max"))
+    elif not _gate_max(residual_median, _threshold(thresholds, "residual_median_max")) or not _gate_max(
+        residual_p95, _threshold(thresholds, "residual_p95_max")
     ):
         return {"result": "not_same", "first_failed_gate": "residual"}
 
@@ -477,9 +468,8 @@ def evaluate_alignment_metadata(
         failure = _pending_or_failure("geometry", complete=complete)
         if failure is not None:
             return failure
-    elif (
-        not _gate_min(hull_support, _threshold(thresholds, "hull_support_min", 0.0))
-        or not _gate_min(eigenvalue_ratio, _threshold(thresholds, "eigenvalue_ratio_min", 0.0))
+    elif not _gate_min(hull_support, _threshold(thresholds, "hull_support_min", 0.0)) or not _gate_min(
+        eigenvalue_ratio, _threshold(thresholds, "eigenvalue_ratio_min", 0.0)
     ):
         return {"result": "not_same", "first_failed_gate": "geometry"}
 
@@ -522,7 +512,8 @@ def _content_change_passes(
     largest = metadata.get("largest_changed_component_fraction")
     if _missing(changed) or _missing(largest):
         return _pending_or_failure("content_change", complete=complete) or {
-            "result": "not_same", "first_failed_gate": "content_change"
+            "result": "not_same",
+            "first_failed_gate": "content_change",
         }
     if not _finite(changed) or not _finite(largest):
         return {"result": "not_same", "first_failed_gate": "content_change"}
@@ -551,24 +542,30 @@ def evaluate_visual_candidate(
     thresholds = dict(thresholds or {})
     direct_same = metadata.get("direct_same")
     if direct_same is True:
-        identity = _content_change_passes(
-            metadata.get("identity_content_change"), thresholds, complete=complete
-        )
+        identity = _content_change_passes(metadata.get("identity_content_change"), thresholds, complete=complete)
         if identity["result"] == "pending":
             return {**identity, "path": "identity_content_change", "alignment_required": False}
         if identity["result"] == "same":
-            return {"result": "same", "first_failed_gate": None, "path": "identity_content_change", "alignment_required": False}
+            return {
+                "result": "same",
+                "first_failed_gate": None,
+                "path": "identity_content_change",
+                "alignment_required": False,
+            }
         # Content change is a veto, not a terminal direct duplicate decision:
         # a coordinate change can still be recovered by alignment.
         identity_failure = identity["first_failed_gate"]
     elif direct_same is False:
         identity_failure = None
     else:
-        return {"result": "unavailable", "first_failed_gate": "direct", "path": "unavailable", "alignment_required": False}
+        return {
+            "result": "unavailable",
+            "first_failed_gate": "direct",
+            "path": "unavailable",
+            "alignment_required": False,
+        }
 
-    alignment = evaluate_alignment_metadata(
-        dict(metadata.get("alignment") or {}), thresholds, complete=complete
-    )
+    alignment = evaluate_alignment_metadata(dict(metadata.get("alignment") or {}), thresholds, complete=complete)
     if alignment["result"] != "same":
         return {
             "result": alignment["result"],
@@ -577,9 +574,7 @@ def evaluate_visual_candidate(
             "alignment_required": True,
             "identity_veto_gate": identity_failure,
         }
-    content = _content_change_passes(
-        metadata.get("aligned_content_change"), thresholds, complete=complete
-    )
+    content = _content_change_passes(metadata.get("aligned_content_change"), thresholds, complete=complete)
     return {
         "result": content["result"],
         "first_failed_gate": content["first_failed_gate"],
@@ -616,11 +611,7 @@ def visual_metadata_from_worker_result(
         "direct_metrics": result.get("direct_metrics"),
         "source_phash": result.get("source_phash"),
         **selected,
-        "alignment": {
-            key: value
-            for key, value in result.items()
-            if key not in excluded
-        },
+        "alignment": {key: value for key, value in result.items() if key not in excluded},
     }
 
 
@@ -724,12 +715,14 @@ def _measure_pair(reference_path: str, candidate_path: str, thresholds: dict[str
         )
         for delta in (8, 12, 16, 24, 32, 48, 64)
     }
-    base.update({
-        "source_phash": {"reference": int(reference_phash), "candidate": int(candidate_phash)},
-        "direct_metrics": {"hist_corr": hist_corr, "ssim": direct_ssim},
-        "direct_same": is_same_slide(hist_corr, direct_ssim),
-        "identity_content_change": {"by_pixel_delta": identity_by_delta},
-    })
+    base.update(
+        {
+            "source_phash": {"reference": int(reference_phash), "candidate": int(candidate_phash)},
+            "direct_metrics": {"hist_corr": hist_corr, "ssim": direct_ssim},
+            "direct_same": is_same_slide(hist_corr, direct_ssim),
+            "identity_content_change": {"by_pixel_delta": identity_by_delta},
+        }
+    )
     pixel_delta = _threshold(thresholds, "pixel_delta")
     if base["direct_same"] is True and pixel_delta is not None:
         identity = _content_change_passes(
@@ -789,11 +782,7 @@ def _measure_pair(reference_path: str, candidate_path: str, thresholds: dict[str
         base["error"] = f"{type(exc).__name__}: {exc}"
         return _terminal_result(base, thresholds, complete=True)
     ratio_match_count = sum(1 for row in knn_rows if len(row) == 2)
-    matches = [
-        (row[0], row[1])
-        for row in knn_rows
-        if len(row) == 2 and row[0].distance < RATIO_TEST * row[1].distance
-    ]
+    matches = [(row[0], row[1]) for row in knn_rows if len(row) == 2 and row[0].distance < RATIO_TEST * row[1].distance]
     matches.sort(key=lambda pair: (pair[0].queryIdx, pair[0].trainIdx, pair[0].distance))
     base["ratio_match_count"] = ratio_match_count
     base["ratio_matches"] = len(matches)
@@ -864,20 +853,26 @@ def _measure_pair(reference_path: str, candidate_path: str, thresholds: dict[str
     base.update(geometry)
     if not _gate_min(
         base.get("eigenvalue_ratio"), _threshold(thresholds, "eigenvalue_ratio_min", 0.0)
-    ) or not _gate_min(
-        base.get("hull_support"), _threshold(thresholds, "hull_support_min", 0.0)
-    ):
+    ) or not _gate_min(base.get("hull_support"), _threshold(thresholds, "hull_support_min", 0.0)):
         return _terminal_result(base, thresholds, complete=True)
 
     try:
         pixel_delta = _threshold(thresholds, "pixel_delta")
         forward_coverage, forward_ssim, forward_content = _support_and_ssim(
-            reference, candidate, matrix, cv2, np,
+            reference,
+            candidate,
+            matrix,
+            cv2,
+            np,
             pixel_delta=int(pixel_delta) if pixel_delta is not None else None,
         )
         inverse = cv2.invertAffineTransform(matrix)
         reverse_coverage, reverse_ssim, reverse_content = _support_and_ssim(
-            candidate, reference, inverse, cv2, np,
+            candidate,
+            reference,
+            inverse,
+            cv2,
+            np,
             pixel_delta=int(pixel_delta) if pixel_delta is not None else None,
         )
     except Exception as exc:
@@ -913,19 +908,13 @@ def _measure_pair(reference_path: str, candidate_path: str, thresholds: dict[str
         calls_per_direction = 1
     else:
         for delta in (8, 12, 16, 24, 32, 48, 64):
-            _fc, _fs, forward = _support_and_ssim(
-                reference, candidate, matrix, cv2, np, pixel_delta=delta
-            )
-            _rc, _rs, reverse = _support_and_ssim(
-                candidate, reference, inverse, cv2, np, pixel_delta=delta
-            )
+            _fc, _fs, forward = _support_and_ssim(reference, candidate, matrix, cv2, np, pixel_delta=delta)
+            _rc, _rs, reverse = _support_and_ssim(candidate, reference, inverse, cv2, np, pixel_delta=delta)
             aligned_by_delta[str(delta)] = (
                 None
                 if forward is None or reverse is None
                 else {
-                    "changed_fraction": max(
-                        forward["changed_fraction"], reverse["changed_fraction"]
-                    ),
+                    "changed_fraction": max(forward["changed_fraction"], reverse["changed_fraction"]),
                     "largest_changed_component_fraction": max(
                         forward["largest_changed_component_fraction"],
                         reverse["largest_changed_component_fraction"],
@@ -938,10 +927,7 @@ def _measure_pair(reference_path: str, candidate_path: str, thresholds: dict[str
     base["alignment_warp_pixels"] = (
         2
         * calls_per_direction
-        * (
-            int(reference.shape[0] * reference.shape[1])
-            + int(candidate.shape[0] * candidate.shape[1])
-        )
+        * (int(reference.shape[0] * reference.shape[1]) + int(candidate.shape[0] * candidate.shape[1]))
     )
     coverage_min = _threshold(thresholds, "coverage_min", 0.0)
     if not _gate_min(forward_coverage, coverage_min) or not _gate_min(reverse_coverage, coverage_min):
@@ -958,32 +944,38 @@ def _worker_entry(connection, thresholds: dict[str, Any]) -> None:
         try:
             import cv2
         except Exception as exc:
-            connection.send({
-                "ok": True,
-                "protocol_version": PROTOCOL_VERSION,
-                "opencv_available": False,
-                "error": f"{type(exc).__name__}: {exc}",
-            })
+            connection.send(
+                {
+                    "ok": True,
+                    "protocol_version": PROTOCOL_VERSION,
+                    "opencv_available": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
             while True:
                 command = connection.recv()
                 if command is None:
                     break
                 if isinstance(command, dict) and command.get("op") == "inspect":
-                    connection.send({
-                        "ok": False,
-                        "error": f"{type(exc).__name__}: {exc}",
-                        "path": str(command.get("path", "")),
-                        "worker_pid": os.getpid(),
-                    })
+                    connection.send(
+                        {
+                            "ok": False,
+                            "error": f"{type(exc).__name__}: {exc}",
+                            "path": str(command.get("path", "")),
+                            "worker_pid": os.getpid(),
+                        }
+                    )
                     continue
                 reference, candidate = command
-                connection.send(_result(
-                    result="unavailable",
-                    first_failed_gate="opencv",
-                    reference_path=str(reference),
-                    candidate_path=str(candidate),
-                    error=f"{type(exc).__name__}: {exc}",
-                ))
+                connection.send(
+                    _result(
+                        result="unavailable",
+                        first_failed_gate="opencv",
+                        reference_path=str(reference),
+                        candidate_path=str(candidate),
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                )
             return
 
         cv2.setNumThreads(WORKER_THREADS)
@@ -1010,7 +1002,15 @@ def _worker_entry(connection, thresholds: dict[str, Any]) -> None:
                 else:
                     np = __import__("numpy")
                     from .visual import _image_phash_from_array
-                    connection.send({"ok": True, "path": path, "phash": int(_image_phash_from_array(image, cv2, np)), "worker_pid": os.getpid()})
+
+                    connection.send(
+                        {
+                            "ok": True,
+                            "path": path,
+                            "phash": int(_image_phash_from_array(image, cv2, np)),
+                            "worker_pid": os.getpid(),
+                        }
+                    )
                 continue
             reference, candidate = command
             result = _measure_pair(reference, candidate, thresholds)
@@ -1018,11 +1018,13 @@ def _worker_entry(connection, thresholds: dict[str, Any]) -> None:
             connection.send(result)
     except BaseException as exc:
         try:
-            connection.send({
-                "ok": False,
-                "protocol_version": PROTOCOL_VERSION,
-                "error": f"{type(exc).__name__}: {exc}",
-            })
+            connection.send(
+                {
+                    "ok": False,
+                    "protocol_version": PROTOCOL_VERSION,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+            )
         except (BrokenPipeError, EOFError, OSError):
             pass
     finally:

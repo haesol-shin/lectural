@@ -49,14 +49,13 @@ def build_transcript_anchor_ids(segments: list[dict]) -> list[str]:
     return ids
 
 
-
-
 def _first_line(text: str, fallback: str) -> str:
     for line in (text or "").splitlines():
         line = line.strip()
         if line:
             return line[:80]
     return fallback
+
 
 def _safe_title(text: str) -> str:
     """Pure: make a title safe inside markdown link text / headings.
@@ -75,16 +74,22 @@ def build_section_hints(slides: list[dict], duration: float) -> list[dict]:
     With no slides, a single whole-video section is produced.
     """
     if not slides:
-        return [{"index": 0, "t": 0.0, "win_start": 0.0, "t_end": duration,
-                 "title": "전체", "frame": None}]
+        return [{"index": 0, "t": 0.0, "win_start": 0.0, "t_end": duration, "title": "전체", "frame": None}]
     ordered = sorted(slides, key=lambda s: s.get("t", 0.0))
     hints: list[dict] = []
     # If the first slide starts after 0, prepend an intro section so speech
     # before the first slide is never dropped from the notes (capture-ALL).
     if float(ordered[0].get("t", 0.0)) > 0.0:
-        hints.append({"index": 0, "t": 0.0, "win_start": 0.0,
-                      "t_end": float(ordered[0].get("t", 0.0)),
-                      "title": NOTES_INTRO_TITLE, "frame": None})
+        hints.append(
+            {
+                "index": 0,
+                "t": 0.0,
+                "win_start": 0.0,
+                "t_end": float(ordered[0].get("t", 0.0)),
+                "title": NOTES_INTRO_TITLE,
+                "frame": None,
+            }
+        )
     base = len(hints)
     for i, sl in enumerate(ordered):
         t = float(sl.get("t", 0.0))
@@ -145,6 +150,7 @@ def assign_segments_to_sections(segments: list[dict], hints: list[dict]) -> dict
         buckets[owner["index"]].append(s)
     return buckets
 
+
 def render_transcript_md(video: dict, segments: list[dict]) -> str:
     """Pure: raw timestamped transcript covering every utterance (AC-7)."""
     title = video.get("title", "Untitled")
@@ -153,10 +159,10 @@ def render_transcript_md(video: dict, segments: list[dict]) -> str:
     lines = [f"# {title} — Full transcript (raw)", "", f"- Source: {src}", ""]
     for s, anchor_id in zip(segments, build_transcript_anchor_ids(segments)):
         lines.append(
-            f'<a id="{anchor_id}"></a> '
-            f"[{format_timestamp(float(s.get('t', 0.0)))}] {s.get('text', '').strip()}"
+            f'<a id="{anchor_id}"></a> [{format_timestamp(float(s.get("t", 0.0)))}] {s.get("text", "").strip()}'
         )
     return "\n".join(lines).rstrip() + "\n"
+
 
 def _renderable_section_hints(segments: list[dict], hints: list[dict]) -> tuple[list[dict], dict[int, list[dict]]]:
     """Pure: section list + transcript buckets used by the notes renderer."""
@@ -168,7 +174,6 @@ def _renderable_section_hints(segments: list[dict], hints: list[dict]) -> tuple[
         return bool(h.get("frame")) or bool(buckets.get(h["index"]))
 
     return [h for h in hints if _renderable(h)], buckets
-
 
 
 def _coverage_footer_lines(coverage: dict) -> list[str]:
@@ -257,9 +262,7 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
         out.append(f"### {_safe_title(h.get('title', ''))}")
         if h.get("frame"):
             out.append("")
-            out.append(
-                f'<img src="{h["frame"]}" alt="슬라이드 {section_no}" width="{NOTES_SLIDE_IMG_WIDTH}">'
-            )
+            out.append(f'<img src="{h["frame"]}" alt="슬라이드 {section_no}" width="{NOTES_SLIDE_IMG_WIDTH}">')
             out.append("")
         elif h.get("title") == NOTES_INTRO_TITLE:
             out.append(NOTES_INTRO_MARKER)
@@ -274,6 +277,7 @@ def render_notes_md(synthesis_input: dict, coverage: dict) -> str:
 
     out += ["", NOTES_COVERAGE_ANCHOR, *_coverage_footer_lines(coverage), ""]
     return "\n".join(out).rstrip() + "\n"
+
 
 def write_synthesis_input(synthesis_input: dict, path: str) -> str:
     with open(path, "w", encoding="utf-8") as fh:

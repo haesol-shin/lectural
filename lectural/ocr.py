@@ -81,6 +81,7 @@ def dedupe_incremental_texts(texts: list[str], min_growth: float = INCREMENTAL_S
         # duplicate -> skip, keep prev as-is
     return kept
 
+
 def ocr_roi_box(
     width: int,
     height: int,
@@ -207,11 +208,14 @@ def _preprocess_image_for_ocr(image_path: str) -> str:
         raise
 
 
-
 # --- Engine-backed OCR (lazy) ----------------------------------------------
 
+
 def ocr_image(
-    image_path: str, prefer: str = "paddle", lang: str = "korean", paddle_engine=None,
+    image_path: str,
+    prefer: str = "paddle",
+    lang: str = "korean",
+    paddle_engine=None,
 ) -> tuple[str, str, float | None]:
     """Return (text, engine_used, confidence). Tries Paddle then Tesseract."""
     ocr_path = image_path
@@ -232,14 +236,14 @@ def ocr_image(
             try:
                 result = (
                     _ocr_paddle(ocr_path, lang, engine=paddle_engine)
-                    if paddle_engine is not None else _ocr_paddle(ocr_path, lang)
+                    if paddle_engine is not None
+                    else _ocr_paddle(ocr_path, lang)
                 )
                 text, confidence = result if isinstance(result, tuple) else (result, None)
                 return text, "paddleocr", confidence
             except Exception as exc:  # noqa: BLE001
                 warnings.warn(
-                    f"PaddleOCR unavailable or unsupported ({exc}); "
-                    "falling back to Tesseract (degraded OCR quality).",
+                    f"PaddleOCR unavailable or unsupported ({exc}); falling back to Tesseract (degraded OCR quality).",
                     RuntimeWarning,
                     stacklevel=2,
                 )
@@ -312,9 +316,7 @@ def _paddleocr_2x_lang(lang: str) -> str:
         return "korean"
     if normalized in {"en", "eng", "english"}:
         return "en"
-    raise ValueError(
-        f"Unsupported PaddleOCR 2.x language {lang!r}; use 'korean' for ko/en slide OCR or 'en'."
-    )
+    raise ValueError(f"Unsupported PaddleOCR 2.x language {lang!r}; use 'korean' for ko/en slide OCR or 'en'.")
 
 
 def _create_paddle_engine(lang: str):
@@ -326,6 +328,8 @@ def _create_paddle_engine(lang: str):
         lang=_paddleocr_2x_lang(lang),
         show_log=False,
     )
+
+
 def _ocr_paddle(image_path: str, lang: str, *, engine=None) -> tuple[str, float | None]:
     engine = engine or _create_paddle_engine(lang)
     result = engine.ocr(image_path, cls=True)
@@ -348,7 +352,9 @@ def _ocr_tesseract(image_path: str) -> tuple[str, float | None]:
 
     with Image.open(image_path) as image:
         result = pytesseract.run_and_get_multiple_output(
-            image, extensions=["txt", "tsv"], lang="kor+eng",
+            image,
+            extensions=["txt", "tsv"],
+            lang="kor+eng",
         )
     text, tsv = result[0], result[1]
     scores: list[float] = []
@@ -374,7 +380,11 @@ def ocr_frames(frames: list[Frame], prefer: str = "paddle") -> tuple[list[Frame]
         try:
             paddle_engine = _create_paddle_engine("korean")
         except Exception as exc:  # noqa: BLE001
-            warnings.warn(f"PaddleOCR unavailable or unsupported ({exc}); falling back to Tesseract (degraded OCR quality).", RuntimeWarning, stacklevel=2)
+            warnings.warn(
+                f"PaddleOCR unavailable or unsupported ({exc}); falling back to Tesseract (degraded OCR quality).",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             prefer = "tesseract"
     for f in frames:
         text, engine, confidence = ocr_image(f.image_path, prefer=prefer, paddle_engine=paddle_engine)
@@ -392,16 +402,8 @@ def ocr_frames(frames: list[Frame], prefer: str = "paddle") -> tuple[list[Frame]
             continue
         transition = classify_slide_transition(kept[-1].ocr_text, frame.ocr_text)
         if transition == "duplicate":
-            previous_confidence = (
-                kept[-1].ocr_confidence
-                if kept[-1].ocr_confidence is not None
-                else float("-inf")
-            )
-            current_confidence = (
-                frame.ocr_confidence
-                if frame.ocr_confidence is not None
-                else float("-inf")
-            )
+            previous_confidence = kept[-1].ocr_confidence if kept[-1].ocr_confidence is not None else float("-inf")
+            current_confidence = frame.ocr_confidence if frame.ocr_confidence is not None else float("-inf")
             if current_confidence > previous_confidence:
                 kept[-1] = frame
         else:

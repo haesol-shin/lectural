@@ -27,20 +27,18 @@ def _plugin_version() -> str:
 
 def _pyproject_version() -> str:
     match = _PYPROJECT_VERSION_RE.search(PYPROJECT.read_text(encoding="utf-8"))
-    assert match, "pyproject.toml has no `version = \"...\"` line"
+    assert match, 'pyproject.toml has no `version = "..."` line'
     return match.group(1)
 
 
 def _init_version() -> str:
     match = _INIT_VERSION_RE.search(INIT.read_text(encoding="utf-8"))
-    assert match, "lectural/__init__.py has no `__version__ = \"...\"` line"
+    assert match, 'lectural/__init__.py has no `__version__ = "..."` line'
     return match.group(1)
 
 
 def _heading_count(changelog_text: str, version: str) -> int:
-    pattern = re.compile(
-        r"(?m)^## \[" + re.escape(version) + r"\] - \d{4}-\d{2}-\d{2}$"
-    )
+    pattern = re.compile(r"(?m)^## \[" + re.escape(version) + r"\] - \d{4}-\d{2}-\d{2}$")
     return len(pattern.findall(changelog_text))
 
 

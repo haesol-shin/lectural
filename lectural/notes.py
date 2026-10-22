@@ -42,10 +42,7 @@ def generate_notes(bundle_dir: str) -> dict:
     speech_completeness = extraction.get("speech_completeness") or {}
     visual_completeness = extraction.get("visual_completeness") or {}
     transcript_items = (manifest.get("transcript") or {}).get("segments") or []
-    segments = [
-        {"t": float(item["start"]), "text": str(item.get("text") or "")}
-        for item in transcript_items
-    ]
+    segments = [{"t": float(item["start"]), "text": str(item.get("text") or "")} for item in transcript_items]
     speech = manifest.get("speech") or {}
     video = {
         "title": source.get("title") or "Untitled",
@@ -72,12 +69,14 @@ def generate_notes(bundle_dir: str) -> dict:
         if not os.path.isfile(frame_path):
             raise evidence.ContractError("ARTIFACT_INCOMPLETE", "A referenced evidence frame is missing.")
         annotation = item.get("ocr") or {}
-        slides.append({
-            "t": float(item["start"]),
-            "frame": os.path.relpath(frame_path, output_dir).replace(os.sep, "/"),
-            "ocr_text": annotation.get("text") or "" if annotation.get("reliable") is True else "",
-            "is_slide": True,
-        })
+        slides.append(
+            {
+                "t": float(item["start"]),
+                "frame": os.path.relpath(frame_path, output_dir).replace(os.sep, "/"),
+                "ocr_text": annotation.get("text") or "" if annotation.get("reliable") is True else "",
+                "is_slide": True,
+            }
+        )
 
     synthesis_input = build_synthesis_input(video, segments, slides)
     synthesis_path = os.path.join(output_dir, "synthesis_input.json")

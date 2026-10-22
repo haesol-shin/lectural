@@ -50,7 +50,6 @@ class SpeechTrack:
         return not self.segments
 
 
-
 # --- Pure subtitle parsers --------------------------------------------------
 
 _TS_RE = re.compile(r"(\d{1,2}):(\d{2}):(\d{2})[.,](\d{1,3})")
@@ -150,13 +149,16 @@ def captions_are_usable(segments: list[Segment], min_segments: int = 3) -> bool:
 
 # --- Network/binary-backed acquisition (lazy) ------------------------------
 
+
 def _language_code(value: str | None) -> str | None:
     return value.lower().split("-")[0] if value else None
 
 
 def fetch_caption_segments(
-    video_id: str, languages: tuple[str, ...] = ("ko", "en"),
-    *, spoken_language: str | None = None,
+    video_id: str,
+    languages: tuple[str, ...] = ("ko", "en"),
+    *,
+    spoken_language: str | None = None,
 ) -> SpeechTrack:
     """Fetch an original candidate; acquire_speech verifies its language from audio.
 
@@ -164,10 +166,19 @@ def fetch_caption_segments(
     """
     require_binary("yt-dlp")
     proc = subprocess.run(
-        ["yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
-         "--extractor-args", "youtube:player_client=android",
-         f"https://www.youtube.com/watch?v={video_id}"],
-        check=True, capture_output=True, text=True,
+        [
+            "yt-dlp",
+            "--quiet",
+            "--no-warnings",
+            "--skip-download",
+            "--dump-json",
+            "--extractor-args",
+            "youtube:player_client=android",
+            f"https://www.youtube.com/watch?v={video_id}",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
     metadata = json.loads(proc.stdout)
     spoken = spoken_language or _language_code(metadata.get("language"))
@@ -179,10 +190,16 @@ def fetch_caption_segments(
             language = _language_code(label)
             for fmt in formats:
                 url = fmt.get("url", "")
-                if fmt.get("ext") not in ("json3", "vtt") or "tlang" in parse_qs(urlsplit(url).query, keep_blank_values=True):
+                if fmt.get("ext") not in ("json3", "vtt") or "tlang" in parse_qs(
+                    urlsplit(url).query, keep_blank_values=True
+                ):
                     continue
-                rank = (language != spoken if spoken else False, automatic,
-                        language not in languages, fmt["ext"] != "json3")
+                rank = (
+                    language != spoken if spoken else False,
+                    automatic,
+                    language not in languages,
+                    fmt["ext"] != "json3",
+                )
                 candidates.append((rank, language, fmt))
     if not candidates:
         raise ValueError("No original caption track available")
@@ -190,11 +207,14 @@ def fetch_caption_segments(
     with urllib.request.urlopen(fmt["url"]) as response:
         text = response.read().decode("utf-8")
     segments = parse_json3(text) if fmt["ext"] == "json3" else parse_vtt(text)
-    return SpeechTrack(segments, "caption", language, {
-        "metadata_language": spoken,
-    })
-
-
+    return SpeechTrack(
+        segments,
+        "caption",
+        language,
+        {
+            "metadata_language": spoken,
+        },
+    )
 
 
 def acquire_speech(
@@ -240,10 +260,13 @@ def acquire_speech(
                 else:
                     caption.language = detected
             if fallback_code is None and captions_are_usable(segs):
-                caption.meta.update({
-                    "video_id": video_id, "source_kind": source.kind.value,
-                    "input_source": source_meta,
-                })
+                caption.meta.update(
+                    {
+                        "video_id": video_id,
+                        "source_kind": source.kind.value,
+                        "input_source": source_meta,
+                    }
+                )
                 if audio_path is not None:
                     caption.meta["audio_path"] = audio_path
                 return caption

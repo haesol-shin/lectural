@@ -85,8 +85,7 @@ def _validate_stop_command(command: str, plugin_root: Path) -> list[str]:
         (
             token
             for token in tokens[1:]
-            if "${CLAUDE_PLUGIN_ROOT}" in token
-            and "scripts/completeness_hook.py" in token.replace("\\", "/")
+            if "${CLAUDE_PLUGIN_ROOT}" in token and "scripts/completeness_hook.py" in token.replace("\\", "/")
         ),
         None,
     )
@@ -96,8 +95,6 @@ def _validate_stop_command(command: str, plugin_root: Path) -> list[str]:
     assert resolved == (plugin_root / "scripts" / "completeness_hook.py").resolve()
     assert resolved.is_file(), "resolved completeness hook path must exist"
     return tokens
-
-
 
 
 def test_plugin_and_marketplace_json_are_strict_and_portable():
@@ -169,8 +166,6 @@ def test_english_packaging_artifacts_have_zero_hangul_codepoints():
         text = _read_text(path)
         match = HANGUL_RE.search(text)
         assert match is None, f"Hangul codepoint in {path.relative_to(ROOT)} at offset {match.start()}"
-
-
 
 
 def test_hooks_json_rejects_comment_syntax_as_adversarial_mutation():

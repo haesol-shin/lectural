@@ -147,7 +147,9 @@ def test_parse_json3_empty_malformed_and_invalid_payload_contracts():
     assert parse_json3("{}") == []
     assert parse_json3(json.dumps({"events": [{"segs": []}, {"tStartMs": 1234, "segs": [{"utf8": "  "}]}]})) == []
 
-    segs = parse_json3(json.dumps({"events": [{"tStartMs": 1250, "segs": [{"utf8": "Hello"}, {"utf8": " "}, {"utf8": "world"}]}]}))
+    segs = parse_json3(
+        json.dumps({"events": [{"tStartMs": 1250, "segs": [{"utf8": "Hello"}, {"utf8": " "}, {"utf8": "world"}]}]})
+    )
     assert [(seg.t, seg.text) for seg in segs] == [(1.25, "Hello world")]
 
     with pytest.raises(json.JSONDecodeError):

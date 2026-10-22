@@ -23,6 +23,7 @@ If a required external dependency is missing, the harness records the blocker in
 perf_metrics.json (status="blocked") and exits non-zero WITHOUT fabricating any
 timing/CPU/RAM numbers.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -149,7 +150,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     started_at = time.strftime("%Y-%m-%dT%H:%M:%S")
     base = {
         "harness": "scripts/perf_smoke.py",
-        "command": f'uv run --with psutil python scripts/perf_smoke.py --url {url} --sample-interval {sample_interval} --out {out_root}',
+        "command": f"uv run --with psutil python scripts/perf_smoke.py --url {url} --sample-interval {sample_interval} --out {out_root}",
         "url": url,
         "started_at": started_at,
         "machine": _machine_spec(),
@@ -226,7 +227,9 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     overall_pass: bool | None = None
     out_dir = None
     try:
-        track, _ = timed("acquisition", lambda: acquire_speech(input_source, work_hint, force_stt=force_stt, model=model))
+        track, _ = timed(
+            "acquisition", lambda: acquire_speech(input_source, work_hint, force_stt=force_stt, model=model)
+        )
         metadata, _ = timed("metadata", lambda: probe_source(input_source))
         title = metadata.title or input_source.title_hint or input_source.video_id or "video"
         out_dir = output_dir_for(out_root, title)
@@ -245,13 +248,18 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
             lambda: detect_speech_spans(audio_path, duration) if os.path.isfile(audio_path) else [(0.0, duration)],
         )
 
-        video = {"title": title, "duration_sec": duration,
-                 "language": track.language, "speech_source": track.source,
-                 "input_source": input_source.as_dict()}
+        video = {
+            "title": title,
+            "duration_sec": duration,
+            "language": track.language,
+            "speech_source": track.source,
+            "input_source": input_source.as_dict(),
+        }
         segments = [s.as_dict() for s in track.segments]
-        slide_dicts = [{"t": f.timestamp,
-                        "frame": _frame_link(f.image_path, out_dir),
-                        "ocr_text": f.ocr_text, "is_slide": True} for f in slide_frames]
+        slide_dicts = [
+            {"t": f.timestamp, "frame": _frame_link(f.image_path, out_dir), "ocr_text": f.ocr_text, "is_slide": True}
+            for f in slide_frames
+        ]
 
         transcript_path = os.path.join(out_dir, "transcript.md")
         notes_path = os.path.join(out_dir, "notes.md")
@@ -268,12 +276,17 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
         def _coverage():
             def _cov_inputs(notes_md_text):
                 return coverage_inputs_from_extraction(
-                    video_title=title, duration_sec=duration, speech_spans=speech_spans,
+                    video_title=title,
+                    duration_sec=duration,
+                    speech_spans=speech_spans,
                     segment_times=[s["t"] for s in segments],
                     raw_sample_times=[f.timestamp for f in raw_frames],
-                    slides=slide_dicts, transcript_path=transcript_path, notes_path=notes_path,
+                    slides=slide_dicts,
+                    transcript_path=transcript_path,
+                    notes_path=notes_path,
                     ocr_engine=ocr_engine,
-                    transcript_text=transcript_md, notes_text=notes_md_text,
+                    transcript_text=transcript_md,
+                    notes_text=notes_md_text,
                 )
 
             draft_coverage = build_coverage(_cov_inputs(""))
@@ -296,9 +309,13 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
         )
 
         def _hook():
-            r = subprocess.run([sys.executable, os.path.join(_REPO_ROOT, "scripts", "completeness_hook.py")],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [sys.executable, os.path.join(_REPO_ROOT, "scripts", "completeness_hook.py")],
+                capture_output=True,
+                text=True,
+            )
             return r.returncode
+
         hook_exit, _ = timed("completeness_hook", _hook)
     except Exception as exc:  # noqa: BLE001
         base["pipeline_error"] = f"{exc.__class__.__name__}: {exc}"

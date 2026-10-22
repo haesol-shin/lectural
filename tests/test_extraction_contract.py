@@ -13,10 +13,19 @@ from lectural import acquisition, cli, evidence, media, notes, speech, vad, visu
 
 
 SCHEMA_PATH = Path("docs/contracts/evidence.schema.json")
-FALLBACK_CODES = {"captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"}
+FALLBACK_CODES = {
+    "captions_unavailable",
+    "captions_unusable",
+    "captions_language_mismatch",
+    "captions_language_unverified",
+    "forced_stt",
+    "local_source",
+}
 
 
-def _install_fake_pipeline(monkeypatch, tmp_path: Path, *, audio_only: bool = False, duration: float = 20.0, ocr: str = "completed-with-text") -> Path:
+def _install_fake_pipeline(
+    monkeypatch, tmp_path: Path, *, audio_only: bool = False, duration: float = 20.0, ocr: str = "completed-with-text"
+) -> Path:
     source_path = tmp_path / ("recording.wav" if audio_only else "lecture.mp4")
     source_path.write_bytes(b"input-media")
     monkeypatch.setattr(media, "probe_source", lambda _source: media.SourceMetadata("Lecture", duration, None))
@@ -73,13 +82,22 @@ def _install_fake_pipeline(monkeypatch, tmp_path: Path, *, audio_only: bool = Fa
 def _invoke_cli(argv: list[str]) -> tuple[int, str]:
     from contextlib import redirect_stdout
     from io import StringIO
+
     stream = StringIO()
     with redirect_stdout(stream):
         exit_code = cli.main(argv)
     return exit_code, stream.getvalue()
 
 
-def _run_extract(monkeypatch, tmp_path: Path, *, audio_only: bool = False, duration: float = 20.0, ocr: str = "completed-with-text", skip_ocr: bool = False):
+def _run_extract(
+    monkeypatch,
+    tmp_path: Path,
+    *,
+    audio_only: bool = False,
+    duration: float = 20.0,
+    ocr: str = "completed-with-text",
+    skip_ocr: bool = False,
+):
     source_path = _install_fake_pipeline(monkeypatch, tmp_path, audio_only=audio_only, duration=duration, ocr=ocr)
     output_dir = tmp_path / "bundle"
     argv = ["extract", str(source_path), "--out", str(output_dir), "--json"]
@@ -87,6 +105,7 @@ def _run_extract(monkeypatch, tmp_path: Path, *, audio_only: bool = False, durat
         argv.append("--skip-ocr")
     exit_code, stdout = _invoke_cli(argv)
     return source_path, output_dir, exit_code, json.loads(stdout)
+
 
 def _validate_evidence_shape(manifest: dict, schema: dict) -> None:
     assert set(manifest) == set(schema["required"])
@@ -113,16 +132,22 @@ def test_version_json_negotiates_only_contract_and_schema_v2():
     assert payload["result"]["supported_contract_versions"] == [2]
     assert payload["result"]["supported_schema_versions"] == [2]
 
+
 def test_extract_json_stdout_is_exactly_one_document(monkeypatch, tmp_path):
     source_path = _install_fake_pipeline(monkeypatch, tmp_path, audio_only=True)
-    exit_code, stdout = _invoke_cli([
-        "extract", str(source_path), "--out", str(tmp_path / "json-bundle"), "--json",
-    ])
+    exit_code, stdout = _invoke_cli(
+        [
+            "extract",
+            str(source_path),
+            "--out",
+            str(tmp_path / "json-bundle"),
+            "--json",
+        ]
+    )
     assert exit_code == 0
     payload, end = json.JSONDecoder().raw_decode(stdout)
     assert isinstance(payload, dict)
     assert not stdout[end:].strip()
-
 
 
 def test_extract_emits_v2_evidence_ids_hashes_and_local_source_identity(monkeypatch, tmp_path):
@@ -142,7 +167,14 @@ def test_extract_emits_v2_evidence_ids_hashes_and_local_source_identity(monkeypa
         assert frame["sha256"] == hashlib.sha256(Path(frame["path"]).read_bytes()).hexdigest()
     assert set(manifest["artifacts"]) == {"evidence", "transcript", "frames_dir", "output_dir"}
     assert not set(manifest) & {"representative_frames", "source_kind", "status", "extraction_status"}
-    assert not set(manifest["artifacts"]) & {"notes", "synthesis_input", "coverage", "notes_md", "synthesis_input_json", "coverage_json"}
+    assert not set(manifest["artifacts"]) & {
+        "notes",
+        "synthesis_input",
+        "coverage",
+        "notes_md",
+        "synthesis_input_json",
+        "coverage_json",
+    }
     assert Path(manifest["artifacts"]["evidence"]).is_file()
     assert Path(manifest["artifacts"]["transcript"]).is_file()
     assert not any((output_dir / name).exists() for name in ("notes.md", "synthesis_input.json", "coverage.json"))
@@ -189,10 +221,16 @@ def test_extract_keeps_frame_on_ocr_failure_and_emits_fail_status(monkeypatch, t
 def test_extract_warning_is_not_a_notes_contract_failure(monkeypatch, tmp_path):
     source_path = _install_fake_pipeline(monkeypatch, tmp_path, audio_only=True, duration=200.0)
     monkeypatch.setattr(vad, "detect_speech_spans", lambda _audio, duration: [(0.0, duration)])
-    monkeypatch.setattr(acquisition, "acquire_speech", lambda _source, output, **_kwargs: acquisition.SpeechTrack(
-        [acquisition.Segment(0.0, "Only one cue", end=1.0)], "stt", language="en",
-        meta={"audio_path": str(source_path), "duration": 200.0, "model": "tiny", "fallback_code": "local_source"},
-    ))
+    monkeypatch.setattr(
+        acquisition,
+        "acquire_speech",
+        lambda _source, output, **_kwargs: acquisition.SpeechTrack(
+            [acquisition.Segment(0.0, "Only one cue", end=1.0)],
+            "stt",
+            language="en",
+            meta={"audio_path": str(source_path), "duration": 200.0, "model": "tiny", "fallback_code": "local_source"},
+        ),
+    )
     output = tmp_path / "warn"
     exit_code, stdout = _invoke_cli(["extract", str(source_path), "--out", str(output), "--json"])
     assert exit_code == 1
@@ -204,7 +242,11 @@ def test_extract_warning_is_not_a_notes_contract_failure(monkeypatch, tmp_path):
 
 def test_bounded_caption_fallback_excludes_exception_text_from_json(monkeypatch, tmp_path):
     monkeypatch.setattr(media, "probe_source", lambda _source: media.SourceMetadata("Lecture", 20.0, "dQw4w9WgXcQ"))
-    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: (_ for _ in ()).throw(RuntimeError("secret-token=private-value")))
+    monkeypatch.setattr(
+        acquisition,
+        "fetch_caption_segments",
+        lambda *_args: (_ for _ in ()).throw(RuntimeError("secret-token=private-value")),
+    )
 
     def resolve_audio(_source, output):
         audio = Path(output) / "audio.wav"
@@ -212,10 +254,16 @@ def test_bounded_caption_fallback_excludes_exception_text_from_json(monkeypatch,
         return str(audio)
 
     monkeypatch.setattr(media, "resolve_audio", resolve_audio)
-    monkeypatch.setattr(speech, "transcribe_audio", lambda path, model_size: acquisition.SpeechTrack(
-        [acquisition.Segment(0.0, "A transcript segment", end=20.0)], "stt", language="en",
-        meta={"audio_path": path, "duration": 20.0, "model": model_size},
-    ))
+    monkeypatch.setattr(
+        speech,
+        "transcribe_audio",
+        lambda path, model_size: acquisition.SpeechTrack(
+            [acquisition.Segment(0.0, "A transcript segment", end=20.0)],
+            "stt",
+            language="en",
+            meta={"audio_path": path, "duration": 20.0, "model": model_size},
+        ),
+    )
     monkeypatch.setattr(media, "resolve_video", lambda _source, _out: str(tmp_path / "video.bin"))
     monkeypatch.setattr(media, "probe_video_resolution", lambda _video: (640, 360))
 
@@ -230,7 +278,9 @@ def test_bounded_caption_fallback_excludes_exception_text_from_json(monkeypatch,
     monkeypatch.setattr(visual, "dedupe_frames", lambda frames: frames)
     monkeypatch.setattr(vad, "detect_speech_spans", lambda _audio, duration: [(0.0, duration)])
     output = tmp_path / "youtube"
-    exit_code, serialized = _invoke_cli(["extract", "https://youtu.be/dQw4w9WgXcQ", "--out", str(output), "--skip-ocr", "--json"])
+    exit_code, serialized = _invoke_cli(
+        ["extract", "https://youtu.be/dQw4w9WgXcQ", "--out", str(output), "--skip-ocr", "--json"]
+    )
     assert exit_code == 0
     manifest = json.loads(serialized)["result"]
     assert manifest["speech"]["fallback"] == {"code": "captions_unavailable"}
@@ -245,12 +295,14 @@ def test_notes_generate_from_bundle_containing_only_manifest_transcript_and_fram
     (bundle / "frames").mkdir(parents=True)
     transcript = Path(manifest["artifacts"]["transcript"])
     shutil.copyfile(transcript, bundle / "transcript.md")
-    manifest["artifacts"].update({
-        "evidence": str(bundle / "evidence.json"),
-        "transcript": str(bundle / "transcript.md"),
-        "frames_dir": str(bundle / "frames"),
-        "output_dir": str(bundle),
-    })
+    manifest["artifacts"].update(
+        {
+            "evidence": str(bundle / "evidence.json"),
+            "transcript": str(bundle / "transcript.md"),
+            "frames_dir": str(bundle / "frames"),
+            "output_dir": str(bundle),
+        }
+    )
     for frame in manifest["frames"]:
         copied = bundle / "frames" / Path(frame["path"]).name
         shutil.copyfile(frame["path"], copied)
@@ -267,10 +319,9 @@ def test_notes_generate_from_bundle_containing_only_manifest_transcript_and_fram
     assert "notes_contract" in json.loads((bundle / "coverage.json").read_text(encoding="utf-8"))
     assert original.is_dir()
 
+
 def test_notes_command_regenerates_bundle_without_extraction(monkeypatch, tmp_path):
-    _source_path, bundle, extract_exit, _payload = _run_extract(
-        monkeypatch, tmp_path, audio_only=True
-    )
+    _source_path, bundle, extract_exit, _payload = _run_extract(monkeypatch, tmp_path, audio_only=True)
     assert extract_exit == 0
     notes.generate_notes(str(bundle))
     (bundle / "notes.md").write_text("stale notes", encoding="utf-8")
@@ -297,7 +348,10 @@ def test_notes_from_evidence_is_byte_identical_to_legacy_notes_output(tmp_path):
     bundle = tmp_path / "legacy-equivalence"
     bundle.mkdir()
     transcript = bundle / "transcript.md"
-    transcript.write_text("# Recording — Full transcript (raw)\n\n- Source: stt\n\n<a id=\"t000000\"></a> [00:00:00] Hello from the lecture\n", encoding="utf-8")
+    transcript.write_text(
+        '# Recording — Full transcript (raw)\n\n- Source: stt\n\n<a id="t000000"></a> [00:00:00] Hello from the lecture\n',
+        encoding="utf-8",
+    )
     manifest = {
         "schema_version": 2,
         "contract_version": 2,
@@ -317,16 +371,35 @@ def test_notes_from_evidence_is_byte_identical_to_legacy_notes_output(tmp_path):
         "speech": {"source": "stt", "language": "en", "model": "tiny", "fallback": {"code": "local_source"}},
         "transcript": {"segments": [{"id": "s0001", "start": 0.0, "end": 30.0, "text": "Hello from the lecture"}]},
         "frames": [],
-        "artifacts": {"evidence": str(bundle / "evidence.json"), "transcript": str(transcript), "frames_dir": None, "output_dir": str(bundle)},
+        "artifacts": {
+            "evidence": str(bundle / "evidence.json"),
+            "transcript": str(transcript),
+            "frames_dir": None,
+            "output_dir": str(bundle),
+        },
         "extraction": {
             "status": "pass",
             "reasons": [],
             "speech_completeness": {"status": "pass", "pass": True, "speech_spans": [[0.0, 30.0]]},
-            "visual_completeness": {"status": "not-applicable", "pass": True, "visual_required": False, "ocr_required": False, "raw_sample_times": [], "slide_frame_ids": []},
+            "visual_completeness": {
+                "status": "not-applicable",
+                "pass": True,
+                "visual_required": False,
+                "ocr_required": False,
+                "raw_sample_times": [],
+                "slide_frame_ids": [],
+            },
             "timestamp_integrity": {"status": "pass", "pass": True},
             "ocr": {"status": "not_applicable", "engine": "not_applicable", "annotation_only": True},
         },
-        "resources": {"wall_sec": 0.1, "stages": {"speech": 0.1, "frames": 0.0, "dedupe": 0.0, "ocr": 0.0}, "peak_rss_mb": None, "artifact_bytes": 1, "frames_candidate": 0, "frames_retained": 0},
+        "resources": {
+            "wall_sec": 0.1,
+            "stages": {"speech": 0.1, "frames": 0.0, "dedupe": 0.0, "ocr": 0.0},
+            "peak_rss_mb": None,
+            "artifact_bytes": 1,
+            "frames_candidate": 0,
+            "frames_retained": 0,
+        },
         "failure": None,
     }
     (bundle / "evidence.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -374,20 +447,25 @@ def test_notes_from_evidence_is_byte_identical_to_legacy_notes_output(tmp_path):
 
 
 def test_safe_source_keeps_identity_and_nullable_resolution():
-    source = evidence._safe_source({
-        "id": "sha256:" + "a" * 64,
-        "kind": "local_video",
-        "argument": "C:/private/deck.mp4",
-        "title": "Deck",
-        "duration_sec": 10,
-        "has_video": True,
-        "citation": {"kind": "transcript"},
-        "resolution": {"width": 1280, "height": 720, "secret": "discard"},
-    })
+    source = evidence._safe_source(
+        {
+            "id": "sha256:" + "a" * 64,
+            "kind": "local_video",
+            "argument": "C:/private/deck.mp4",
+            "title": "Deck",
+            "duration_sec": 10,
+            "has_video": True,
+            "citation": {"kind": "transcript"},
+            "resolution": {"width": 1280, "height": 720, "secret": "discard"},
+        }
+    )
     assert source["id"] == "sha256:" + "a" * 64
     assert source["resolution"] == {"width": 1280, "height": 720}
     assert source["argument"] == "deck.mp4"
-    assert evidence._safe_source({"kind": "local_audio", "resolution": {"width": 0}})["resolution"] == {"width": None, "height": None}
+    assert evidence._safe_source({"kind": "local_audio", "resolution": {"width": 0}})["resolution"] == {
+        "width": None,
+        "height": None,
+    }
 
 
 def test_existing_output_is_rejected_as_bounded_json_failure(tmp_path):
@@ -405,7 +483,10 @@ def test_existing_output_is_rejected_as_bounded_json_failure(tmp_path):
     assert "source_kind" not in payload["result"]
     assert payload["result"]["source"] is None
     assert payload["result"]["artifacts"] == {
-        "evidence": None, "transcript": None, "frames_dir": None, "output_dir": None,
+        "evidence": None,
+        "transcript": None,
+        "frames_dir": None,
+        "output_dir": None,
     }
 
 
@@ -561,10 +642,7 @@ def test_inspect_json_reports_manifest_counts_without_writing(monkeypatch, tmp_p
     _source, bundle, extract_exit, extracted = _run_extract(monkeypatch, tmp_path)
     assert extract_exit == 0
     manifest = extracted["result"]
-    before = {
-        path.relative_to(bundle): path.read_bytes()
-        for path in bundle.rglob("*") if path.is_file()
-    }
+    before = {path.relative_to(bundle): path.read_bytes() for path in bundle.rglob("*") if path.is_file()}
 
     exit_code, stdout = _invoke_cli(["inspect", str(bundle), "--json"])
     assert exit_code == 0
@@ -575,10 +653,7 @@ def test_inspect_json_reports_manifest_counts_without_writing(monkeypatch, tmp_p
     assert result["frames"]["ocr_status"] == manifest["extraction"]["ocr"]["status"]
     assert result["completeness"]["speech"] == manifest["extraction"]["speech_completeness"]["status"]
     assert result["extraction"]["status"] == manifest["extraction"]["status"]
-    after = {
-        path.relative_to(bundle): path.read_bytes()
-        for path in bundle.rglob("*") if path.is_file()
-    }
+    after = {path.relative_to(bundle): path.read_bytes() for path in bundle.rglob("*") if path.is_file()}
     assert after == before
 
 
@@ -587,12 +662,14 @@ def test_verify_source_matches_youtube_url_and_id(monkeypatch, tmp_path):
     assert extract_exit == 0
     manifest = _bundle_manifest(bundle)
     video_id = "dQw4w9WgXcQ"
-    manifest["source"].update({
-        "id": f"youtube:{video_id}",
-        "kind": "youtube",
-        "argument": f"https://youtu.be/{video_id}",
-        "citation": {"kind": "youtube", "video_id": video_id},
-    })
+    manifest["source"].update(
+        {
+            "id": f"youtube:{video_id}",
+            "kind": "youtube",
+            "argument": f"https://youtu.be/{video_id}",
+            "citation": {"kind": "youtube", "video_id": video_id},
+        }
+    )
     _write_bundle_manifest(bundle, manifest)
 
     assert _verify_report(bundle, "--source", f"https://youtu.be/{video_id}")[0] == 0

@@ -68,8 +68,14 @@ def fetch_video_metadata(url: str) -> dict:
     require_binary("yt-dlp")
     proc = subprocess.run(
         [
-            "yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
-            "--extractor-args", "youtube:player_client=android", url,
+            "yt-dlp",
+            "--quiet",
+            "--no-warnings",
+            "--skip-download",
+            "--dump-json",
+            "--extractor-args",
+            "youtube:player_client=android",
+            url,
         ],
         check=True,
         capture_output=True,
@@ -96,9 +102,18 @@ def download_audio(url: str, out_dir: str) -> str:
     out_template = os.path.join(out_dir, "audio.%(ext)s")
     subprocess.run(
         [
-            "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
-            "--extractor-args", "youtube:player_client=android",
-            "-x", "--audio-format", "wav", "-o", out_template, url,
+            "yt-dlp",
+            "--quiet",
+            "--no-warnings",
+            "--no-progress",
+            "--extractor-args",
+            "youtube:player_client=android",
+            "-x",
+            "--audio-format",
+            "wav",
+            "-o",
+            out_template,
+            url,
         ],
         check=True,
         capture_output=True,
@@ -117,8 +132,18 @@ def extract_audio(path: str, out_dir: str) -> str:
     audio_path = os.path.join(out_dir, "audio.wav")
     subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
-            "-y", "-i", path, "-vn", "-acodec", "pcm_s16le", audio_path,
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-nostats",
+            "-y",
+            "-i",
+            path,
+            "-vn",
+            "-acodec",
+            "pcm_s16le",
+            audio_path,
         ],
         check=True,
         capture_output=True,
@@ -143,10 +168,17 @@ def download_video(url: str, out_dir: str) -> str:
     out_template = os.path.join(out_dir, "video.%(ext)s")
     subprocess.run(
         [
-            "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
-            "--extractor-args", "youtube:player_client=android",
-            "-f", "bestvideo[height<=720]+bestaudio/best",
-            "-o", out_template, url,
+            "yt-dlp",
+            "--quiet",
+            "--no-warnings",
+            "--no-progress",
+            "--extractor-args",
+            "youtube:player_client=android",
+            "-f",
+            "bestvideo[height<=720]+bestaudio/best",
+            "-o",
+            out_template,
+            url,
         ],
         check=True,
         capture_output=True,
@@ -171,10 +203,21 @@ def probe_video_resolution(video_path: str) -> tuple[int | None, int | None]:
     try:
         proc = subprocess.run(
             [
-                "ffprobe", "-hide_banner", "-loglevel", "error", "-select_streams", "v:0",
-                "-show_entries", "stream=width,height", "-of", "json", video_path,
+                "ffprobe",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=width,height",
+                "-of",
+                "json",
+                video_path,
             ],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
     except subprocess.CalledProcessError as exc:
         if isinstance(exc.stderr, str) and exc.stderr.strip():

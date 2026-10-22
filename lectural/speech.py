@@ -25,13 +25,16 @@ def detect_audio_language(audio_path: str, model_size: str = DEFAULT_STT_MODEL) 
 
     require_binary("ffmpeg")
     sample = subprocess.run(
-        ["ffmpeg", "-v", "error", "-i", audio_path, "-t", "30",
-         "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1"],
-        check=True, capture_output=True,
+        ["ffmpeg", "-v", "error", "-i", audio_path, "-t", "30", "-ac", "1", "-ar", "16000", "-f", "wav", "pipe:1"],
+        check=True,
+        capture_output=True,
     )
     model = WhisperModel(model_size, device="cpu", compute_type=STT_COMPUTE_TYPE)
     _, info = model.transcribe(
-        io.BytesIO(sample.stdout), language=None, vad_filter=True, word_timestamps=False,
+        io.BytesIO(sample.stdout),
+        language=None,
+        vad_filter=True,
+        word_timestamps=False,
     )
     if getattr(info, "duration_after_vad", 1.0) <= 0 or getattr(info, "language_probability", 0.0) < 0.8:
         return None

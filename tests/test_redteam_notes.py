@@ -94,7 +94,11 @@ def _fixture(*, video_id: str | None = VIDEO_ID, url: str | None = None) -> tupl
 
 
 def _render_notes_and_transcript(
-    *, video_id: str | None = VIDEO_ID, url: str | None = None, segments: list[dict] | None = None, slides: list[dict] | None = None
+    *,
+    video_id: str | None = VIDEO_ID,
+    url: str | None = None,
+    segments: list[dict] | None = None,
+    slides: list[dict] | None = None,
 ) -> tuple[str, str, dict, list[dict], list[dict]]:
     video, default_segments, default_slides, coverage = _fixture(video_id=video_id, url=url)
     if segments is None:
@@ -103,6 +107,8 @@ def _render_notes_and_transcript(
         slides = default_slides
     synthesis_input = build_synthesis_input(video, segments, slides)
     return render_notes_md(synthesis_input, coverage), render_transcript_md(video, segments), video, segments, slides
+
+
 def _replace_section_body(text: str, anchor: str, next_anchor: str, lines: list[str]) -> str:
     body_start = text.index("\n", text.index(anchor)) + 1
     body_end = text.index(next_anchor, body_start)
@@ -110,9 +116,7 @@ def _replace_section_body(text: str, anchor: str, next_anchor: str, lines: list[
 
 
 def _enrich(notes_md: str) -> str:
-    notes = "\n".join(
-        line for line in notes_md.splitlines() if line.strip() != NOTES_UNENRICHED_MARKER
-    ) + "\n"
+    notes = "\n".join(line for line in notes_md.splitlines() if line.strip() != NOTES_UNENRICHED_MARKER) + "\n"
     notes = _replace_section_body(
         notes,
         NOTES_TAKEAWAY_ANCHOR,
@@ -182,8 +186,6 @@ def _hook_fixture_texts() -> tuple[str, str]:
     slides = [{"t": 0.0, "frame": "frames/slide-001.png", "ocr_text": "Hook slide", "is_slide": True}]
     synthesis_input = build_synthesis_input(video, segments, slides)
     return render_notes_md(synthesis_input, _coverage_payload(True)), render_transcript_md(video, segments)
-
-
 
 
 def _block(md: str, start: str, end: str | None = None) -> str:
@@ -346,7 +348,15 @@ def test_coverage_contract_uses_notes_only_and_overall_pass_and_folds_components
     assert gap_fail["overall_pass"] is False
 
     scene_fail = build_coverage(
-        CoverageInputs(**{**all_pass.__dict__, "duration_sec": 10.0, "speech_spans": [(0.0, 10.0)], "segment_times": [0.0], "frame_times": []})
+        CoverageInputs(
+            **{
+                **all_pass.__dict__,
+                "duration_sec": 10.0,
+                "speech_spans": [(0.0, 10.0)],
+                "segment_times": [0.0],
+                "frame_times": [],
+            }
+        )
     )
     assert scene_fail["scene_coverage"]["pass"] is False
     assert scene_fail["overall_pass"] is False
@@ -386,12 +396,16 @@ for name in list(sys.modules):
 import lectural.synthesis  # noqa: F401
 print(json.dumps({name: (name in sys.modules) for name in ['cv2', 'numpy', 'paddleocr', 'paddle', 'PIL']}, sort_keys=True))
 """
-    proc = subprocess.run([sys.executable, "-c", probe], cwd=REPO_ROOT, capture_output=True, text=True, encoding="utf-8", check=True)
+    proc = subprocess.run(
+        [sys.executable, "-c", probe], cwd=REPO_ROOT, capture_output=True, text=True, encoding="utf-8", check=True
+    )
     loaded = json.loads(proc.stdout)
     assert loaded == {"PIL": False, "cv2": False, "numpy": False, "paddle": False, "paddleocr": False}
 
 
-def _write_hook_case(root: Path, name: str, *, notes_text: str | None = None, frames_png: bool = False, status: str = "complete") -> dict:
+def _write_hook_case(
+    root: Path, name: str, *, notes_text: str | None = None, frames_png: bool = False, status: str = "complete"
+) -> dict:
     out = root / name
     out.mkdir(parents=True)
     notes_path = out / "notes.md"
@@ -423,13 +437,23 @@ def _write_hook_case(root: Path, name: str, *, notes_text: str | None = None, fr
     return run
 
 
-def _invoke_hook(runstate_path: Path, runs: list[dict], *, malformed_runstate: bool = False) -> subprocess.CompletedProcess[str]:
+def _invoke_hook(
+    runstate_path: Path, runs: list[dict], *, malformed_runstate: bool = False
+) -> subprocess.CompletedProcess[str]:
     if malformed_runstate:
         runstate_path.write_text("{not valid json", encoding="utf-8")
     else:
         runstate_path.write_text(json.dumps({"tool": "lectural", "runs": runs}, ensure_ascii=False), encoding="utf-8")
     env = {**os.environ, "LECTURAL_RUNSTATE": str(runstate_path)}
-    return subprocess.run([sys.executable, str(HOOK_PATH)], cwd=REPO_ROOT, input="{}", capture_output=True, text=True, encoding="utf-8", env=env)
+    return subprocess.run(
+        [sys.executable, str(HOOK_PATH)],
+        cwd=REPO_ROOT,
+        input="{}",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+    )
 
 
 def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
@@ -456,13 +480,27 @@ def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
         valid_run = _write_hook_case(tmp_path, "valid", frames_png=True)
         record("complete-valid-notes", _invoke_hook(tmp_path / "valid-runstate.json", [valid_run]), 0)
 
-        missing_marker_text = (Path(valid_run["notes_md"]).read_text(encoding="utf-8").replace(f"{NOTES_ENRICH_MARKER}\n", "", 1))
+        missing_marker_text = (
+            Path(valid_run["notes_md"]).read_text(encoding="utf-8").replace(f"{NOTES_ENRICH_MARKER}\n", "", 1)
+        )
         missing_marker_run = _write_hook_case(tmp_path, "missing-marker", notes_text=missing_marker_text)
-        record("missing-notes-marker-line-one", _invoke_hook(tmp_path / "missing-marker-runstate.json", [missing_marker_run]), 2)
+        record(
+            "missing-notes-marker-line-one",
+            _invoke_hook(tmp_path / "missing-marker-runstate.json", [missing_marker_run]),
+            2,
+        )
 
-        missing_anchor_text = Path(valid_run["notes_md"]).read_text(encoding="utf-8").replace(NOTES_QUESTIONS_ANCHOR, "## 빠진 복습 질문", 1)
+        missing_anchor_text = (
+            Path(valid_run["notes_md"])
+            .read_text(encoding="utf-8")
+            .replace(NOTES_QUESTIONS_ANCHOR, "## 빠진 복습 질문", 1)
+        )
         missing_anchor_run = _write_hook_case(tmp_path, "missing-anchor", notes_text=missing_anchor_text)
-        record("missing-required-section-anchor", _invoke_hook(tmp_path / "missing-anchor-runstate.json", [missing_anchor_run]), 2)
+        record(
+            "missing-required-section-anchor",
+            _invoke_hook(tmp_path / "missing-anchor-runstate.json", [missing_anchor_run]),
+            2,
+        )
 
         failed_run = _write_hook_case(tmp_path, "failed-run", status="failed")
         record("failed-runstate-run", _invoke_hook(tmp_path / "failed-runstate.json", [failed_run]), 2)
@@ -470,13 +508,27 @@ def test_completeness_hook_real_subprocess_adversarial_smoke(tmp_path):
         pending_run = _write_hook_case(tmp_path, "pending-run", status="pending")
         record("pending-runstate-run", _invoke_hook(tmp_path / "pending-runstate.json", [pending_run]), 2)
 
-        record("malformed-runstate-fails-closed", _invoke_hook(tmp_path / "malformed-runstate.json", [], malformed_runstate=True), 2)
+        record(
+            "malformed-runstate-fails-closed",
+            _invoke_hook(tmp_path / "malformed-runstate.json", [], malformed_runstate=True),
+            2,
+        )
 
-        no_frame_link_text = re.sub(r'\n<img[^\n]*frames/slide-001\.png[^\n]*>', "", Path(valid_run["notes_md"]).read_text(encoding="utf-8"))
-        no_frame_link_run = _write_hook_case(tmp_path, "frames-without-link", notes_text=no_frame_link_text, frames_png=True)
-        record("frames-present-without-slide-link", _invoke_hook(tmp_path / "frames-no-link-runstate.json", [no_frame_link_run]), 2)
+        no_frame_link_text = re.sub(
+            r"\n<img[^\n]*frames/slide-001\.png[^\n]*>", "", Path(valid_run["notes_md"]).read_text(encoding="utf-8")
+        )
+        no_frame_link_run = _write_hook_case(
+            tmp_path, "frames-without-link", notes_text=no_frame_link_text, frames_png=True
+        )
+        record(
+            "frames-present-without-slide-link",
+            _invoke_hook(tmp_path / "frames-no-link-runstate.json", [no_frame_link_run]),
+            2,
+        )
         bare_skeleton_text, _ = _hook_fixture_texts()
         bare_skeleton_run = _write_hook_case(tmp_path, "bare-skeleton", notes_text=bare_skeleton_text)
-        record("bare-unenriched-skeleton", _invoke_hook(tmp_path / "bare-skeleton-runstate.json", [bare_skeleton_run]), 2)
+        record(
+            "bare-unenriched-skeleton", _invoke_hook(tmp_path / "bare-skeleton-runstate.json", [bare_skeleton_run]), 2
+        )
     finally:
         artifact.write_text("\n".join(transcript), encoding="utf-8")

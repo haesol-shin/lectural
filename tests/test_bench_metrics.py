@@ -226,7 +226,10 @@ def test_frame_dedupe_evaluates_near_dup_gt():
     kept = [0.1, 5.0, 13.1, 18.0]
     candidates = [0.0, 5.0, 9.0, 13.0, 18.0]
     res = frame_recall_and_duplicate_rate(
-        gt, kept, candidates, tolerance_sec=1.0,
+        gt,
+        kept,
+        candidates,
+        tolerance_sec=1.0,
         near_duplicate_timestamps=near_dup,
         incremental_timestamps=incremental,
     )
@@ -237,12 +240,16 @@ def test_frame_dedupe_evaluates_near_dup_gt():
     # Case B: near-dup erroneously kept (leak), incremental dropped
     kept_with_dup = [0.1, 5.0, 9.0, 13.1]
     res_b = frame_recall_and_duplicate_rate(
-        gt, kept_with_dup, candidates, tolerance_sec=1.0,
+        gt,
+        kept_with_dup,
+        candidates,
+        tolerance_sec=1.0,
         near_duplicate_timestamps=near_dup,
         incremental_timestamps=incremental,
     )
     assert res_b["near_duplicate_dropped"] is False
     assert res_b["incremental_retained"] is False
+
 
 # --- 6. ocr_quality Tests ---------------------------------------------------
 
@@ -298,6 +305,7 @@ def test_ocr_quality_cer_uses_slide_text_reference():
     assert res["key_field_recall_exact"] == 1.0
     assert res["key_field_recall_fuzzy"] == 1.0
 
+
 # --- 7. Pure Helper Unit Tests -----------------------------------------------
 
 
@@ -315,6 +323,7 @@ def test_normalize_korean():
 
 def test_normalize_korean_preserves_digits():
     assert normalize_korean("1956년 256개") == "1956년256개"
+
 
 def test_normalize_basic():
     assert normalize_basic("  Hello,  World!  ") == "hello world"

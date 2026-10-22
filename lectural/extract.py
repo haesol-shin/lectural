@@ -61,20 +61,22 @@ def _frame_items(frames: list, out_dir: str, ocr_status: str) -> tuple[list[dict
             annotation_status = "text" if (frame.ocr_text or "").strip() else "no-text"
         frame_id = f"f{index:04d}"
         ids_by_path[os.path.normcase(path)] = frame_id
-        items.append({
-            "id": frame_id,
-            "start": round(float(frame.timestamp), 3),
-            "path": path,
-            "sha256": evidence.sha256_file(path),
-            "width": frame.meta.get("width"),
-            "height": frame.meta.get("height"),
-            "ocr": {
-                "status": annotation_status,
-                "text": (frame.ocr_text or "") or None,
-                "is_slide": bool(frame.is_slide),
-                "reliable": _safe_reliable(frame, ocr_status),
-            },
-        })
+        items.append(
+            {
+                "id": frame_id,
+                "start": round(float(frame.timestamp), 3),
+                "path": path,
+                "sha256": evidence.sha256_file(path),
+                "width": frame.meta.get("width"),
+                "height": frame.meta.get("height"),
+                "ocr": {
+                    "status": annotation_status,
+                    "text": (frame.ocr_text or "") or None,
+                    "is_slide": bool(frame.is_slide),
+                    "reliable": _safe_reliable(frame, ocr_status),
+                },
+            }
+        )
     return items, ids_by_path
 
 
@@ -148,9 +150,11 @@ def _extract_source(
 
                 try:
                     slide_frames, ocr_engine = ocr_frames(representative_frames)
-                    ocr_status = "completed-with-text" if any(
-                        (frame.ocr_text or "").strip() for frame in representative_frames
-                    ) else "completed-no-text"
+                    ocr_status = (
+                        "completed-with-text"
+                        if any((frame.ocr_text or "").strip() for frame in representative_frames)
+                        else "completed-no-text"
+                    )
                 except Exception:  # noqa: BLE001 - OCR failure is a bounded evidence state.
                     slide_frames = []
                     ocr_engine = "failed"
@@ -161,17 +165,30 @@ def _extract_source(
     else:
         frame_items, frame_ids = [], {}
 
-    title = metadata.title or track.meta.get("title") or metadata.video_id or source.video_id or source.title_hint or "video"
+    title = (
+        metadata.title
+        or track.meta.get("title")
+        or metadata.video_id
+        or source.video_id
+        or source.title_hint
+        or "video"
+    )
     source_data = source.safe_as_dict()
-    source_data.update({
-        "id": handler.source_id(source),
-        "title": title,
-        "duration_sec": round(duration, 3),
-        "resolution": source_resolution,
-    })
+    source_data.update(
+        {
+            "id": handler.source_id(source),
+            "title": title,
+            "duration_sec": round(duration, 3),
+            "resolution": source_resolution,
+        }
+    )
     segment_items = [
-        {"id": f"s{index:04d}", "start": round(float(segment.t), 3),
-         "end": round(float(segment.end), 3), "text": segment.text}
+        {
+            "id": f"s{index:04d}",
+            "start": round(float(segment.t), 3),
+            "end": round(float(segment.end), 3),
+            "text": segment.text,
+        }
         for index, segment in enumerate(segments, start=1)
     ]
     transcript_segments = [{"t": segment.t, "text": segment.text} for segment in segments]
@@ -186,15 +203,21 @@ def _extract_source(
     slide_frame_ids = [frame_ids[os.path.normcase(os.path.abspath(frame.image_path))] for frame in slide_frames]
     gap = gap_check(speech_spans, [float(segment.t) for segment in segments], duration)
     scene = scene_coverage(
-        raw_sample_times, speech_spans, duration,
+        raw_sample_times,
+        speech_spans,
+        duration,
         slide_frames_total=len(slide_frames),
         slide_frames_with_text=sum(bool((frame.ocr_text or "").strip()) for frame in slide_frames),
         visual_required=visual_required,
         ocr_required=ocr_required,
         ocr_failed=ocr_failed,
     )
-    transcript_present = bool(transcript_md.strip() and os.path.isfile(transcript_path) and os.path.getsize(transcript_path) > 0)
-    frames_present = not visual_required or bool(frame_items and all(os.path.isfile(item["path"]) for item in frame_items))
+    transcript_present = bool(
+        transcript_md.strip() and os.path.isfile(transcript_path) and os.path.getsize(transcript_path) > 0
+    )
+    frames_present = not visual_required or bool(
+        frame_items and all(os.path.isfile(item["path"]) for item in frame_items)
+    )
     reasons: list[dict] = []
     if not gap["pass"]:
         reasons.append(evidence.reason("SPEECH_INCOMPLETE"))
@@ -209,7 +232,10 @@ def _extract_source(
 
     hard_failure = ocr_failed or not transcript_present or not frames_present
     timestamp = evidence.timestamp_integrity(
-        duration, segment_items, frame_items, allow_unknown_duration=not source.has_video,
+        duration,
+        segment_items,
+        frame_items,
+        allow_unknown_duration=not source.has_video,
     )
     if not timestamp["pass"]:
         reasons.append(evidence.reason("TIMESTAMP_INVALID"))
@@ -229,7 +255,14 @@ def _extract_source(
     fallback_code = track.meta.get("fallback_code")
     if fallback_code is None and speech_source == "stt":
         fallback_code = handler.stt_fallback_code
-    allowed_fallbacks = {"captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source"}
+    allowed_fallbacks = {
+        "captions_unavailable",
+        "captions_unusable",
+        "captions_language_mismatch",
+        "captions_language_unverified",
+        "forced_stt",
+        "local_source",
+    }
     fallback = {"code": fallback_code} if fallback_code in allowed_fallbacks else None
     speech = {
         "source": speech_source,
@@ -276,6 +309,8 @@ def _extract_source(
     )
     evidence.write_json(manifest, os.path.join(out_dir, "evidence.json"))
     return {"output_dir": out_dir, "manifest": manifest}
+
+
 def extract_source(
     source_argument: str,
     output_dir: str,
@@ -306,8 +341,6 @@ def extract_source(
     except BaseException:
         resources.abort()
         raise
-
-
 
 
 __all__ = ["extract_source"]

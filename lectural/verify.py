@@ -36,8 +36,14 @@ def _is_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-def _string(value: object, *, minimum: int = 0, maximum: int | None = None,
-            pattern: re.Pattern[str] | None = None, enum: set[str] | None = None) -> bool:
+def _string(
+    value: object,
+    *,
+    minimum: int = 0,
+    maximum: int | None = None,
+    pattern: re.Pattern[str] | None = None,
+    enum: set[str] | None = None,
+) -> bool:
     return (
         isinstance(value, str)
         and len(value) >= minimum
@@ -47,8 +53,9 @@ def _string(value: object, *, minimum: int = 0, maximum: int | None = None,
     )
 
 
-def _object(value: object, required: set[str], properties: dict[str, Callable[[object], bool]],
-            *, additional: bool = False) -> bool:
+def _object(
+    value: object, required: set[str], properties: dict[str, Callable[[object], bool]], *, additional: bool = False
+) -> bool:
     if not isinstance(value, dict) or not required.issubset(value):
         return False
     if not additional and value.keys() - properties.keys():
@@ -69,9 +76,9 @@ def _number(value: object, *, minimum: float | None = None) -> bool:
     return _is_number(value) and (minimum is None or value >= minimum)
 
 
-
 def _integer(value: object, *, minimum: int | None = None) -> bool:
     return _is_integer(value) and (minimum is None or value >= minimum)
+
 
 def _valid_datetime(value: object) -> bool:
     if not isinstance(value, str):
@@ -85,8 +92,7 @@ def _valid_datetime(value: object) -> bool:
 
 def _valid_pair_list(value: object) -> bool:
     return isinstance(value, list) and all(
-        isinstance(pair, list) and len(pair) == 2 and all(_is_number(item) for item in pair)
-        for pair in value
+        isinstance(pair, list) and len(pair) == 2 and all(_is_number(item) for item in pair) for pair in value
     )
 
 
@@ -96,46 +102,75 @@ def _valid_array(value: object, item_validator: Callable[[object], bool]) -> boo
 
 def _valid_failure(value: object) -> bool:
     return _object(
-        value, {"code", "message"},
-        {"code": lambda item: _string(item, minimum=1, pattern=_REASON_CODE),
-         "message": lambda item: _string(item, minimum=1, maximum=200)},
+        value,
+        {"code", "message"},
+        {
+            "code": lambda item: _string(item, minimum=1, pattern=_REASON_CODE),
+            "message": lambda item: _string(item, minimum=1, maximum=200),
+        },
     )
 
 
 def _valid_source(value: object) -> bool:
     citation = lambda item: _object(
-        item, {"kind"},
-        {"kind": _enum("youtube", "transcript"),
-         "video_id": lambda val: _string(val, pattern=re.compile(r"^[A-Za-z0-9_-]{11}$"))},
+        item,
+        {"kind"},
+        {
+            "kind": _enum("youtube", "transcript"),
+            "video_id": lambda val: _string(val, pattern=re.compile(r"^[A-Za-z0-9_-]{11}$")),
+        },
     )
     resolution = lambda item: _object(
-        item, {"width", "height"},
-        {"width": _nullable(lambda val: _integer(val, minimum=1)),
-         "height": _nullable(lambda val: _integer(val, minimum=1))},
+        item,
+        {"width", "height"},
+        {
+            "width": _nullable(lambda val: _integer(val, minimum=1)),
+            "height": _nullable(lambda val: _integer(val, minimum=1)),
+        },
     )
     return _object(
-        value, {"id", "kind", "argument", "title", "duration_sec", "has_video", "resolution", "citation"},
-        {"id": lambda item: _string(item, pattern=_SOURCE_ID),
-         "kind": _enum("youtube", "local_video", "local_audio"),
-         "argument": lambda item: _string(item, minimum=1),
-         "title": lambda item: _string(item, minimum=1),
-         "duration_sec": lambda item: _number(item, minimum=0),
-         "has_video": lambda item: isinstance(item, bool),
-         "resolution": resolution,
-         "citation": citation},
+        value,
+        {"id", "kind", "argument", "title", "duration_sec", "has_video", "resolution", "citation"},
+        {
+            "id": lambda item: _string(item, pattern=_SOURCE_ID),
+            "kind": _enum("youtube", "local_video", "local_audio"),
+            "argument": lambda item: _string(item, minimum=1),
+            "title": lambda item: _string(item, minimum=1),
+            "duration_sec": lambda item: _number(item, minimum=0),
+            "has_video": lambda item: isinstance(item, bool),
+            "resolution": resolution,
+            "citation": citation,
+        },
     )
 
 
 def _valid_speech(value: object) -> bool:
-    fallback = lambda item: item is None or _object(
-        item, {"code"}, {"code": _enum("captions_unavailable", "captions_unusable", "captions_language_mismatch", "captions_language_unverified", "forced_stt", "local_source")}
+    fallback = lambda item: (
+        item is None
+        or _object(
+            item,
+            {"code"},
+            {
+                "code": _enum(
+                    "captions_unavailable",
+                    "captions_unusable",
+                    "captions_language_mismatch",
+                    "captions_language_unverified",
+                    "forced_stt",
+                    "local_source",
+                )
+            },
+        )
     )
     return _object(
-        value, {"source", "language", "model", "fallback"},
-        {"source": _enum("caption", "stt"),
-         "language": _nullable(lambda item: isinstance(item, str)),
-         "model": _nullable(lambda item: isinstance(item, str)),
-         "fallback": fallback},
+        value,
+        {"source", "language", "model", "fallback"},
+        {
+            "source": _enum("caption", "stt"),
+            "language": _nullable(lambda item: isinstance(item, str)),
+            "model": _nullable(lambda item: isinstance(item, str)),
+            "fallback": fallback,
+        },
     )
 
 
@@ -169,71 +204,91 @@ def _valid_completeness(value: object) -> bool:
 
 def _valid_frame(value: object) -> bool:
     ocr = lambda item: _object(
-        item, {"status", "text", "is_slide", "reliable"},
-        {"status": _enum("text", "no-text", "skipped", "failed"),
-         "text": _nullable(lambda val: isinstance(val, str)),
-         "is_slide": lambda val: isinstance(val, bool),
-         "reliable": _nullable(lambda val: isinstance(val, bool))},
+        item,
+        {"status", "text", "is_slide", "reliable"},
+        {
+            "status": _enum("text", "no-text", "skipped", "failed"),
+            "text": _nullable(lambda val: isinstance(val, str)),
+            "is_slide": lambda val: isinstance(val, bool),
+            "reliable": _nullable(lambda val: isinstance(val, bool)),
+        },
     )
     nullable_dimension = _nullable(lambda item: _integer(item, minimum=1))
     return _object(
-        value, {"id", "start", "path", "sha256", "width", "height", "ocr"},
-        {"id": lambda item: _string(item, pattern=_FRAME_ID),
-         "start": lambda item: _number(item, minimum=0),
-         "path": lambda item: _string(item, minimum=1),
-         "sha256": lambda item: _string(item, pattern=_HASH),
-         "width": nullable_dimension,
-         "height": nullable_dimension,
-         "ocr": ocr},
+        value,
+        {"id", "start", "path", "sha256", "width", "height", "ocr"},
+        {
+            "id": lambda item: _string(item, pattern=_FRAME_ID),
+            "start": lambda item: _number(item, minimum=0),
+            "path": lambda item: _string(item, minimum=1),
+            "sha256": lambda item: _string(item, pattern=_HASH),
+            "width": nullable_dimension,
+            "height": nullable_dimension,
+            "ocr": ocr,
+        },
     )
 
 
 def _valid_manifest_shape(manifest: dict[str, Any]) -> bool:
     segment = lambda item: _object(
-        item, {"id", "start", "end", "text"},
-        {"id": lambda val: _string(val, pattern=_SEGMENT_ID),
-         "start": lambda val: _number(val, minimum=0),
-         "end": lambda val: _number(val, minimum=0),
-         "text": lambda val: isinstance(val, str)},
+        item,
+        {"id", "start", "end", "text"},
+        {
+            "id": lambda val: _string(val, pattern=_SEGMENT_ID),
+            "start": lambda val: _number(val, minimum=0),
+            "end": lambda val: _number(val, minimum=0),
+            "text": lambda val: isinstance(val, str),
+        },
     )
-    transcript = lambda item: _object(
-        item, {"segments"}, {"segments": lambda val: _valid_array(val, segment)}
-    )
+    transcript = lambda item: _object(item, {"segments"}, {"segments": lambda val: _valid_array(val, segment)})
     artifacts = lambda item: _object(
-        item, {"evidence", "transcript", "frames_dir", "output_dir"},
-        {"evidence": lambda val: _string(val, minimum=1),
-         "transcript": lambda val: _string(val, minimum=1),
-         "frames_dir": _nullable(lambda val: _string(val, minimum=1)),
-         "output_dir": lambda val: _string(val, minimum=1)},
+        item,
+        {"evidence", "transcript", "frames_dir", "output_dir"},
+        {
+            "evidence": lambda val: _string(val, minimum=1),
+            "transcript": lambda val: _string(val, minimum=1),
+            "frames_dir": _nullable(lambda val: _string(val, minimum=1)),
+            "output_dir": lambda val: _string(val, minimum=1),
+        },
     )
     extraction_ocr = lambda item: _object(
-        item, {"status", "engine", "annotation_only"},
-        {"status": _enum("skipped", "completed-no-text", "completed-with-text", "failed", "not_applicable"),
-         "engine": lambda val: isinstance(val, str),
-         "annotation_only": lambda val: val is True},
+        item,
+        {"status", "engine", "annotation_only"},
+        {
+            "status": _enum("skipped", "completed-no-text", "completed-with-text", "failed", "not_applicable"),
+            "engine": lambda val: isinstance(val, str),
+            "annotation_only": lambda val: val is True,
+        },
         additional=True,
     )
     extraction = lambda item: _object(
-        item, {"status", "reasons", "speech_completeness", "visual_completeness", "timestamp_integrity", "ocr"},
-        {"status": _enum("pass", "warn", "fail"),
-         "reasons": lambda val: _valid_array(val, _valid_failure),
-         "speech_completeness": _valid_completeness,
-         "visual_completeness": _valid_completeness,
-         "timestamp_integrity": _valid_completeness,
-         "ocr": extraction_ocr},
+        item,
+        {"status", "reasons", "speech_completeness", "visual_completeness", "timestamp_integrity", "ocr"},
+        {
+            "status": _enum("pass", "warn", "fail"),
+            "reasons": lambda val: _valid_array(val, _valid_failure),
+            "speech_completeness": _valid_completeness,
+            "visual_completeness": _valid_completeness,
+            "timestamp_integrity": _valid_completeness,
+            "ocr": extraction_ocr,
+        },
     )
     stages = lambda item: _object(
-        item, {"speech", "frames", "dedupe", "ocr"},
+        item,
+        {"speech", "frames", "dedupe", "ocr"},
         {key: lambda val: _number(val, minimum=0) for key in ("speech", "frames", "dedupe", "ocr")},
     )
     resources = lambda item: _object(
-        item, {"wall_sec", "stages", "peak_rss_mb", "artifact_bytes", "frames_candidate", "frames_retained"},
-        {"wall_sec": lambda val: _number(val, minimum=0),
-         "stages": stages,
-         "peak_rss_mb": _nullable(lambda val: _number(val, minimum=0)),
-         "artifact_bytes": lambda val: _integer(val, minimum=0),
-         "frames_candidate": lambda val: _integer(val, minimum=0),
-         "frames_retained": lambda val: _integer(val, minimum=0)},
+        item,
+        {"wall_sec", "stages", "peak_rss_mb", "artifact_bytes", "frames_candidate", "frames_retained"},
+        {
+            "wall_sec": lambda val: _number(val, minimum=0),
+            "stages": stages,
+            "peak_rss_mb": _nullable(lambda val: _number(val, minimum=0)),
+            "artifact_bytes": lambda val: _integer(val, minimum=0),
+            "frames_candidate": lambda val: _integer(val, minimum=0),
+            "frames_retained": lambda val: _integer(val, minimum=0),
+        },
     )
     top = {
         "schema_version": lambda val: type(val) is int and val == EXTRACTION_SCHEMA_VERSION,
@@ -274,8 +329,10 @@ def _verify_artifacts(bundle: Bundle) -> bool:
     frames_dir = bundle.artifact_paths.get("frames_dir")
     try:
         return (
-            evidence_path is not None and os.path.isfile(evidence_path)
-            and transcript_path is not None and os.path.isfile(transcript_path)
+            evidence_path is not None
+            and os.path.isfile(evidence_path)
+            and transcript_path is not None
+            and os.path.isfile(transcript_path)
             and os.path.getsize(transcript_path) > 0
             and (not visual_required or (frames_dir is not None and os.path.isdir(frames_dir)))
         )
@@ -327,8 +384,11 @@ def _verify_identifiers(bundle: Bundle) -> bool:
             ordered = sorted(zip(items, ids), key=lambda pair: float(pair[0][field]))
         except (KeyError, TypeError, ValueError, OverflowError):
             return False
-        if any(identifier != f"{prefix}{index:04d}" for index, (item, identifier) in enumerate(ordered, start=1)
-               for prefix in ("s" if items is segments else "f",)):
+        if any(
+            identifier != f"{prefix}{index:04d}"
+            for index, (item, identifier) in enumerate(ordered, start=1)
+            for prefix in ("s" if items is segments else "f",)
+        ):
             return False
     extraction = bundle.manifest.get("extraction")
     visual = extraction.get("visual_completeness") if isinstance(extraction, dict) else None
@@ -412,17 +472,15 @@ def _verify_completeness(bundle: Bundle) -> bool:
     visual_required = visual.get("visual_required")
     ocr_required = visual.get("ocr_required")
     if (
-        not _integer(bins, minimum=1) or bins > 1000
+        not _integer(bins, minimum=1)
+        or bins > 1000
         or not _number(carry, minimum=0)
         or not isinstance(visual_required, bool)
         or not isinstance(ocr_required, bool)
     ):
         return False
     slide_ids = visual.get("slide_frame_ids")
-    frame_by_id = {
-        item["id"]: item for item in frames
-        if isinstance(item, dict) and isinstance(item.get("id"), str)
-    }
+    frame_by_id = {item["id"]: item for item in frames if isinstance(item, dict) and isinstance(item.get("id"), str)}
     if not isinstance(slide_ids, list) or any(
         not isinstance(item, str) or item not in frame_by_id for item in slide_ids
     ):
@@ -443,7 +501,9 @@ def _verify_completeness(bundle: Bundle) -> bool:
         return False
     try:
         scene = scene_coverage(
-            [float(item) for item in raw_times], spans, float(duration),
+            [float(item) for item in raw_times],
+            spans,
+            float(duration),
             bins=bins,
             slide_frames_total=slide_total,
             slide_frames_with_text=slide_with_text,
@@ -492,7 +552,11 @@ def _verify_source(bundle: Bundle, argument: str) -> tuple[bool, str, str]:
                     digest.update(chunk)
         except OSError:
             return False, "SOURCE_UNAVAILABLE", "The supplied source cannot be read."
-        return source["id"] == f"sha256:{digest.hexdigest()}", "SOURCE_MISMATCH", "The supplied source does not match the recorded identity."
+        return (
+            source["id"] == f"sha256:{digest.hexdigest()}",
+            "SOURCE_MISMATCH",
+            "The supplied source does not match the recorded identity.",
+        )
     try:
         classified = classify_source(argument)
     except (FileNotFoundError, TypeError, ValueError):
@@ -505,13 +569,48 @@ def verify_bundle(path: str, *, source: str | None = None) -> dict[str, Any]:
     """Run every deterministic check, marking source identity skipped if absent."""
     bundle = load_bundle(path)
     checks: list[dict[str, str]] = [
-        _check("schema", _valid_manifest_shape(bundle.manifest), "SCHEMA_INVALID", "The evidence manifest shape does not match contract v2."),
-        _check("containment", bundle.containment_valid, "BUNDLE_CONTAINMENT", "A recorded artifact path is outside its bundle."),
-        _check("artifacts", _verify_artifacts(bundle), "ARTIFACTS_INCOMPLETE", "A required evidence artifact is missing or empty."),
-        _check("frame_hashes", _verify_frame_hashes(bundle), "FRAME_HASH_MISMATCH", "A frame is missing or its SHA-256 does not match."),
-        _check("identifiers", _verify_identifiers(bundle), "IDENTIFIERS_INVALID", "Segment or frame identifiers are invalid or inconsistent."),
-        _check("timestamps", _verify_timestamps(bundle), "TIMESTAMPS_INVALID", "Segment or frame timestamps are invalid or unordered."),
-        _check("completeness", _verify_completeness(bundle), "COMPLETENESS_INVALID", "Declared completeness does not match the evidence."),
+        _check(
+            "schema",
+            _valid_manifest_shape(bundle.manifest),
+            "SCHEMA_INVALID",
+            "The evidence manifest shape does not match contract v2.",
+        ),
+        _check(
+            "containment",
+            bundle.containment_valid,
+            "BUNDLE_CONTAINMENT",
+            "A recorded artifact path is outside its bundle.",
+        ),
+        _check(
+            "artifacts",
+            _verify_artifacts(bundle),
+            "ARTIFACTS_INCOMPLETE",
+            "A required evidence artifact is missing or empty.",
+        ),
+        _check(
+            "frame_hashes",
+            _verify_frame_hashes(bundle),
+            "FRAME_HASH_MISMATCH",
+            "A frame is missing or its SHA-256 does not match.",
+        ),
+        _check(
+            "identifiers",
+            _verify_identifiers(bundle),
+            "IDENTIFIERS_INVALID",
+            "Segment or frame identifiers are invalid or inconsistent.",
+        ),
+        _check(
+            "timestamps",
+            _verify_timestamps(bundle),
+            "TIMESTAMPS_INVALID",
+            "Segment or frame timestamps are invalid or unordered.",
+        ),
+        _check(
+            "completeness",
+            _verify_completeness(bundle),
+            "COMPLETENESS_INVALID",
+            "Declared completeness does not match the evidence.",
+        ),
     ]
     if source is None:
         checks.append({"name": "source", "status": "skipped", "detail": "No source was supplied."})
@@ -525,7 +624,8 @@ def response(result: dict[str, Any]) -> dict[str, Any]:
     """Build the common JSON envelope for a verifier result."""
     failed = [
         {"code": item["code"], "message": item.get("detail", "Bundle verification failed.")}
-        for item in result["checks"] if item["status"] == "fail"
+        for item in result["checks"]
+        if item["status"] == "fail"
     ]
     return {
         "schema_version": EXTRACTION_SCHEMA_VERSION,

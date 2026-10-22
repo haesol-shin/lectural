@@ -77,7 +77,14 @@ def _alignment(*, same: bool, failure: str | None = None) -> dict[str, Any]:
 def _sequence(split: str, transform_class: str, seed: int, ordinal: int) -> dict[str, Any]:
     positive_classes = {"static_shift", "static_duplicate", "pan_zoom", "pan_zoom_reverse"}
     same = transform_class in positive_classes
-    direct_true = transform_class in {"static_shift", "pan_zoom", "pan_zoom_reverse", "incremental_build", "pan_zoom_incremental", "pan_zoom_shared_template"}
+    direct_true = transform_class in {
+        "static_shift",
+        "pan_zoom",
+        "pan_zoom_reverse",
+        "incremental_build",
+        "pan_zoom_incremental",
+        "pan_zoom_shared_template",
+    }
     # The three direct-true different classes are deliberate identity-veto
     # cases.  Their fallback remains alignment-reachable; content rejects them.
     fallback = transform_class in {"pan_zoom", "pan_zoom_reverse", "pan_zoom_incremental", "pan_zoom_shared_template"}
@@ -128,8 +135,7 @@ def build_synthetic_sequence_manifest() -> dict[str, Any]:
         for replica in range(2)
     ]
     held_out = [
-        _sequence("held-out", transform_class, 2000 + index, index)
-        for index, transform_class in enumerate(classes)
+        _sequence("held-out", transform_class, 2000 + index, index) for index, transform_class in enumerate(classes)
     ]
     return {
         "manifest_version": 2,
@@ -145,7 +151,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
-    args.out.write_text(json.dumps(build_synthetic_sequence_manifest(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.out.write_text(
+        json.dumps(build_synthetic_sequence_manifest(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return 0
 
 

@@ -51,7 +51,7 @@ def sweep_stale_scratch(root: str | None = None, *, now: float | None = None) ->
         fd = None
         try:
             info = os.lstat(path)
-            if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mtime > cutoff):
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mtime > cutoff:
                 continue
             fd = _lock(path)
             locked = os.fstat(fd)

@@ -36,8 +36,12 @@ def open_url(url: str, headers: dict | None = None):
     # Building explicitly avoids urllib's file, FTP, data and cookie handlers.
     opener = urllib.request.OpenerDirector()
     for handler in (
-        urllib.request.ProxyHandler({}), urllib.request.UnknownHandler(), urllib.request.HTTPHandler(),
-        urllib.request.HTTPSHandler(), urllib.request.HTTPDefaultErrorHandler(), _Redirects(),
+        urllib.request.ProxyHandler({}),
+        urllib.request.UnknownHandler(),
+        urllib.request.HTTPHandler(),
+        urllib.request.HTTPSHandler(),
+        urllib.request.HTTPDefaultErrorHandler(),
+        _Redirects(),
         urllib.request.HTTPErrorProcessor(),
     ):
         opener.add_handler(handler)
@@ -79,9 +83,13 @@ def try_direct(url: str, dest_dir: str):
     response = open_url(url)
     content_type = response.headers.get_content_type().lower()
     final = response.geturl()
-    login_wall = final != url and bool(re.search(
-        r"/(?:login|log-in|signin|sign-in|sign_in)(?:[/.?]|$)", urlsplit(final).path, re.I,
-    ))
+    login_wall = final != url and bool(
+        re.search(
+            r"/(?:login|log-in|signin|sign-in|sign_in)(?:[/.?]|$)",
+            urlsplit(final).path,
+            re.I,
+        )
+    )
     if not login_wall and content_type.split("/", 1)[0] in ("audio", "video"):
         path = os.path.join(dest_dir, media_filename(content_type))
         stream_to_file(response, path)

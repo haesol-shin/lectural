@@ -13,10 +13,7 @@ from lectural.acquisition import Segment, captions_are_usable, fill_segment_ends
 
 
 def test_parse_vtt_basic():
-    vtt = (
-        "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nhello world\n\n"
-        "00:00:03.000 --> 00:00:04.000\nsecond cue\n"
-    )
+    vtt = "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nhello world\n\n00:00:03.000 --> 00:00:04.000\nsecond cue\n"
     segs = parse_vtt(vtt)
     assert [seg.text for seg in segs] == ["hello world", "second cue"]
     assert [(seg.t, seg.end) for seg in segs] == [(1.0, 2.0), (3.0, 4.0)]
@@ -69,7 +66,9 @@ def test_youtube_usable_captions_probe_audio_and_skip_stt(monkeypatch):
     source = classify_source("https://youtu.be/dQw4w9WgXcQ")
     segments = [acquisition.Segment(i, f"cue {i} with enough text") for i in range(3)]
     calls = []
-    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: acquisition.SpeechTrack(segments, "caption", "en"))
+    monkeypatch.setattr(
+        acquisition, "fetch_caption_segments", lambda *_args: acquisition.SpeechTrack(segments, "caption", "en")
+    )
     monkeypatch.setattr(media, "resolve_audio", lambda *_args: calls.append("audio") or "synthetic.wav")
     monkeypatch.setattr(speech, "detect_audio_language", lambda *_args, **_kwargs: calls.append("probe") or "en")
     monkeypatch.setattr(speech, "transcribe_audio", lambda *_args, **_kwargs: calls.append("stt"))
@@ -86,7 +85,9 @@ def test_youtube_forced_stt_warns_and_forwards_model(monkeypatch, tmp_path):
     audio_path = str(tmp_path / "audio.wav")
     expected = acquisition.SpeechTrack([], "stt", meta={"duration": 11.0})
     monkeypatch.setattr(media, "resolve_audio", lambda source, out: calls.append((source, out)) or audio_path)
-    monkeypatch.setattr(speech, "transcribe_audio", lambda path, model_size: calls.append((path, model_size)) or expected)
+    monkeypatch.setattr(
+        speech, "transcribe_audio", lambda path, model_size: calls.append((path, model_size)) or expected
+    )
     with pytest.warns(RuntimeWarning, match="Captions unavailable.*force_stt requested"):
         track = acquisition.acquire_speech(source, str(tmp_path), force_stt=True, model="small")
     assert track is expected
@@ -99,10 +100,16 @@ def test_youtube_forced_stt_warns_and_forwards_model(monkeypatch, tmp_path):
 
 def test_unusable_youtube_captions_preserve_fallback_reason(monkeypatch, tmp_path):
     source = classify_source("https://youtu.be/dQw4w9WgXcQ")
-    monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: acquisition.SpeechTrack([acquisition.Segment(1, "x")], "caption", "en"))
+    monkeypatch.setattr(
+        acquisition,
+        "fetch_caption_segments",
+        lambda *_args: acquisition.SpeechTrack([acquisition.Segment(1, "x")], "caption", "en"),
+    )
     monkeypatch.setattr(speech, "detect_audio_language", lambda *_args, **_kwargs: "en")
     monkeypatch.setattr(media, "resolve_audio", lambda *_args: str(tmp_path / "audio.wav"))
-    monkeypatch.setattr(speech, "transcribe_audio", lambda *_args, **_kwargs: acquisition.SpeechTrack([], "stt", meta={}))
+    monkeypatch.setattr(
+        speech, "transcribe_audio", lambda *_args, **_kwargs: acquisition.SpeechTrack([], "stt", meta={})
+    )
     with pytest.warns(RuntimeWarning, match="captions present but unusable"):
         track = acquisition.acquire_speech(source, str(tmp_path))
     assert track.meta["caption_fallback_reason"] == "captions present but unusable (1 cues)"
@@ -119,7 +126,9 @@ def test_local_sources_directly_select_stt_without_caption_warning(monkeypatch, 
     monkeypatch.setattr(acquisition, "fetch_caption_segments", lambda *_args: calls.append("captions"))
     monkeypatch.setattr(media, "resolve_audio", lambda actual, out: calls.append(("audio", actual.kind)) or audio_path)
     expected = acquisition.SpeechTrack([], "stt", meta={})
-    monkeypatch.setattr(speech, "transcribe_audio", lambda actual, model_size: calls.append(("stt", actual, model_size)) or expected)
+    monkeypatch.setattr(
+        speech, "transcribe_audio", lambda actual, model_size: calls.append(("stt", actual, model_size)) or expected
+    )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         track = acquisition.acquire_speech(source, str(tmp_path / "out"), model="tiny")

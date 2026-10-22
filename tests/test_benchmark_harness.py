@@ -13,6 +13,7 @@ Tests:
   5. run_fixture_repetitions: multi-repetition median and variance aggregation.
   6. CLI parser: argument parsing, defaults, mutual exclusion of --cold/--warm.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,6 +24,7 @@ import sys
 from unittest.mock import MagicMock, patch
 import warnings
 import wave
+
 # Ensure repository root is on sys.path for scripts import
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
@@ -54,6 +56,7 @@ Second cue with sufficient text content.
 Third cue with sufficient text content.
 """
 
+
 def _write_minimal_wav(path: Path, duration_sec: float = 1.0) -> None:
     """Write a minimal valid PCM WAV file for offline testing."""
     with wave.open(str(path), "wb") as wf:
@@ -62,9 +65,12 @@ def _write_minimal_wav(path: Path, duration_sec: float = 1.0) -> None:
         wf.setframerate(16000)
         n_samples = int(16000 * duration_sec)
         wf.writeframes(b"\x00\x00" * n_samples)
+
+
 # ============================================================================
 # 1. Caption / Fallback Injection Tests (All 4 Cases)
 # ============================================================================
+
 
 def test_caption_variant_usable_returns_caption_source_without_stt(tmp_path: Path) -> None:
     """Case 1: 'usable' caption_variant parses VTT and returns SpeechTrack with source='caption'."""
@@ -77,7 +83,9 @@ def test_caption_variant_usable_returns_caption_source_without_stt(tmp_path: Pat
     audio_file = tmp_path / "dummy_audio.wav"
     audio_file.write_bytes(b"RIFFdummywavbytes")
 
-    transcribe_mock = MagicMock(side_effect=AssertionError("STT transcribe_audio must not be called for usable captions"))
+    transcribe_mock = MagicMock(
+        side_effect=AssertionError("STT transcribe_audio must not be called for usable captions")
+    )
 
     track = acquire_speech_with_caption_injection(
         gt=gt,
@@ -197,6 +205,7 @@ def test_caption_variant_force_stt_bypasses_captions_and_uses_stt(tmp_path: Path
 # 2. Pure Helper Functions Tests
 # ============================================================================
 
+
 def test_compute_fixture_duration_sec() -> None:
     # Explicit duration_sec takes precedence
     assert compute_fixture_duration_sec({"duration_sec": 15.5, "speech_spans": [[0.0, 10.0]]}) == 15.5
@@ -236,6 +245,7 @@ def test_measure_directory_bytes(tmp_path: Path) -> None:
 # ============================================================================
 # 3. Resource Measurement & Repetitions Tests
 # ============================================================================
+
 
 def test_measure_fixture_run_computes_rtf_and_storage(tmp_path: Path) -> None:
     """Verify measure_fixture_run computes wall time, RTF, storage delta, and per-stage metrics."""
@@ -347,6 +357,7 @@ def test_alignment_observability_records_work_and_runtime_without_decoding() -> 
     assert summary["opencv_runtime"]["requested_threads"] == [1]
     assert summary["opencv_runtime"]["requested_seeds"] == [1337]
 
+
 def test_run_fixture_repetitions_aggregates_median_and_variance(tmp_path: Path) -> None:
     """Verify run_fixture_repetitions produces aggregate statistics across repetitions."""
     audio_file = tmp_path / "audio.wav"
@@ -386,6 +397,7 @@ def test_run_fixture_repetitions_aggregates_median_and_variance(tmp_path: Path) 
 # 4. Quality Metrics Interface Dependency Handling
 # ============================================================================
 
+
 def test_evaluate_quality_metrics_contract_handling() -> None:
     """When lectural_bench.metrics is not importable, records deferred status."""
     gt = {
@@ -413,6 +425,7 @@ def test_evaluate_quality_metrics_contract_handling() -> None:
 # 5. CLI Parser Tests
 # ============================================================================
 
+
 def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     parser = build_parser()
 
@@ -426,6 +439,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     assert args.warm is False
     assert args.model == "medium"
     # Custom flags
+    # fmt: off
     custom = parser.parse_args([
         "--fixtures-dir", "custom/fixtures",
         "--out", "custom/out",
@@ -436,6 +450,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
         "--sample-interval", "0.5",
         "--model", "medium",
     ])
+    # fmt: on
     assert custom.fixtures_dir == "custom/fixtures"
     assert custom.out == "custom/out"
     assert custom.reps == 5
@@ -459,6 +474,7 @@ def test_harness_default_model_is_medium() -> None:
 def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
     """Verify evaluate_degraded_slide_ocr scores against slide_04 authored text and key fields."""
     from scripts.benchmark import evaluate_degraded_slide_ocr
+
     img_path = tmp_path / "slide_degraded_l1.png"
     img_path.write_bytes(b"\x89PNG\r\n\x1a\n")
 
@@ -493,6 +509,7 @@ def test_degraded_slide_ocr_uses_slide4_reference(tmp_path: Path) -> None:
         0.0,
         rel_tol=1e-5,
     )
+
 
 def test_degraded_slide_ocr_scores_rejected_text_separately(tmp_path: Path) -> None:
     from scripts.benchmark import evaluate_degraded_slide_ocr

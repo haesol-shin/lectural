@@ -208,9 +208,7 @@ def test_runtime_lock_keeps_cv2_and_onnxruntime_constraints():
 
     assert package_versions["opencv-python"] == ["4.6.0.66"]
     for name in ("opencv-contrib-python", "opencv-python-headless"):
-        assert all(
-            deps._compare_versions(version, "4.6.0.66") <= 0 for version in package_versions.get(name, [])
-        )
+        assert all(deps._compare_versions(version, "4.6.0.66") <= 0 for version in package_versions.get(name, []))
     assert package_versions["psutil"]
     assert '{ name = "psutil", marker = "extra == \'run\'", specifier = ">=5.9" }' in lock
     assert all(deps._compare_versions(version, "1.24") < 0 for version in package_versions.get("onnxruntime", []))

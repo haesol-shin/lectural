@@ -80,7 +80,9 @@ def _sparse_canvas(seed: int, content_id: str, density: int) -> Image.Image:
 
 
 def _shift(image: Image.Image, dx: int, dy: int) -> Image.Image:
-    return image.transform(SIZE, Image.AFFINE, (1, 0, -dx, 0, 1, -dy), resample=Image.Resampling.BILINEAR, fillcolor="#f7f3e8")
+    return image.transform(
+        SIZE, Image.AFFINE, (1, 0, -dx, 0, 1, -dy), resample=Image.Resampling.BILINEAR, fillcolor="#f7f3e8"
+    )
 
 
 def _zoom(image: Image.Image, scale: float, dx: int = 0, dy: int = 0) -> Image.Image:
@@ -196,7 +198,13 @@ def _candidate(
         patch_offset = (-16, -8) if held_out else (0, 0)
         image = _zoom(base, **params)
         params = {**params, "semantic_patch_offset": list(patch_offset)}
-        return _fallback_content_change(image, "added", offset=patch_offset), False, fallback_variant, "zoom_in" if fallback_variant else None, params
+        return (
+            _fallback_content_change(image, "added", offset=patch_offset),
+            False,
+            fallback_variant,
+            "zoom_in" if fallback_variant else None,
+            params,
+        )
     if transform_class == "pan_zoom_reverse":
         params = {
             "scale": 0.82 if edge_fit_variant else 0.87,
@@ -217,7 +225,13 @@ def _candidate(
         patch_offset = (-16, -8) if held_out else (0, 0)
         image = _zoom_out(base, **params)
         params = {**params, "semantic_patch_offset": list(patch_offset)}
-        return _fallback_content_change(image, "other", offset=patch_offset), False, fallback_variant, "zoom_out" if fallback_variant else None, params
+        return (
+            _fallback_content_change(image, "other", offset=patch_offset),
+            False,
+            fallback_variant,
+            "zoom_out" if fallback_variant else None,
+            params,
+        )
     semantic_offset = (-24, -12) if held_out else (0, 0)
     if transform_class == "incremental_build":
         params = {"semantic_patch_offset": list(semantic_offset)}
@@ -285,26 +299,28 @@ def _sequence(split: str, transform_class: str, seed: int, ordinal: int, root: P
         "pan_zoom_reverse",
         "pan_zoom_shared_template",
     }
-    fallback_variant = transform_class in fallback_classes and (
-        split == "held_out" or seed % 10 in {0, 2}
-    )
+    fallback_variant = transform_class in fallback_classes and (split == "held_out" or seed % 10 in {0, 2})
     edge_fit_variant = (
         split == "development"
         and transform_class in {"pan_zoom", "pan_zoom_reverse"}
         and not fallback_variant
         and seed % 10 == 3
     )
-    sparse_density = 12 if edge_fit_variant else (
-        {
-            "static_duplicate": 8,
-            "static_shift": 45,
-            "pan_zoom": 18 if split == "held_out" else 16,
-            "pan_zoom_reverse": 22 if split == "held_out" else 20,
-            "pan_zoom_incremental": 8,
-            "pan_zoom_shared_template": 8,
-        }.get(transform_class)
-        if transform_class not in fallback_classes or fallback_variant
-        else None
+    sparse_density = (
+        12
+        if edge_fit_variant
+        else (
+            {
+                "static_duplicate": 8,
+                "static_shift": 45,
+                "pan_zoom": 18 if split == "held_out" else 16,
+                "pan_zoom_reverse": 22 if split == "held_out" else 20,
+                "pan_zoom_incremental": 8,
+                "pan_zoom_shared_template": 8,
+            }.get(transform_class)
+            if transform_class not in fallback_classes or fallback_variant
+            else None
+        )
     )
     base = _sparse_canvas(seed, content_id, sparse_density) if sparse_density else _canvas(seed, content_id)
     candidate, same, fallback, direction, transform_parameters = _candidate(
@@ -348,10 +364,7 @@ def _sequence(split: str, transform_class: str, seed: int, ordinal: int, root: P
 def build_real_sequence_manifest(root: Path = DEFAULT_OUT) -> dict[str, Any]:
     """Build independently seeded development and held-out content per class."""
     classes = sorted(REQUIRED_TRANSFORM_CLASSES)
-    development_replica_counts = {
-        name: 4 if name in {"pan_zoom", "pan_zoom_reverse"} else 2
-        for name in classes
-    }
+    development_replica_counts = {name: 4 if name in {"pan_zoom", "pan_zoom_reverse"} else 2 for name in classes}
     development = [
         _sequence("development", name, 1100 + 10 * index + replica, index, root)
         for index, name in enumerate(classes)
