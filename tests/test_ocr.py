@@ -1,9 +1,9 @@
 """Unit tests for OCR slide classification + re-split (AC-6). Pure, offline."""
 
 import os
-from pathlib import Path
 import sys
 import types
+from pathlib import Path
 
 import pytest
 

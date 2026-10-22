@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lectural.notes_contract import citation_problems, coverage_contract_problems, hook_contract_problems
+from lectural.notes_contract import citation_problems, coverage_contract_problems
 
 
 def _local_notes(concepts: str, answers: list[str]) -> str:

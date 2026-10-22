@@ -1,16 +1,16 @@
 """Checked HTTP transport and direct-media detection."""
 
-from dataclasses import dataclass
 import http.client
 import mimetypes
 import os
 import re
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
 
 from ..urlpolicy import is_http_url
-from .errors import RemoteSourceError, REDIRECT_REJECTED, UNAVAILABLE, status_code
+from .errors import REDIRECT_REJECTED, UNAVAILABLE, RemoteSourceError, status_code
 
 TIMEOUT = 60
 USER_AGENT = "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"

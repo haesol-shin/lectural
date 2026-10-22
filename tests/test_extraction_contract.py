@@ -5,12 +5,10 @@ from __future__ import annotations
 import builtins
 import hashlib
 import json
-from pathlib import Path
 import shutil
-
+from pathlib import Path
 
 from lectural import acquisition, cli, evidence, media, notes, speech, vad, visual
-
 
 SCHEMA_PATH = Path("docs/contracts/evidence.schema.json")
 FALLBACK_CODES = {

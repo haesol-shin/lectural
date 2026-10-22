@@ -21,8 +21,7 @@ from PIL import Image, ImageDraw
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-from scripts.calibrate_alignment import REQUIRED_TRANSFORM_CLASSES
-
+from scripts.calibrate_alignment import REQUIRED_TRANSFORM_CLASSES  # noqa: E402  # imported after repository-root path setup
 
 DEFAULT_OUT = REPO_ROOT / "tests" / "fixtures" / "visual_alignment" / "real_sequence_v1"
 GENERATOR_VERSION = "issue-22-real-sequence-v26"
@@ -370,7 +369,7 @@ def build_real_sequence_manifest(root: Path = DEFAULT_OUT) -> dict[str, Any]:
         for index, name in enumerate(classes)
         for replica in range(development_replica_counts[name])
     ]
-    held_out_replica_counts = {name: 1 for name in classes}
+    held_out_replica_counts = dict.fromkeys(classes, 1)
     held_out = [_sequence("held_out", name, 259100 + 10 * index, index, root) for index, name in enumerate(classes)]
     retired_holdouts = [
         {

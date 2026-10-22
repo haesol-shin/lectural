@@ -7,12 +7,13 @@ processing code; it is the boundary shared by acquisition and orchestration.
 
 from __future__ import annotations
 
+import os
+import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import os
-import re
-from .urlpolicy import has_url_scheme, is_youtube_url, is_url_like
+
+from .urlpolicy import has_url_scheme, is_url_like, is_youtube_url
 
 
 class SourceKind(str, Enum):

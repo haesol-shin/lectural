@@ -4,7 +4,6 @@ from types import SimpleNamespace
 
 from lectural import doctor
 
-
 VALID_HOOKS = {
     "hooks": {
         "Stop": [

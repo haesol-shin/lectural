@@ -7,12 +7,12 @@ project eligibility belong to consumers.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
 import json
 import math
 import os
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import datetime, timezone
 
 from . import __version__
 from .config import EXTRACTION_CONTRACT_VERSION, EXTRACTION_SCHEMA_VERSION

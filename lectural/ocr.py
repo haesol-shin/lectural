@@ -10,12 +10,14 @@ that grows line-by-line must NOT collapse into a single deduped frame.
 
 from __future__ import annotations
 
+import contextlib
+import csv
+import io
 import os
 import re
 import tempfile
-import csv
-import io
 import warnings
+
 from .config import INCREMENTAL_SLIDE_MIN_GROWTH, SLIDE_MIN_TEXT_CHARS
 from .visual import Frame
 
@@ -169,8 +171,8 @@ def ocr_binarize_luma(value: int, threshold: int) -> int:
 def _pil_bicubic_resample(image_module: object) -> int:
     resampling = getattr(image_module, "Resampling", None)
     if resampling is not None:
-        return getattr(resampling, "BICUBIC")
-    return getattr(image_module, "BICUBIC")
+        return resampling.BICUBIC
+    return image_module.BICUBIC
 
 
 def _preprocess_image_for_ocr(image_path: str) -> str:
@@ -194,17 +196,14 @@ def _preprocess_image_for_ocr(image_path: str) -> str:
             threshold = ocr_otsu_threshold(tuple(gray.histogram()[:256]))
             binarized = gray.point(lambda value: ocr_binarize_luma(value, threshold), mode="L")
 
-            handle = tempfile.NamedTemporaryFile(prefix="lectural_ocr_", suffix=".png", delete=False)
-            tmp_path = handle.name
-            handle.close()
+            with tempfile.NamedTemporaryFile(prefix="lectural_ocr_", suffix=".png", delete=False) as handle:
+                tmp_path = handle.name
             binarized.save(tmp_path)
             return tmp_path
     except Exception:
         if tmp_path:
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(tmp_path)
-            except OSError:
-                pass
         raise
 
 
@@ -339,10 +338,8 @@ def _ocr_paddle(image_path: str, lang: str, *, engine=None) -> tuple[str, float 
         for line in block or []:
             if line and len(line) >= 2 and line[1]:
                 lines.append(str(line[1][0]))
-                try:
+                with contextlib.suppress(IndexError, TypeError, ValueError):
                     scores.append(float(line[1][1]))
-                except (IndexError, TypeError, ValueError):
-                    pass
     return "\n".join(lines), (sum(scores) / len(scores) if scores else None)
 
 

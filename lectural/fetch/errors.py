@@ -1,9 +1,9 @@
 """Bounded URL error classification, independent of transport."""
 
-from datetime import date
 import re
+from datetime import date
 
-from ..deps import DependencyError
+from ..deps import DependencyError  # noqa: F401  # re-exported for callers importing from this module
 from ..evidence import ContractError, failure
 
 LOGIN_REQUIRED = "SOURCE_LOGIN_REQUIRED"

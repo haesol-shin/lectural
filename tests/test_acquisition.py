@@ -8,8 +8,8 @@ import warnings
 import pytest
 
 from lectural import acquisition, media, speech
-from lectural.source import classify_source
 from lectural.acquisition import Segment, captions_are_usable, fill_segment_ends, parse_json3, parse_vtt
+from lectural.source import classify_source
 
 
 def test_parse_vtt_basic():

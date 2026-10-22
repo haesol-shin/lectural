@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import math
-from pathlib import Path
 import sys
-import pytest
+from pathlib import Path
 
 # Safeguard: allow importing lectural_bench without re-installing editable package
 _REPO_ROOT = str(Path(__file__).resolve().parent.parent)
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
-from lectural_bench.metrics import (
+from lectural_bench.metrics import (  # noqa: E402  # imported after repository-root path setup
     frame_recall_and_duplicate_rate,
     levenshtein_distance,
     merge_spans,
@@ -24,7 +23,6 @@ from lectural_bench.metrics import (
     voiced_recall_and_gap,
     wer_cer,
 )
-
 
 # --- 1. wer_cer Tests --------------------------------------------------------
 

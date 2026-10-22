@@ -25,14 +25,15 @@ import argparse
 import gc
 import json
 import os
-from pathlib import Path
 import platform
 import re
 import statistics
 import sys
 import tempfile
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 # Make `import lectural` and `from scripts.perf_smoke ...` work regardless of launch directory.

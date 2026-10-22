@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from lectural import acquisition, cli, coverage, doctor, media, vad, visual
+from lectural import acquisition, cli, doctor, media, vad, visual
 from lectural.source import SourceKind
 
 
@@ -450,7 +450,7 @@ def test_run_default_processor_suffixes_existing_and_reserved_mixed_sources(monk
     ]
     assert len({result["output_dir"] for result in results}) == 2
     assert all(result["overall_pass"] for result in results)
-    for result, entry in zip(results, state["runs"]):
+    for result, entry in zip(results, state["runs"], strict=False):
         assert entry["status"] == "complete"
         assert entry["output_dir"] == result["output_dir"]
         assert entry["coverage_json"] == result["coverage_json"]

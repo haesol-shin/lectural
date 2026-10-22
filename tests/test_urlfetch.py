@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stdout
 import hashlib
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from io import StringIO
 import json
 import os
-from pathlib import Path
 import shutil
 import signal
 import socket
@@ -17,11 +13,15 @@ import sys
 import tempfile
 import threading
 import time
+from contextlib import redirect_stdout
 from datetime import date
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from io import StringIO
+from pathlib import Path
 
 import pytest
 
-from lectural import acquisition, cli, evidence, media, fetch, vad, visual
+from lectural import acquisition, cli, evidence, fetch, media, vad, visual
 from lectural.fetch import assets, errors, scratch, ytdlp
 
 MEDIA_BYTES = b"\x00\x00\x00\x18ftypmp42synthetic-lecture-media" * 64
@@ -398,9 +398,11 @@ def test_remote_failures_are_bounded_and_leave_nothing(
 def test_direct_403_is_decided_after_one_page_resolution(server, temp_root, monkeypatch, ytdlp_result, code):
     factory, calls = _fake_youtube_dl(ytdlp_result)
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/forbidden?sig={QUERY_TOKEN}"):
-            pass
+    with (
+        pytest.raises(errors.RemoteSourceError) as excinfo,
+        fetch.prepare_source(f"{server}/{PATH_TOKEN}/forbidden?sig={QUERY_TOKEN}"),
+    ):
+        pass
     assert excinfo.value.code == code
     assert len(calls) == 1
     _assert_no_tokens(str(excinfo.value))
@@ -636,9 +638,8 @@ def test_page_url_downloads_the_single_progressive_format_ytdlp_selects(
 def test_page_url_resolution_failures_are_bounded(server, temp_root, monkeypatch, result, code):
     factory, _calls = _fake_youtube_dl(result)
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/page"):
-            pass
+    with pytest.raises(errors.RemoteSourceError) as excinfo, fetch.prepare_source(f"{server}/{PATH_TOKEN}/page"):
+        pass
     assert excinfo.value.code == code
     assert excinfo.value.__cause__ is None
     _assert_no_tokens(str(excinfo.value))
@@ -658,7 +659,7 @@ def ftp_listener():
 def _connection_attempted(sock: socket.socket) -> bool:
     try:
         conn, _addr = sock.accept()
-    except (socket.timeout, TimeoutError):
+    except TimeoutError:
         return False
     conn.close()
     return True
@@ -759,9 +760,8 @@ def test_parser_errors_do_not_echo_url_tokens(capsys, argv):
 @pytest.mark.url_ytdlp
 def test_real_ytdlp_never_follows_a_redirect_to_ftp(server, temp_root, probe_by_suffix, ftp_listener, capsys, route):
     pytest.importorskip("yt_dlp")
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/{route}"):
-            pass
+    with pytest.raises(errors.RemoteSourceError) as excinfo, fetch.prepare_source(f"{server}/{PATH_TOKEN}/{route}"):
+        pass
     assert excinfo.value.code == "SOURCE_REDIRECT_REJECTED"
     assert not _connection_attempted(ftp_listener)
     assert list(temp_root.iterdir()) == []
@@ -896,9 +896,11 @@ def test_real_ffmpeg_merges_split_streams_locally(server, temp_root, monkeypatch
 @pytest.mark.skipif(shutil.which("ffprobe") is None, reason="needs ffprobe")
 @pytest.mark.url_runtime
 def test_manifest_served_as_media_is_rejected_without_fetching_segments(server, temp_root, capsys):
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/manifest-as-mp4?sig={QUERY_TOKEN}"):
-            pass
+    with (
+        pytest.raises(errors.RemoteSourceError) as excinfo,
+        fetch.prepare_source(f"{server}/{PATH_TOKEN}/manifest-as-mp4?sig={QUERY_TOKEN}"),
+    ):
+        pass
     assert excinfo.value.code == "SOURCE_UNAVAILABLE"
     assert _Handler.hits.get(f"/{PATH_TOKEN}/seg0.ts") is None
     assert list(temp_root.iterdir()) == []
@@ -994,9 +996,11 @@ def test_real_ytdlp_selects_nothing_from_fragment_protocols_only():
 @pytest.mark.url_ytdlp
 def test_real_ytdlp_hls_page_fails_bounded_without_fetching_segments(server, temp_root, capfd):
     pytest.importorskip("yt_dlp")
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/live.m3u8?sig={QUERY_TOKEN}"):
-            pass
+    with (
+        pytest.raises(errors.RemoteSourceError) as excinfo,
+        fetch.prepare_source(f"{server}/{PATH_TOKEN}/live.m3u8?sig={QUERY_TOKEN}"),
+    ):
+        pass
     assert excinfo.value.code == "SOURCE_UNAVAILABLE"
     assert _Handler.hits.get(f"/{PATH_TOKEN}/seg0.ts") is None
     assert list(temp_root.iterdir()) == []
@@ -1012,9 +1016,11 @@ def test_real_ytdlp_hls_page_fails_bounded_without_fetching_segments(server, tem
 def test_real_ytdlp_classifies_http_auth_failures(server, temp_root, monkeypatch, capfd, route, code):
     pytest.importorskip("yt_dlp")
     monkeypatch.setattr(errors, "ytdlp_outdated", lambda: False)
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/{route}?sig={QUERY_TOKEN}"):
-            pass
+    with (
+        pytest.raises(errors.RemoteSourceError) as excinfo,
+        fetch.prepare_source(f"{server}/{PATH_TOKEN}/{route}?sig={QUERY_TOKEN}"),
+    ):
+        pass
     assert excinfo.value.code == code
     assert list(temp_root.iterdir()) == []
     captured = capfd.readouterr()
@@ -1027,9 +1033,8 @@ def test_keyboard_interrupt_during_fetch_removes_media(temp_root, monkeypatch):
         raise KeyboardInterrupt
 
     monkeypatch.setattr(fetch, "fetch_url", interrupted_fetch)
-    with pytest.raises(KeyboardInterrupt):
-        with fetch.prepare_source(f"https://media.example.invalid/{PATH_TOKEN}"):
-            pass
+    with pytest.raises(KeyboardInterrupt), fetch.prepare_source(f"https://media.example.invalid/{PATH_TOKEN}"):
+        pass
     assert list(temp_root.iterdir()) == []
 
 
@@ -1143,11 +1148,13 @@ def test_real_ytdlp_without_generic_refuses_delegation_to_generic(server, temp_r
     # A site extractor's fallback is url_result(url, "Generic"), i.e. extract_info(ie_key="Generic").
     youtube_dl = ytdlp.http_only_ytdlp([])
     page = f"{server}/accounts/login/"
-    with youtube_dl(
-        {"quiet": True, "logger": ytdlp.SilentLogger(), "allowed_extractors": ["default", "-generic"]}
-    ) as ydl:
-        with pytest.raises(Exception, match="No suitable extractor"):
-            ydl.extract_info(page, download=False, ie_key="Generic")
+    with (
+        youtube_dl(
+            {"quiet": True, "logger": ytdlp.SilentLogger(), "allowed_extractors": ["default", "-generic"]}
+        ) as ydl,
+        pytest.raises(Exception, match="No suitable extractor"),
+    ):
+        ydl.extract_info(page, download=False, ie_key="Generic")
     with youtube_dl({"quiet": True, "logger": ytdlp.SilentLogger()}) as ydl:
         assert ydl.extract_info(page, download=False, ie_key="Generic")
     assert _Handler.hits.get(f"/{PATH_TOKEN}/intro.mp4") is None
@@ -1157,9 +1164,8 @@ def test_real_ytdlp_without_generic_refuses_delegation_to_generic(server, temp_r
 def test_login_wall_redirect_stays_login_required_when_resolution_fails(server, temp_root, monkeypatch, ytdlp_error):
     factory, _calls = _fake_youtube_dl(RuntimeError(ytdlp_error))
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/to-login"):
-            pass
+    with pytest.raises(errors.RemoteSourceError) as excinfo, fetch.prepare_source(f"{server}/{PATH_TOKEN}/to-login"):
+        pass
     assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
 
 
@@ -1167,9 +1173,11 @@ def test_login_wall_redirect_stays_login_required_when_resolution_fails(server, 
 @pytest.mark.url_ytdlp
 def test_real_ytdlp_never_fetches_video_embedded_in_a_login_wall(server, temp_root, probe_by_suffix, capfd):
     pytest.importorskip("yt_dlp")
-    with pytest.raises(errors.RemoteSourceError) as excinfo:
-        with fetch.prepare_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}"):
-            pass
+    with (
+        pytest.raises(errors.RemoteSourceError) as excinfo,
+        fetch.prepare_source(f"{server}/{PATH_TOKEN}/to-login?sig={QUERY_TOKEN}"),
+    ):
+        pass
     assert excinfo.value.code == "SOURCE_LOGIN_REQUIRED"
     assert _Handler.hits.get(f"/{PATH_TOKEN}/intro.mp4") is None
     assert list(temp_root.iterdir()) == []
@@ -1415,9 +1423,8 @@ def test_scratch_restores_previous_signal_handler_on_success_and_interrupt(temp_
         assert Path(path).stat().st_mode & 0o777 == 0o700
         assert signal.getsignal(signal.SIGTERM) is not before
     assert signal.getsignal(signal.SIGTERM) is before
-    with pytest.raises(KeyboardInterrupt):
-        with scratch.scratch_space():
-            raise KeyboardInterrupt
+    with pytest.raises(KeyboardInterrupt), scratch.scratch_space():
+        raise KeyboardInterrupt
     assert signal.getsignal(signal.SIGTERM) is before
     assert list(temp_root.iterdir()) == []
 

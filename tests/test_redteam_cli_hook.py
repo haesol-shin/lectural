@@ -10,9 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from lectural import cli, runstate
+from lectural import cli
 from lectural.notes_contract import hook_contract_problems
-
 
 _HOOK_PATH = Path(__file__).resolve().parents[1] / "scripts" / "completeness_hook.py"
 

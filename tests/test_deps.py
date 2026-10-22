@@ -6,7 +6,6 @@ from types import SimpleNamespace
 
 from lectural import deps
 
-
 _BINARY_NAMES = ("ffmpeg", "yt-dlp", "tesseract")
 _OS_LABELS = ("win:", "linux:", "macos:")
 

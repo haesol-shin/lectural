@@ -18,21 +18,20 @@ from __future__ import annotations
 
 import json
 import math
-import os
-from pathlib import Path
 import sys
-from unittest.mock import MagicMock, patch
-import warnings
 import wave
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Ensure repository root is on sys.path for scripts import
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-import pytest
-from lectural.acquisition import SpeechTrack
-from scripts.benchmark import (
+import pytest  # noqa: E402  # imported after repository-root path setup
+
+from lectural.acquisition import SpeechTrack  # noqa: E402  # imported after repository-root path setup
+from scripts.benchmark import (  # noqa: E402  # imported after repository-root path setup
     acquire_speech_with_caption_injection,
     build_parser,
     compute_fixture_duration_sec,
@@ -40,8 +39,8 @@ from scripts.benchmark import (
     measure_directory_bytes,
     measure_fixture_run,
     run_fixture_repetitions,
-    summarize_alignment_observability,
     slide_cer_reference,
+    summarize_alignment_observability,
 )
 
 _MINIMAL_USABLE_VTT = """WEBVTT
@@ -623,13 +622,15 @@ def test_measure_fixture_run_vad_runtime_error_is_not_swallowed(tmp_path: Path) 
         "speech_spans": [[0.5, 4.5]],
         "vtt": _MINIMAL_USABLE_VTT,
     }
-    with patch(
-        "lectural.vad.detect_speech_spans",
-        side_effect=RuntimeError("ffmpeg silencedetect failed (code 1)"),
+    with (
+        patch(
+            "lectural.vad.detect_speech_spans",
+            side_effect=RuntimeError("ffmpeg silencedetect failed (code 1)"),
+        ),
+        pytest.raises(RuntimeError, match="silencedetect failed"),
     ):
-        with pytest.raises(RuntimeError, match="silencedetect failed"):
-            measure_fixture_run(
-                fixture_data=gt,
-                out_dir=tmp_path / "vad_runtime_out",
-                audio_path=audio_file,
-            )
+        measure_fixture_run(
+            fixture_data=gt,
+            out_dir=tmp_path / "vad_runtime_out",
+            audio_path=audio_file,
+        )

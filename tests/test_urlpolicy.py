@@ -1,7 +1,9 @@
 """Pure URL policy and prepared source identity contracts."""
 
 from pathlib import Path
+
 import pytest
+
 from lectural import fetch
 from lectural.fetch.assets import FetchedMedia
 from lectural.source import CitationKind, SourceKind, classify_source
@@ -55,18 +57,16 @@ def test_non_http_urls_are_rejected_without_echoing_the_url(value: str, monkeypa
         classify_source(value)
     assert "secret-path-token" not in str(excinfo.value)
     assert "c2VjcmV0" not in str(excinfo.value)
-    with pytest.raises((ValueError, FileNotFoundError)) as prepared_error:
-        with fetch.prepare_source(value):
-            pass
+    with pytest.raises((ValueError, FileNotFoundError)) as prepared_error, fetch.prepare_source(value):
+        pass
     assert "secret-path-token" not in str(prepared_error.value)
     assert "c2VjcmV0" not in str(prepared_error.value)
 
 
 def test_youtube_hosts_never_become_remote_sources(monkeypatch):
     monkeypatch.setattr(fetch, "fetch_url", lambda *args: pytest.fail("unexpected fetch"))
-    with pytest.raises(ValueError):
-        with fetch.prepare_source("https://www.youtube.com/playlist?list=secret-list-token"):
-            pass
+    with pytest.raises(ValueError), fetch.prepare_source("https://www.youtube.com/playlist?list=secret-list-token"):
+        pass
     with fetch.prepare_source("https://youtu.be/dQw4w9WgXcQ") as ready:
         assert ready.source.kind is SourceKind.YOUTUBE
         assert ready.work_dir is None
@@ -151,7 +151,6 @@ def test_malformed_url_parser_values_are_masked(value, capsys):
 )
 def test_youtube_shaped_ids_cannot_bypass_url_syntax(value, monkeypatch):
     monkeypatch.setattr(fetch, "fetch_url", lambda *args: pytest.fail("unexpected fetch"))
-    with pytest.raises(ValueError) as excinfo:
-        with fetch.prepare_source(value):
-            pass
+    with pytest.raises(ValueError) as excinfo, fetch.prepare_source(value):
+        pass
     assert "private" not in str(excinfo.value) and "secret" not in str(excinfo.value)

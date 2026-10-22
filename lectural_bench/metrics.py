@@ -27,7 +27,7 @@ import bisect
 import math
 import re
 import statistics
-from typing import Sequence
+from collections.abc import Sequence
 
 Span = tuple[float, float]
 
@@ -464,7 +464,7 @@ def ocr_quality(
     fuzzy_matches = 0
     norm_ocr = re.sub(r"\s+", " ", (ocr_text or "").lower()).strip()
 
-    for field_name, field_val in ground_truth_key_fields.items():
+    for _field_name, field_val in ground_truth_key_fields.items():
         val_str = str(field_val).strip()
         if not val_str:
             exact_matches += 1

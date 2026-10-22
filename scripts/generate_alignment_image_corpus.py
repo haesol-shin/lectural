@@ -11,8 +11,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 import cv2
@@ -22,9 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from lectural.visual import _image_phash_from_array
-from scripts.calibrate_alignment import REQUIRED_TRANSFORM_CLASSES
-
+from lectural.visual import _image_phash_from_array  # noqa: E402  # imported after repository-root path setup
+from scripts.calibrate_alignment import REQUIRED_TRANSFORM_CLASSES  # noqa: E402  # imported after repository-root path setup
 
 CORPUS_ROOT = ROOT / "tests" / "fixtures" / "visual_alignment" / "corpus_v1"
 MANIFEST_PATH = ROOT / "tests" / "fixtures" / "visual_alignment" / "sequence_manifest_v1.json"

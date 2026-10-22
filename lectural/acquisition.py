@@ -9,13 +9,14 @@ functions over text and are unit-tested offline.
 """
 
 from __future__ import annotations
+
 import json
 import re
-import warnings
 import subprocess
 import urllib.request
-from urllib.parse import parse_qs, urlsplit
+import warnings
 from dataclasses import dataclass, field
+from urllib.parse import parse_qs, urlsplit
 
 from .config import DEFAULT_STT_MODEL
 from .deps import require_binary

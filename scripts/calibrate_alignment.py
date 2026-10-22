@@ -9,17 +9,16 @@ It never changes production configuration and never recalibrates at runtime.
 from __future__ import annotations
 
 import argparse
-import itertools
-from datetime import date
 import hashlib
 import json
 import math
-from pathlib import Path
+import os
 import re
 import sys
 import tempfile
 import time
-import os
+from datetime import date
+from pathlib import Path
 from typing import Any
 
 # Keep direct ``python scripts/calibrate_alignment.py`` invocation equivalent
@@ -28,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from lectural.alignment import (
+from lectural.alignment import (  # noqa: E402, F401  # path setup; CANONICAL_GATE_ORDER re-exported for tests
     CANONICAL_GATE_ORDER,
     OPENCV_CONSTRAINT,
     PROTOCOL_VERSION,
@@ -38,8 +37,7 @@ from lectural.alignment import (
     opencv_provenance,
     run_alignment_batch,
 )
-from lectural.visual import advance_dedupe_state, initial_dedupe_state
-
+from lectural.visual import advance_dedupe_state, initial_dedupe_state  # noqa: E402  # imported after repository-root path setup
 
 DEFAULT_MANIFEST = REPO_ROOT / "tests" / "fixtures" / "visual_alignment" / "manifest.json"
 THRESHOLD_FIELDS = (
@@ -176,7 +174,7 @@ def _positive_metric_failures(rows: list[dict[str, Any]], measurements: list[dic
     """Report unavailable/non-finite prerequisites before threshold search."""
     failures = []
     required_fields = tuple(dict.fromkeys(raw_field for raw_field, _name, _direction in _THRESHOLD_ORDER))
-    for row, measurement in zip(rows, measurements):
+    for row, measurement in zip(rows, measurements, strict=False):
         if row.get("expected_label") != "same":
             continue
         missing = []
@@ -206,7 +204,7 @@ def _positive_metric_failures(rows: list[dict[str, Any]], measurements: list[dic
 
 
 def _find_thresholds(rows: list[dict[str, Any]], measurements: list[dict[str, Any]]) -> dict[str, float] | None:
-    development = list(zip(rows, measurements))
+    development = list(zip(rows, measurements, strict=False))
     positives = [measurement for row, measurement in development if row["expected_label"] == "same"]
     negatives = [measurement for row, measurement in development if row["expected_label"] == "different"]
     if not positives or not negatives:
@@ -277,7 +275,7 @@ def _confusion(
     rows: list[dict[str, Any]], measurements: list[dict[str, Any]], thresholds: dict[str, float] | None
 ) -> dict[str, int]:
     result = {"true_positive": 0, "false_positive": 0, "true_negative": 0, "false_negative": 0}
-    for row, measurement in zip(rows, measurements):
+    for row, measurement in zip(rows, measurements, strict=False):
         predicted_same = bool(thresholds and _passes(measurement, thresholds))
         expected_same = row["expected_label"] == "same"
         if expected_same and predicted_same:
@@ -432,9 +430,9 @@ def replay_sequence(sequence: dict[str, Any], thresholds: dict[str, Any] | None)
     state = initial_dedupe_state(hashes[0])
     measurements = dict(sequence.get("event_measurements", {}))
     events: list[dict[str, Any]] = []
-    for index, frame in enumerate(frames[1:], start=1):
+    for index, _frame in enumerate(frames[1:], start=1):
 
-        def decide(kept_index: int, candidate_index: int) -> str:
+        def decide(kept_index: int, candidate_index: int, index: int = index) -> str:
             event_id = _sequence_event_id(sequence_id, index, candidate_index)
             measurement = measurements.get(event_id)
             if not isinstance(measurement, dict):
@@ -623,7 +621,7 @@ def find_sequence_thresholds(
     alignment_measurements = [event["measurement"].get("alignment", {}) for event in alignment_events]
     alignment_positives = [
         measurement
-        for event, measurement in zip(alignment_events, alignment_measurements)
+        for event, measurement in zip(alignment_events, alignment_measurements, strict=False)
         if event["expected_label"] == "same"
     ]
     if not alignment_positives:
@@ -672,7 +670,9 @@ def find_sequence_thresholds(
         resolved = [_event_metadata_at_delta(event, pixel_delta) for event in populations["content_fit"]]
         if any(value is None for value in resolved):
             continue
-        resolved_events = list(zip(events, (_event_metadata_at_delta(event, pixel_delta) for event in events)))
+        resolved_events = list(
+            zip(events, (_event_metadata_at_delta(event, pixel_delta) for event in events), strict=False)
+        )
         if any(metadata is None for _event, metadata in resolved_events):
             continue
         resolved_events = [(event, metadata) for event, metadata in resolved_events if metadata is not None]
@@ -700,7 +700,7 @@ def find_sequence_thresholds(
             continue
         content_positives = [
             content
-            for event, metadata in zip(populations["content_fit"], resolved)
+            for event, metadata in zip(populations["content_fit"], resolved, strict=False)
             if event["expected_label"] == "same"
             for content in [_content_metric_for_event(event, metadata)]
             if content is not None
@@ -722,7 +722,6 @@ def find_sequence_thresholds(
         if not full_domains["changed_fraction_max"] or not full_domains["largest_changed_component_fraction_max"]:
             continue
         order = tuple(name for _raw, name, _direction in _THRESHOLD_ORDER)
-        directions = {name: direction for _raw, name, direction in _THRESHOLD_ORDER}
         diagnostics["domain_sizes"][str(pixel_delta)] = {
             name: len(full_domains[name]) for name in tuple(name for _raw, name, _direction in THRESHOLD_ORDER_14)
         }
@@ -753,17 +752,28 @@ def find_sequence_thresholds(
                         if identity_passes != (expected_path == "identity_content_change"):
                             viable = False
                             break
-                    if event["expected_label"] == "same" and expected_path == "alignment_content_change":
-                        if not content_passes(metadata.get("aligned_content_change"), changed_max, largest_max):
-                            viable = False
-                            break
+                    if (
+                        event["expected_label"] == "same"
+                        and expected_path == "alignment_content_change"
+                        and not content_passes(metadata.get("aligned_content_change"), changed_max, largest_max)
+                    ):
+                        viable = False
+                        break
                 if viable:
                     content_pairs.append((changed_max, largest_max))
         diagnostics["domain_sizes"][str(pixel_delta)]["viable_content_pairs"] = len(content_pairs)
         if not content_pairs:
             continue
 
-        def complete(prefix: dict[str, Any], *, strictest: bool) -> dict[str, Any]:
+        def complete(
+            prefix: dict[str, Any],
+            *,
+            strictest: bool,
+            order: tuple[str, ...] = order,
+            full_domains: dict[str, Any] = full_domains,
+            content_pairs: list[tuple[float, float]] = content_pairs,
+            pixel_delta: int = pixel_delta,
+        ) -> dict[str, Any]:
             result = dict(prefix)
             for name in order:
                 if name in result:
@@ -780,7 +790,17 @@ def find_sequence_thresholds(
         memo: set[tuple[int, tuple[tuple[str, Any], ...], tuple[str, ...]]] = set()
         aborted: str | None = None
 
-        def visit(position: int, prefix: dict[str, Any]) -> dict[str, Any] | None:
+        def visit(
+            position: int,
+            prefix: dict[str, Any],
+            *,
+            resolved_events: list[tuple[dict[str, Any], dict[str, Any]]] = resolved_events,
+            content_pairs: list[tuple[float, float]] = content_pairs,
+            memo: set[tuple[int, tuple[tuple[str, Any], ...], tuple[str, ...]]] = memo,
+            order: tuple[str, ...] = order,
+            full_domains: dict[str, Any] = full_domains,
+            pixel_delta: int = pixel_delta,
+        ) -> dict[str, Any] | None:
             nonlocal states, aborted
             if aborted:
                 return None
@@ -798,7 +818,7 @@ def find_sequence_thresholds(
                     "first_failed_gate": decision.get("first_failed_gate"),
                     "path": decision.get("path"),
                 }
-                for (event, _metadata), decision in zip(resolved_events, weakest_decisions)
+                for (event, _metadata), decision in zip(resolved_events, weakest_decisions, strict=False)
                 if event["expected_label"] == "same" and not _event_matches_decision(event, decision)
             ]
             if failed_positives:
@@ -846,7 +866,7 @@ def find_sequence_thresholds(
                     decisions = evaluate_events(resolved_events, vector)
                     if all(
                         _event_matches_decision(event, decision)
-                        for (event, _metadata), decision in zip(resolved_events, decisions)
+                        for (event, _metadata), decision in zip(resolved_events, decisions, strict=False)
                     ):
                         return vector
                 return None
@@ -938,9 +958,16 @@ def _sequence_event_tasks(
             continue
         hashes = _sequence_replay_hashes(frames)
         state = initial_dedupe_state(hashes[0])
-        for index, frame in enumerate(frames[1:], start=1):
+        for index, _frame in enumerate(frames[1:], start=1):
 
-            def collect(kept_index: int, candidate_index: int) -> str:
+            def collect(
+                kept_index: int,
+                candidate_index: int,
+                *,
+                sequence: dict[str, Any] = sequence,
+                index: int = index,
+                frames: list[dict[str, Any]] = frames,
+            ) -> str:
                 event_id = _sequence_event_id(str(sequence["sequence_id"]), index, candidate_index)
                 tasks.append((_worker_frame_path(frames[kept_index]), _worker_frame_path(frames[candidate_index])))
                 links.append((sequence, event_id))
@@ -1044,7 +1071,7 @@ def _with_worker_measurements(
         }
         if len(baseline) != len(links):
             return copied, {"worker_measurement_error": "worker task/result count mismatch", **raw}
-        for (sequence, event_id), result, task in zip(links, baseline, tasks):
+        for (sequence, event_id), result, task in zip(links, baseline, tasks, strict=False):
             sequence["event_measurements"][event_id] = {}
             cache = sequence["event_measurements"][event_id]
             # Every field below is a worker result derived from decoded source
@@ -1600,7 +1627,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
     )
     holdout_pass = bool(thresholds) and all(
         _passes(measurement, thresholds) == (row["expected_label"] == "same")
-        for row, measurement in zip(rows_by_split["held_out"], split_measurements["held_out"])
+        for row, measurement in zip(rows_by_split["held_out"], split_measurements["held_out"], strict=False)
     )
     # A semantic corpus label is independently authored ``same``/``different``
     # truth.  The first failed implementation gate is threshold-dependent
@@ -1609,7 +1636,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
     # not make a semantic row's guessed failure family a freeze predicate.
     first_failure_distribution: dict[str, int] = {}
     for split in ("development", "held_out"):
-        for row, measurement in zip(rows_by_split[split], split_measurements[split]):
+        for _row, measurement in zip(rows_by_split[split], split_measurements[split], strict=False):
             actual = _first_failed_inequality(measurement, thresholds)
             key = str(actual or "none")
             first_failure_distribution[key] = first_failure_distribution.get(key, 0) + 1
@@ -1651,7 +1678,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
         blockers.append("no frozen threshold artifact; production config and visual integration remain disabled")
     calibrated_measurements = []
     for split in ("development", "held_out"):
-        for row, measurement in zip(rows_by_split[split], split_measurements[split]):
+        for row, measurement in zip(rows_by_split[split], split_measurements[split], strict=False):
             report_measurement = dict(measurement)
             # Keep a committed report portable; the manifest row already names
             # the exact pair while the worker needs absolute paths to decode.

@@ -9,12 +9,12 @@ tool wrappers here.  Local media is never copied or modified; only generated
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import math
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 
 from .deps import assert_acquisition_ready, require_binary
 from .source import InputSource, extract_video_id

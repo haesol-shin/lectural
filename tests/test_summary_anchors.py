@@ -2,7 +2,6 @@
 
 from lectural.synthesis import (
     build_section_hints,
-    build_synthesis_input,
     format_timestamp,
     render_transcript_md,
 )

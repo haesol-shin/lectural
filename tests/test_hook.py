@@ -8,11 +8,11 @@ import os
 from lectural import runstate
 from lectural.synthesis import (
     NOTES_CONCEPTS_ANCHOR,
+    NOTES_COVERAGE_ANCHOR,
     NOTES_DETAIL_ANCHOR,
     NOTES_FLOW_ANCHOR,
-    NOTES_COVERAGE_ANCHOR,
-    NOTES_QUESTIONS_ANCHOR,
     NOTES_INTRO_MARKER,
+    NOTES_QUESTIONS_ANCHOR,
     NOTES_TAKEAWAY_ANCHOR,
     NOTES_TOC_ANCHOR,
     NOTES_UNENRICHED_MARKER,
@@ -698,7 +698,8 @@ def test_hook_fails_closed_when_synthesis_policy_missing(tmp_path, monkeypatch):
 
 
 def test_hook_source_has_no_literal_anchor_fallback():
-    source = open(_HOOK_PATH, encoding="utf-8").read()
+    with open(_HOOK_PATH, encoding="utf-8") as fh:
+        source = fh.read()
     assert "from lectural.notes_contract import" in source
     assert "fall back to literals" not in source
     assert 'NOTES_TAKEAWAY_ANCHOR = "## 한눈에 요약"' not in source

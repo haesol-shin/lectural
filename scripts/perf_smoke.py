@@ -27,6 +27,7 @@ timing/CPU/RAM numbers.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import platform
@@ -57,10 +58,8 @@ class StageSampler:
 
     def _tree(self) -> list[object]:
         procs = [self._proc]
-        try:
+        with contextlib.suppress(Exception):
             procs += self._proc.children(recursive=True)
-        except Exception:  # noqa: BLE001
-            pass
         return procs
 
     def _sample_once(self) -> tuple[float, float]:
@@ -205,6 +204,7 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     from lectural.media import probe_source, resolve_video
     from lectural.ocr import ocr_frames
     from lectural.runstate import start_session, update_run
+    from lectural.source import classify_source
     from lectural.synthesis import (
         build_synthesis_input,
         render_notes_md,
@@ -214,7 +214,6 @@ def run(url: str, out_root: str, sample_interval: float, model: str, force_stt: 
     )
     from lectural.vad import detect_speech_spans
     from lectural.visual import dedupe_frames, extract_candidate_frames
-    from lectural.source import classify_source
 
     os.makedirs(out_root, exist_ok=True)
     work_hint = os.path.join(out_root, "_work")

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import itertools
 import json
-from pathlib import Path
 import random
 import shutil
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import calibrate_alignment as calibration
+from scripts import calibrate_alignment as calibration  # noqa: E402  # imported after repository-root path setup
 
 
 def _require_calibrated_opencv():
@@ -306,8 +306,14 @@ def test_legacy_pair_manifest_cannot_freeze_even_with_complete_pair_metrics(monk
 
 
 def _exhaustive_threshold_oracle(rows, measurements):
-    positives = [measurement for row, measurement in zip(rows, measurements) if row["expected_label"] == "same"]
-    negatives = [measurement for row, measurement in zip(rows, measurements) if row["expected_label"] == "different"]
+    positives = [
+        measurement for row, measurement in zip(rows, measurements, strict=False) if row["expected_label"] == "same"
+    ]
+    negatives = [
+        measurement
+        for row, measurement in zip(rows, measurements, strict=False)
+        if row["expected_label"] == "different"
+    ]
     if not positives or not negatives:
         return None
     domains = {}
@@ -334,7 +340,7 @@ def _exhaustive_threshold_oracle(rows, measurements):
         values = domains[threshold_name]
         ordered_domains.append(sorted(values, reverse=direction in {"min", "scale_min"}))
     for values in itertools.product(*ordered_domains):
-        candidate = dict(zip((name for _field, name, _direction in calibration._THRESHOLD_ORDER), values))
+        candidate = dict(zip((name for _field, name, _direction in calibration._THRESHOLD_ORDER), values, strict=False))
         if candidate["scale_min"] > candidate["scale_max"]:
             continue
         if all(calibration._passes(measurement, candidate) for measurement in positives) and all(
@@ -347,7 +353,7 @@ def _exhaustive_threshold_oracle(rows, measurements):
 def test_monotone_threshold_search_matches_exhaustive_oracle_with_scale_endpoints():
     for seed in range(5):
         rng = random.Random(seed)
-        positive = calibration_measurement = _measurement("same")
+        positive = _measurement("same")
         for field in ("ratio_matches", "inlier_count", "inlier_ratio", "hull_support", "eigenvalue_ratio"):
             positive[field] = round(
                 rng.uniform(0.55, 0.95) * (100 if field in {"ratio_matches", "inlier_count"} else 1), 3
@@ -457,7 +463,10 @@ def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
     _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
-    digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
+    def digest(path):
+        return __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
     reference_path = str(reference.relative_to(REPO_ROOT)).replace("\\", "/")
     candidate_path = str(candidate.relative_to(REPO_ROOT)).replace("\\", "/")
     sequence = {
@@ -698,8 +707,13 @@ def test_full_decoded_pipeline_has_exact_worker_pid_topology():
     _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
-    digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
-    path = lambda value: str(value.relative_to(REPO_ROOT)).replace("\\", "/")
+
+    def digest(path):
+        return __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
+    def path(value):
+        return str(value.relative_to(REPO_ROOT)).replace("\\", "/")
+
     sequence = {
         "sequence_id": "pid-topology",
         "transform_class": "true_transition",
@@ -871,13 +885,17 @@ def _sequence_exhaustive_oracle(events):
             domains[name] = [1.25]
     for delta in calibration.CONTENT_PIXEL_DELTAS:
         resolved = [calibration._event_metadata_at_delta(event, delta) for event in events]
-        active = [calibration._content_metric_for_event(event, item) for event, item in zip(events, resolved)]
+        active = [
+            calibration._content_metric_for_event(event, item) for event, item in zip(events, resolved, strict=False)
+        ]
         changed = sorted({item["changed_fraction"] for item in active})
         largest = sorted({item["largest_changed_component_fraction"] for item in active})
         for values in itertools.product(
             *(domains[name] for _raw, name, _direction in calibration._THRESHOLD_ORDER), changed, largest
         ):
-            vector = dict(zip((name for _raw, name, _direction in calibration._THRESHOLD_ORDER), values[:11]))
+            vector = dict(
+                zip((name for _raw, name, _direction in calibration._THRESHOLD_ORDER), values[:11], strict=False)
+            )
             vector.update(
                 pixel_delta=delta, changed_fraction_max=values[-2], largest_changed_component_fraction_max=values[-1]
             )
@@ -885,7 +903,7 @@ def _sequence_exhaustive_oracle(events):
                 calibration._event_matches_decision(
                     event, calibration.evaluate_visual_candidate(item, vector, complete=True)
                 )
-                for event, item in zip(events, resolved)
+                for event, item in zip(events, resolved, strict=False)
             ):
                 return vector
     return None
