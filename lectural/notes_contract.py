@@ -32,12 +32,8 @@ SECTION_ANCHORS_IN_ORDER = [
 
 _TRANSCRIPT_ANCHOR_RE = re.compile(r'<a\s+id="(' + ANCHOR_ID_PATTERN + r')"></a>')
 _YOUTUBE_TIME_RE = re.compile(r"https://youtu\.be/([0-9A-Za-z_-]{11})\?t=(\d+)")
-_TRANSCRIPT_LINK_RE = re.compile(
-    r"\[전사 [^\]]+\]\(transcript\.md#(" + ANCHOR_ID_PATTERN + r")\)"
-)
-_SLIDE_IMAGE_LINK_RE = re.compile(
-    r"(?:!\[[^\]]*\]\([^)]*frames/[^)]*\))|(?:<img[^>]*frames/[^>]*>)", re.IGNORECASE
-)
+_TRANSCRIPT_LINK_RE = re.compile(r"\[전사 [^\]]+\]\(transcript\.md#(" + ANCHOR_ID_PATTERN + r")\)")
+_SLIDE_IMAGE_LINK_RE = re.compile(r"(?:!\[[^\]]*\]\([^)]*frames/[^)]*\))|(?:<img[^>]*frames/[^>]*>)", re.IGNORECASE)
 
 
 def transcript_anchor_ids(transcript_text: str) -> set[str]:
@@ -61,7 +57,7 @@ def _section_block(notes_text: str, anchor: str) -> str:
     except ValueError:
         return ""
     end = len(notes_text)
-    for next_anchor in SECTION_ANCHORS_IN_ORDER[anchor_index + 1:]:
+    for next_anchor in SECTION_ANCHORS_IN_ORDER[anchor_index + 1 :]:
         next_pos = notes_text.find(next_anchor, start + len(anchor))
         if next_pos >= 0:
             end = next_pos
@@ -144,13 +140,13 @@ def citation_problems(
         for line in concept_lines:
             problems += _transcript_line_problems(line, cue_ids, NOTES_CONCEPTS_ANCHOR)
         questions_block = _section_block(notes_text, NOTES_QUESTIONS_ANCHOR)
-        cited_question_lines = [
-            line for line in questions_block.splitlines() if _TRANSCRIPT_LINK_RE.search(line)
-        ]
+        cited_question_lines = [line for line in questions_block.splitlines() if _TRANSCRIPT_LINK_RE.search(line)]
         for line in cited_question_lines:
             problems += _transcript_line_problems(line, cue_ids, NOTES_QUESTIONS_ANCHOR)
         if len(cited_question_lines) < 3:
-            problems.append(f"복습 질문에 transcript.md 전사 앵커가 3개 이상 필요합니다(현재 {len(cited_question_lines)}개)")
+            problems.append(
+                f"복습 질문에 transcript.md 전사 앵커가 3개 이상 필요합니다(현재 {len(cited_question_lines)}개)"
+            )
         return problems
 
     for line in concept_lines:
@@ -194,7 +190,7 @@ def slide_detail_problems(notes_text: str, *, has_frames: bool) -> list[str]:
     for pos, heading_index in enumerate(heading_indexes):
         heading = lines[heading_index]
         next_heading = heading_indexes[pos + 1] if pos + 1 < len(heading_indexes) else len(lines)
-        body = lines[heading_index + 1:next_heading]
+        body = lines[heading_index + 1 : next_heading]
         is_intro = NOTES_INTRO_MARKER in "\n".join([heading, *body])
         if not any(line.startswith("- ") for line in body):
             problems.append(f"정리 노트 슬라이드에 설명 글머리표가 없습니다: {heading}")

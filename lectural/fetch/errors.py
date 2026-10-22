@@ -10,9 +10,7 @@ LOGIN_REQUIRED = "SOURCE_LOGIN_REQUIRED"
 ACCESS_DENIED = "SOURCE_ACCESS_DENIED"
 UNAVAILABLE = "SOURCE_UNAVAILABLE"
 REDIRECT_REJECTED = "SOURCE_REDIRECT_REJECTED"
-YTDLP_HINT = (
-    'Install run extras: `uv pip install "lectural[run]"` (a yt-dlp Python package with request handlers).'
-)
+YTDLP_HINT = 'Install run extras: `uv pip install "lectural[run]"` (a yt-dlp Python package with request handlers).'
 YTDLP_UPDATE_HINT = (
     "The installed yt-dlp is more than 90 days old, and an outdated yt-dlp can make public media "
     'look private; update it (for example `uv pip install -U "yt-dlp"`) and retry.'
@@ -57,10 +55,22 @@ def classify_ytdlp_error(exc: BaseException) -> str:
         current = getattr(current, "cause", None) or nested or current.__cause__ or current.__context__
     # URL paths are not evidence of authentication requirements.
     text = re.sub(r"[A-Za-z][A-Za-z0-9+.-]*://\S*", " ", str(exc)).lower()
-    if any(word in text for word in (
-        "http error 401", "http error 407", "login", "log in", "logged in", "logged-in", "sign in",
-        "cookies", "authentication", "registered users", "members-only",
-    )):
+    if any(
+        word in text
+        for word in (
+            "http error 401",
+            "http error 407",
+            "login",
+            "log in",
+            "logged in",
+            "logged-in",
+            "sign in",
+            "cookies",
+            "authentication",
+            "registered users",
+            "members-only",
+        )
+    ):
         return LOGIN_REQUIRED
     if any(word in text for word in ("http error 403", "forbidden", "private", "access denied")):
         return ACCESS_DENIED

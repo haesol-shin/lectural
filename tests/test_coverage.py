@@ -7,11 +7,21 @@ from pathlib import Path
 
 import pytest
 
-from lectural.coverage import CoverageInputs, artifact_check, build_coverage, coverage_inputs_from_extraction, gap_check, scene_coverage, write_coverage
+from lectural.coverage import (
+    CoverageInputs,
+    artifact_check,
+    build_coverage,
+    coverage_inputs_from_extraction,
+    gap_check,
+    scene_coverage,
+    write_coverage,
+)
 from lectural.synthesis import build_synthesis_input, render_notes_md, render_transcript_md
 
 
-def _passing_inputs(tmp_path: Path, *, visual_required=True, ocr_required=True, notes_text=None, transcript_text=None) -> CoverageInputs:
+def _passing_inputs(
+    tmp_path: Path, *, visual_required=True, ocr_required=True, notes_text=None, transcript_text=None
+) -> CoverageInputs:
     return CoverageInputs(
         video_title="L",
         duration_sec=300.0,
@@ -37,7 +47,9 @@ def test_gap_check_pass_and_fail():
 
 
 def test_scene_coverage_timeline_pass_and_stall_fail():
-    good = scene_coverage([10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10, slide_frames_total=3, slide_frames_with_text=3)
+    good = scene_coverage(
+        [10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10, slide_frames_total=3, slide_frames_with_text=3
+    )
     assert good["timeline_pass"] is True and good["pass"] is True
     bad = scene_coverage([150], [(0, 200)], 200, bins=10, slide_frames_total=1, slide_frames_with_text=1)
     assert bad["timeline_pass"] is False and bad["uncovered_speech_bins"]
@@ -59,20 +71,37 @@ def test_visual_timeline_fails_closed_without_positive_finite_duration(duration)
 
 
 def test_default_visual_source_fails_when_slide_lacks_ocr_text():
-    result = scene_coverage([10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10, slide_frames_total=3, slide_frames_with_text=2)
+    result = scene_coverage(
+        [10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10, slide_frames_total=3, slide_frames_with_text=2
+    )
     assert result["visual_required"] is True and result["ocr_required"] is True
     assert result["slide_text_pass"] is False and result["pass"] is False
 
 
 def test_skip_ocr_passes_slide_predicate_but_preserves_real_counts_and_timeline():
-    result = scene_coverage([10 * i + 5 for i in range(10)], [(0, 100)], 100, bins=10,
-                            slide_frames_total=3, slide_frames_with_text=0,
-                            visual_required=True, ocr_required=False)
+    result = scene_coverage(
+        [10 * i + 5 for i in range(10)],
+        [(0, 100)],
+        100,
+        bins=10,
+        slide_frames_total=3,
+        slide_frames_with_text=0,
+        visual_required=True,
+        ocr_required=False,
+    )
     assert result["visual_required"] is True and result["ocr_required"] is False
     assert result["timeline_pass"] is True and result["slide_text_pass"] is True and result["pass"] is True
     assert result["slide_frames_total"] == 3 and result["slide_frames_with_text"] == 0
-    stalled = scene_coverage([60], [(0, 100)], 100, bins=10, slide_frames_total=1, slide_frames_with_text=0,
-                             visual_required=True, ocr_required=False)
+    stalled = scene_coverage(
+        [60],
+        [(0, 100)],
+        100,
+        bins=10,
+        slide_frames_total=1,
+        slide_frames_with_text=0,
+        visual_required=True,
+        ocr_required=False,
+    )
     assert stalled["timeline_pass"] is False and stalled["slide_text_pass"] is True and stalled["pass"] is False
 
 
@@ -94,21 +123,38 @@ def test_artifact_check(tmp_path: Path):
 
 
 def test_build_coverage_schema_and_write(tmp_path: Path):
-    video = {"title": "L", "duration_sec": 300.0, "speech_source": "stt",
-             "input_source": {"kind": "local_video", "argument": "x.mp4", "has_video": True,
-                               "citation": {"kind": "transcript"}}}
+    video = {
+        "title": "L",
+        "duration_sec": 300.0,
+        "speech_source": "stt",
+        "input_source": {
+            "kind": "local_video",
+            "argument": "x.mp4",
+            "has_video": True,
+            "citation": {"kind": "transcript"},
+        },
+    }
     segments = [{"t": 2.0, "text": "핵심 설명"}]
     synthesis_input = build_synthesis_input(video, segments, [])
     transcript = render_transcript_md(video, segments)
-    notes = render_notes_md(synthesis_input, {
-        "duration_sec": 300.0,
-        "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
-        "scene_coverage": {"speech_bins": [], "uncovered_speech_bins": [], "pass": True,
-                           "visual_required": True, "ocr_required": True,
-                           "slide_frames_with_text": 0, "slide_frames_total": 0},
-        "artifacts": {"transcript_nonempty": True, "notes_nonempty": True},
-        "ocr_engine": "none",
-    })
+    notes = render_notes_md(
+        synthesis_input,
+        {
+            "duration_sec": 300.0,
+            "gap_check": {"max_untranscribed_speech_gap_sec": 0, "threshold_sec": 60, "pass": True},
+            "scene_coverage": {
+                "speech_bins": [],
+                "uncovered_speech_bins": [],
+                "pass": True,
+                "visual_required": True,
+                "ocr_required": True,
+                "slide_frames_with_text": 0,
+                "slide_frames_total": 0,
+            },
+            "artifacts": {"transcript_nonempty": True, "notes_nonempty": True},
+            "ocr_engine": "none",
+        },
+    )
     coverage = build_coverage(_passing_inputs(tmp_path, notes_text=notes, transcript_text=transcript))
     assert coverage["schema_version"] == 2
     assert coverage["scene_coverage"]["visual_required"] is True
@@ -118,17 +164,26 @@ def test_build_coverage_schema_and_write(tmp_path: Path):
 
 
 def test_coverage_inputs_routes_applicability_and_actual_counts(tmp_path: Path):
-    transcript = tmp_path / "transcript.md"; transcript.write_text("x", encoding="utf-8")
-    notes = tmp_path / "notes.md"; notes.write_text("y", encoding="utf-8")
+    transcript = tmp_path / "transcript.md"
+    transcript.write_text("x", encoding="utf-8")
+    notes = tmp_path / "notes.md"
+    notes.write_text("y", encoding="utf-8")
     slides = [
         {"t": 0.0, "frame": "frames/0.png", "ocr_text": "Slide A"},
         {"t": 300.0, "frame": "frames/1.png", "ocr_text": ""},
     ]
     inputs = coverage_inputs_from_extraction(
-        video_title="L", duration_sec=600.0, speech_spans=[(0, 600)], segment_times=[10 * i for i in range(60)],
-        raw_sample_times=[float(i) for i in range(600)], slides=slides,
-        transcript_path=str(transcript), notes_path=str(notes), ocr_engine="skipped",
-        visual_required=True, ocr_required=False,
+        video_title="L",
+        duration_sec=600.0,
+        speech_spans=[(0, 600)],
+        segment_times=[10 * i for i in range(60)],
+        raw_sample_times=[float(i) for i in range(600)],
+        slides=slides,
+        transcript_path=str(transcript),
+        notes_path=str(notes),
+        ocr_engine="skipped",
+        visual_required=True,
+        ocr_required=False,
     )
     coverage = build_coverage(inputs)
     assert inputs.slide_frames_total == 2 and inputs.slide_frames_with_text == 1

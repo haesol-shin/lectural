@@ -49,6 +49,7 @@ PLUGIN_FILES = (
     "skills/lectural/references/pipeline.md",
 )
 
+
 @dataclass(frozen=True)
 class DoctorItem:
     name: str
@@ -112,7 +113,7 @@ def _status_from_python_detail(detail: str) -> str:
 
 
 def _runtime_dep_hint() -> str:
-    return "Install runtime extras with `uv pip install -e \".[run]\"` or use `uvx --from \".[run]\" lectural ...`."
+    return 'Install runtime extras with `uv pip install -e ".[run]"` or use `uvx --from ".[run]" lectural ...`.'
 
 
 def _doctor_python_status(module: str, package: str | None, specifier: str | None) -> deps.DepStatus:
@@ -230,7 +231,6 @@ def _file_item(root: Path, relative: str) -> DoctorItem:
     return missing(relative, "file", f"missing {relative}", f"Restore `{relative}` from the LecturAL distribution.")
 
 
-
 def _hook_command_item(root: Path, relative: str = "hooks/hooks.json") -> DoctorItem:
     path = _rel(root, relative)
     if not path.is_file():
@@ -239,40 +239,79 @@ def _hook_command_item(root: Path, relative: str = "hooks/hooks.json") -> Doctor
     try:
         data = _load_json(path)
     except (json.JSONDecodeError, ValueError) as exc:
-        return incompatible(relative, "file", f"invalid hooks JSON manifest: {type(exc).__name__}: {exc}", "Fix hooks/hooks.json to be a JSON object with hooks.Stop command wiring.")
+        return incompatible(
+            relative,
+            "file",
+            f"invalid hooks JSON manifest: {type(exc).__name__}: {exc}",
+            "Fix hooks/hooks.json to be a JSON object with hooks.Stop command wiring.",
+        )
     except Exception as exc:  # noqa: BLE001
-        return unfixable(relative, "file", f"could not read hooks manifest: {type(exc).__name__}: {exc}", "Check filesystem permissions and file encoding.")
+        return unfixable(
+            relative,
+            "file",
+            f"could not read hooks manifest: {type(exc).__name__}: {exc}",
+            "Check filesystem permissions and file encoding.",
+        )
 
     hooks = data.get("hooks")
     if not isinstance(hooks, dict):
-        return incompatible(relative, "file", "hooks must be a JSON object", "Configure hooks.Stop with the completeness command hook.")
+        return incompatible(
+            relative, "file", "hooks must be a JSON object", "Configure hooks.Stop with the completeness command hook."
+        )
     stop_entries = hooks.get("Stop")
     if not isinstance(stop_entries, list) or not stop_entries:
-        return incompatible(relative, "file", "hooks.Stop must be a non-empty list", "Configure a Stop command hook for scripts/completeness_hook.py.")
+        return incompatible(
+            relative,
+            "file",
+            "hooks.Stop must be a non-empty list",
+            "Configure a Stop command hook for scripts/completeness_hook.py.",
+        )
 
     commands: list[str] = []
     for entry_index, entry in enumerate(stop_entries):
         if not isinstance(entry, dict):
-            return incompatible(relative, "file", f"hooks.Stop[{entry_index}] must be an object", "Use object entries in hooks.Stop.")
+            return incompatible(
+                relative, "file", f"hooks.Stop[{entry_index}] must be an object", "Use object entries in hooks.Stop."
+            )
         entry_hooks = entry.get("hooks")
         if not isinstance(entry_hooks, list):
             continue
         for hook_index, hook in enumerate(entry_hooks):
             if not isinstance(hook, dict):
-                return incompatible(relative, "file", f"hooks.Stop[{entry_index}].hooks[{hook_index}] must be an object", "Use object command hooks in hooks.Stop[].hooks[].")
+                return incompatible(
+                    relative,
+                    "file",
+                    f"hooks.Stop[{entry_index}].hooks[{hook_index}] must be an object",
+                    "Use object command hooks in hooks.Stop[].hooks[].",
+                )
             if hook.get("type") != "command":
                 continue
             command = hook.get("command")
             if not isinstance(command, str) or not command.strip():
-                return incompatible(relative, "file", "Stop command hook command must be a non-empty string", "Set the command to run scripts/completeness_hook.py through python.")
+                return incompatible(
+                    relative,
+                    "file",
+                    "Stop command hook command must be a non-empty string",
+                    "Set the command to run scripts/completeness_hook.py through python.",
+                )
             commands.append(command)
 
     if not commands:
-        return incompatible(relative, "file", "hooks.Stop must contain a command hook", "Add a command hook for scripts/completeness_hook.py.")
+        return incompatible(
+            relative,
+            "file",
+            "hooks.Stop must contain a command hook",
+            "Add a command hook for scripts/completeness_hook.py.",
+        )
 
     expected_script = (root / "scripts" / "completeness_hook.py").resolve()
     if not expected_script.is_file():
-        return missing("scripts/completeness_hook.py", "file", "missing scripts/completeness_hook.py", "Restore the Stop hook script from the LecturAL distribution.")
+        return missing(
+            "scripts/completeness_hook.py",
+            "file",
+            "missing scripts/completeness_hook.py",
+            "Restore the Stop hook script from the LecturAL distribution.",
+        )
 
     for command in commands:
         normalized_command = command.replace("\\", "/")
@@ -289,8 +328,7 @@ def _hook_command_item(root: Path, relative: str = "hooks/hooks.json") -> Doctor
             (
                 token
                 for token in tokens[1:]
-                if "${CLAUDE_PLUGIN_ROOT}" in token
-                and "scripts/completeness_hook.py" in token.replace("\\", "/")
+                if "${CLAUDE_PLUGIN_ROOT}" in token and "scripts/completeness_hook.py" in token.replace("\\", "/")
             ),
             None,
         )
@@ -304,49 +342,107 @@ def _hook_command_item(root: Path, relative: str = "hooks/hooks.json") -> Doctor
         relative,
         "file",
         "Stop command must run python/py with quoted ${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py",
-        "Use `python \"${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py\"`.",
+        'Use `python "${CLAUDE_PLUGIN_ROOT}/scripts/completeness_hook.py"`.',
     )
+
 
 def _plugin_item(root: Path) -> DoctorItem:
     path = _rel(root, ".claude-plugin/plugin.json")
     if not path.is_file():
-        return missing(str(path.relative_to(root)), "plugin", "plugin manifest is missing", "Restore `.claude-plugin/plugin.json`.")
+        return missing(
+            str(path.relative_to(root)), "plugin", "plugin manifest is missing", "Restore `.claude-plugin/plugin.json`."
+        )
     try:
         data = _load_json(path)
     except Exception as exc:  # noqa: BLE001
-        return incompatible(".claude-plugin/plugin.json", "plugin", f"invalid JSON manifest: {type(exc).__name__}: {exc}", "Fix plugin.json to be valid JSON.")
+        return incompatible(
+            ".claude-plugin/plugin.json",
+            "plugin",
+            f"invalid JSON manifest: {type(exc).__name__}: {exc}",
+            "Fix plugin.json to be valid JSON.",
+        )
     if data.get("name") != "lectural":
-        return incompatible(".claude-plugin/plugin.json", "plugin", "plugin name is not `lectural`", "Set plugin.json name to `lectural`.")
+        return incompatible(
+            ".claude-plugin/plugin.json",
+            "plugin",
+            "plugin name is not `lectural`",
+            "Set plugin.json name to `lectural`.",
+        )
     hooks = data.get("hooks")
     if hooks is not None:
         if not isinstance(hooks, str) or not hooks.strip():
-            return incompatible(".claude-plugin/plugin.json", "plugin", "plugin hooks must be a non-empty string when set", "Remove the `hooks` key from plugin.json, or point it only at additional hook files.")
+            return incompatible(
+                ".claude-plugin/plugin.json",
+                "plugin",
+                "plugin hooks must be a non-empty string when set",
+                "Remove the `hooks` key from plugin.json, or point it only at additional hook files.",
+            )
         standard = (root / "hooks" / "hooks.json").resolve()
         if (root / hooks).resolve() == standard:
-            return incompatible(".claude-plugin/plugin.json", "plugin", "plugin.json hooks must not reference the auto-loaded hooks/hooks.json (the duplicate hook load breaks plugin loading)", "Remove the `hooks` key from plugin.json; the standard hooks/hooks.json is loaded automatically.")
+            return incompatible(
+                ".claude-plugin/plugin.json",
+                "plugin",
+                "plugin.json hooks must not reference the auto-loaded hooks/hooks.json (the duplicate hook load breaks plugin loading)",
+                "Remove the `hooks` key from plugin.json; the standard hooks/hooks.json is loaded automatically.",
+            )
     return ok(".claude-plugin/plugin.json", "plugin", "name lectural")
 
 
 def _marketplace_item(root: Path) -> DoctorItem:
     path = _rel(root, ".claude-plugin/marketplace.json")
     if not path.is_file():
-        return missing(str(path.relative_to(root)), "plugin", "marketplace manifest is missing", "Restore `.claude-plugin/marketplace.json`.")
+        return missing(
+            str(path.relative_to(root)),
+            "plugin",
+            "marketplace manifest is missing",
+            "Restore `.claude-plugin/marketplace.json`.",
+        )
     try:
         data = _load_json(path)
     except Exception as exc:  # noqa: BLE001
-        return incompatible(".claude-plugin/marketplace.json", "plugin", f"invalid JSON manifest: {type(exc).__name__}: {exc}", "Fix marketplace.json to be valid JSON.")
+        return incompatible(
+            ".claude-plugin/marketplace.json",
+            "plugin",
+            f"invalid JSON manifest: {type(exc).__name__}: {exc}",
+            "Fix marketplace.json to be valid JSON.",
+        )
     if data.get("name") != "lectural":
-        return incompatible(".claude-plugin/marketplace.json", "plugin", "marketplace name is not `lectural`", "Set marketplace.json name to `lectural`.")
+        return incompatible(
+            ".claude-plugin/marketplace.json",
+            "plugin",
+            "marketplace name is not `lectural`",
+            "Set marketplace.json name to `lectural`.",
+        )
     plugins = data.get("plugins")
     if not isinstance(plugins, list) or not plugins:
-        return incompatible(".claude-plugin/marketplace.json", "plugin", "plugins must be a non-empty list", "Add a plugins[] entry for LecturAL.")
+        return incompatible(
+            ".claude-plugin/marketplace.json",
+            "plugin",
+            "plugins must be a non-empty list",
+            "Add a plugins[] entry for LecturAL.",
+        )
     for index, plugin in enumerate(plugins):
         if not isinstance(plugin, dict):
-            return incompatible(".claude-plugin/marketplace.json", "plugin", f"plugins[{index}] is not an object", "Use object entries in plugins[].")
+            return incompatible(
+                ".claude-plugin/marketplace.json",
+                "plugin",
+                f"plugins[{index}] is not an object",
+                "Use object entries in plugins[].",
+            )
         if plugin.get("name") != "lectural":
-            return incompatible(".claude-plugin/marketplace.json", "plugin", f"plugins[{index}].name is not `lectural`", "Set every plugin entry name to `lectural`.")
+            return incompatible(
+                ".claude-plugin/marketplace.json",
+                "plugin",
+                f"plugins[{index}].name is not `lectural`",
+                "Set every plugin entry name to `lectural`.",
+            )
         if plugin.get("source") != "./":
-            return incompatible(".claude-plugin/marketplace.json", "plugin", f"plugins[{index}].source is {plugin.get('source')!r}, expected './'", "Set every plugin entry source exactly to `./`.")
+            return incompatible(
+                ".claude-plugin/marketplace.json",
+                "plugin",
+                f"plugins[{index}].source is {plugin.get('source')!r}, expected './'",
+                "Set every plugin entry source exactly to `./`.",
+            )
     return ok(".claude-plugin/marketplace.json", "plugin", "marketplace entry points at ./")
 
 
@@ -388,7 +484,14 @@ def build_report(
     try:
         items = _items(_root(root), plugin=plugin)
     except Exception as exc:  # noqa: BLE001 - doctor runtime failure must become exit 1
-        items = [unfixable("doctor", "internal", f"doctor runtime failure: {type(exc).__name__}: {exc}", "Report this LecturAL doctor bug with the traceback context.")]
+        items = [
+            unfixable(
+                "doctor",
+                "internal",
+                f"doctor runtime failure: {type(exc).__name__}: {exc}",
+                "Report this LecturAL doctor bug with the traceback context.",
+            )
+        ]
     exit_code = exit_code_for(items)
     report = {
         "schema_version": SCHEMA_VERSION,
@@ -417,7 +520,9 @@ def _run_command(command: list[str]) -> FixAction:
         return FixAction(name=command[0], command=command, outcome="failed", detail=f"{type(exc).__name__}: {exc}")
     output = " ".join(part.strip() for part in (completed.stdout, completed.stderr) if part and part.strip())
     detail = f"exit {completed.returncode}" + (f": {output[:500]}" if output else "")
-    return FixAction(name=command[0], command=command, outcome="ok" if completed.returncode == 0 else "failed", detail=detail)
+    return FixAction(
+        name=command[0], command=command, outcome="ok" if completed.returncode == 0 else "failed", detail=detail
+    )
 
 
 def _attempt_yt_dlp() -> FixAction:
@@ -427,15 +532,17 @@ def _attempt_yt_dlp() -> FixAction:
 def _attempt_ffmpeg() -> FixAction:
     system = platform.system().lower()
     if system == "windows" and shutil.which("winget"):
-        return _run_command([
-            "winget",
-            "install",
-            "--id",
-            "Gyan.FFmpeg",
-            "-e",
-            "--accept-package-agreements",
-            "--accept-source-agreements",
-        ])
+        return _run_command(
+            [
+                "winget",
+                "install",
+                "--id",
+                "Gyan.FFmpeg",
+                "-e",
+                "--accept-package-agreements",
+                "--accept-source-agreements",
+            ]
+        )
     if system == "darwin" and shutil.which("brew"):
         return _run_command(["brew", "install", "ffmpeg"])
     if system == "linux" and shutil.which("apt-get"):

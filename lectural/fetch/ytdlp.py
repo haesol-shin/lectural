@@ -10,9 +10,13 @@ from .errors import YTDLP_HINT, classify_ytdlp_error
 from .http import TIMEOUT
 
 _PROTOCOL_FILTER = "[protocol~='^(" + "|".join(HTTP_SCHEMES) + ")$']"
-FORMAT_SELECTOR = "/".join((
-    f"b{_PROTOCOL_FILTER}", f"bv{_PROTOCOL_FILTER}+ba{_PROTOCOL_FILTER}", f"ba{_PROTOCOL_FILTER}",
-))
+FORMAT_SELECTOR = "/".join(
+    (
+        f"b{_PROTOCOL_FILTER}",
+        f"bv{_PROTOCOL_FILTER}+ba{_PROTOCOL_FILTER}",
+        f"ba{_PROTOCOL_FILTER}",
+    )
+)
 
 
 class SilentLogger:
@@ -63,9 +67,16 @@ def resolve_formats(url: str, *, allow_generic: bool = True) -> list[dict]:
     rejected = []
     youtube_dl = http_only_ytdlp(rejected)
     params = {
-        "quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True,
-        "skip_download": True, "format": FORMAT_SELECTOR, "socket_timeout": TIMEOUT,
-        "logger": SilentLogger(), "cookiefile": None, "cookiesfrombrowser": None,
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "noplaylist": True,
+        "skip_download": True,
+        "format": FORMAT_SELECTOR,
+        "socket_timeout": TIMEOUT,
+        "logger": SilentLogger(),
+        "cookiefile": None,
+        "cookiesfrombrowser": None,
     }
     if not allow_generic:
         params["allowed_extractors"] = ["default", "-generic"]
@@ -82,14 +93,16 @@ def resolve_formats(url: str, *, allow_generic: bool = True) -> list[dict]:
     if not isinstance(selected, list) or not 1 <= len(selected) <= 2:
         raise RemoteSourceError(UNAVAILABLE)
     for fmt in selected:
-        if (not isinstance(fmt, dict) or not is_http_url(str(fmt.get("url") or ""))
-                or fmt.get("protocol") not in HTTP_SCHEMES):
+        if (
+            not isinstance(fmt, dict)
+            or not is_http_url(str(fmt.get("url") or ""))
+            or fmt.get("protocol") not in HTTP_SCHEMES
+        ):
             raise RemoteSourceError(UNAVAILABLE)
     if not any(fmt.get("vcodec") != "none" for fmt in selected) and any(
         isinstance(fmt, dict) and fmt.get("vcodec") != "none" for fmt in info.get("formats") or []
     ):
         raise RemoteSourceError(UNAVAILABLE)
-    if len(selected) == 2 and (selected[0].get("vcodec") == "none"
-                               or selected[1].get("vcodec") != "none"):
+    if len(selected) == 2 and (selected[0].get("vcodec") == "none" or selected[1].get("vcodec") != "none"):
         raise RemoteSourceError(UNAVAILABLE)
     return selected

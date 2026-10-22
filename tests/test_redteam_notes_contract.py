@@ -114,6 +114,7 @@ def _replace_section_body(text: str, anchor: str, next_anchor: str, lines: list[
 def _remove_marker_lines(text: str) -> str:
     return "\n".join(line for line in text.splitlines() if line != NOTES_UNENRICHED_MARKER) + "\n"
 
+
 def _fixture_texts_with_slides(slides: list[dict]) -> tuple[str, str]:
     video = _video()
     segments = _segments()
@@ -144,7 +145,7 @@ def _remove_image_from_detail_heading(notes: str, heading_text: str) -> str:
 
 
 def _first_concept_bullet(notes_text: str) -> str:
-    block = notes_text[notes_text.index(NOTES_CONCEPTS_ANCHOR):notes_text.index(NOTES_DETAIL_ANCHOR)]
+    block = notes_text[notes_text.index(NOTES_CONCEPTS_ANCHOR) : notes_text.index(NOTES_DETAIL_ANCHOR)]
     for line in block.splitlines():
         if line.startswith("- ") and line.strip() != NOTES_UNENRICHED_MARKER:
             return line
@@ -236,14 +237,16 @@ def _enriched_notes(
             lines.append(line)
         notes = "\n".join(lines) + "\n"
     if not frame_links:
-        notes = "\n".join(
-            line for line in notes.splitlines()
-            if not line.startswith("![") and not line.startswith("<img")
-        ) + "\n"
+        notes = (
+            "\n".join(line for line in notes.splitlines() if not line.startswith("![") and not line.startswith("<img"))
+            + "\n"
+        )
     return notes
 
 
-def _write_run_dir(tmp_path: Path, name: str, notes_text: str, transcript_text: str, *, overall_pass: bool = True) -> Path:
+def _write_run_dir(
+    tmp_path: Path, name: str, notes_text: str, transcript_text: str, *, overall_pass: bool = True
+) -> Path:
     out = tmp_path / name
     out.mkdir()
     (out / "notes.md").write_text(notes_text, encoding="utf-8")
@@ -286,7 +289,9 @@ def _complete_run(out: Path) -> dict:
     }
 
 
-def _run_hook(hook_path: Path, runstate_path: Path, *, cwd: Path | None = None, strip_pythonpath: bool = False) -> subprocess.CompletedProcess[str]:
+def _run_hook(
+    hook_path: Path, runstate_path: Path, *, cwd: Path | None = None, strip_pythonpath: bool = False
+) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["LECTURAL_RUNSTATE"] = str(runstate_path)
     if strip_pythonpath:
@@ -334,7 +339,12 @@ def test_layer1_coverage_is_marker_agnostic_for_bare_skeleton():
 @pytest.mark.parametrize(
     ("mutator", "problem"),
     [
-        (lambda line: re.sub(r"https://youtu\.be/[^)?]+\?t=\d+", "https://youtu.be/abc12345678?t=999", line, count=1), "1초 넘게 다릅니다"),
+        (
+            lambda line: re.sub(
+                r"https://youtu\.be/[^)?]+\?t=\d+", "https://youtu.be/abc12345678?t=999", line, count=1
+            ),
+            "1초 넘게 다릅니다",
+        ),
         (lambda line: re.sub(r" \(\[영상 [^)]*\]\(https://youtu\.be/[^)]*\)\)", "", line, count=1), "영상 딥링크"),
     ],
 )
@@ -378,9 +388,11 @@ def test_anchor_seconds_decodes_duplicate_suffix_and_layer1_accepts_bare_skeleto
         (lambda text: text.replace(NOTES_ENRICH_MARKER + "\n", "", 1), "첫 줄"),
         (lambda text: text.replace(NOTES_DETAIL_ANCHOR, "", 1), "필수 섹션"),
         (
-            lambda text: text.replace(NOTES_FLOW_ANCHOR, "@@FLOW@@", 1)
-            .replace(NOTES_CONCEPTS_ANCHOR, NOTES_FLOW_ANCHOR, 1)
-            .replace("@@FLOW@@", NOTES_CONCEPTS_ANCHOR, 1),
+            lambda text: (
+                text.replace(NOTES_FLOW_ANCHOR, "@@FLOW@@", 1)
+                .replace(NOTES_CONCEPTS_ANCHOR, NOTES_FLOW_ANCHOR, 1)
+                .replace("@@FLOW@@", NOTES_CONCEPTS_ANCHOR, 1)
+            ),
             "섹션 순서",
         ),
     ],
@@ -511,7 +523,9 @@ def test_real_completeness_hook_subprocess_matrix(tmp_path):
     cases.append(("bad-youtube-second", bad_youtube_rs, 2))
 
     failed_rs = tmp_path / "failed-runstate.json"
-    _write_runstate(failed_rs, [{"status": "failed", "error": "intentional failure", "output_dir": str(tmp_path / "failed")}])
+    _write_runstate(
+        failed_rs, [{"status": "failed", "error": "intentional failure", "output_dir": str(tmp_path / "failed")}]
+    )
     cases.append(("failed-run", failed_rs, 2))
 
     pending_rs = tmp_path / "pending-runstate.json"

@@ -42,15 +42,10 @@ class _Handler(BaseHTTPRequestHandler):
         pass
 
     def _html(self, video_src: str) -> None:
-        body = (
-            f"<html><head><title>{PATH_TOKEN}</title></head>"
-            f'<body><video src="{video_src}"></video></body></html>'
-        )
+        body = f'<html><head><title>{PATH_TOKEN}</title></head><body><video src="{video_src}"></video></body></html>'
         self._send(200, body.encode(), "text/html")
 
-    def _send(
-        self, status: int, body: bytes = b"", content_type: str = "text/plain", headers: dict | None = None
-    ):
+    def _send(self, status: int, body: bytes = b"", content_type: str = "text/plain", headers: dict | None = None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -86,8 +81,7 @@ class _Handler(BaseHTTPRequestHandler):
             self._send(
                 200,
                 (
-                    f'<html><body><form>sign in</form><video src="/{PATH_TOKEN}/intro.mp4">'
-                    "</video></body></html>"
+                    f'<html><body><form>sign in</form><video src="/{PATH_TOKEN}/intro.mp4"></video></body></html>'
                 ).encode(),
                 "text/html",
             )
@@ -106,14 +100,10 @@ class _Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
             self.release.wait(30)
         elif path == f"/{PATH_TOKEN}/live.m3u8":
-            playlist = (
-                f"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\n/{PATH_TOKEN}/seg0.ts\n#EXT-X-ENDLIST\n"
-            )
+            playlist = f"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\n/{PATH_TOKEN}/seg0.ts\n#EXT-X-ENDLIST\n"
             self._send(200, playlist.encode(), "application/vnd.apple.mpegurl")
         elif path == f"/{PATH_TOKEN}/manifest-as-mp4":
-            playlist = (
-                f"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\n/{PATH_TOKEN}/seg0.ts\n#EXT-X-ENDLIST\n"
-            )
+            playlist = f"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\n/{PATH_TOKEN}/seg0.ts\n#EXT-X-ENDLIST\n"
             self._send(200, playlist.encode(), "video/mp4")
         elif path == f"/{PATH_TOKEN}/seg0.ts":
             self.hits[path] = self.hits.get(path, 0) + 1
@@ -284,9 +274,7 @@ def test_url_fixture_produces_local_file_evidence_shape_and_leaves_no_media(
         ["extract", str(local_file), "--out", str(tmp_path / "local"), "--json"], capsys
     )
     url_out_dir = tmp_path / "remote"
-    url_code, url_out, url_err = _run_cli(
-        ["extract", server + VIDEO_PATH, "--out", str(url_out_dir), "--json"], capsys
-    )
+    url_code, url_out, url_err = _run_cli(["extract", server + VIDEO_PATH, "--out", str(url_out_dir), "--json"], capsys)
 
     assert local_code == url_code == 0
     local_manifest = json.loads(local_out)["result"]
@@ -310,9 +298,7 @@ def test_url_fixture_produces_local_file_evidence_shape_and_leaves_no_media(
     _assert_no_tokens(url_out, url_err, _tree_text(url_out_dir))
 
 
-def test_audio_url_becomes_local_audio_evidence(
-    server, temp_root, probe_by_suffix, monkeypatch, tmp_path, capsys
-):
+def test_audio_url_becomes_local_audio_evidence(server, temp_root, probe_by_suffix, monkeypatch, tmp_path, capsys):
     seen: dict = {}
     _install_fake_pipeline(monkeypatch, seen)
     out_dir = tmp_path / "audio-bundle"
@@ -329,9 +315,7 @@ def test_audio_url_becomes_local_audio_evidence(
     _assert_no_tokens(out, err, _tree_text(out_dir))
 
 
-def test_redirect_to_http_media_is_followed(
-    server, temp_root, probe_by_suffix, monkeypatch, tmp_path, capsys
-):
+def test_redirect_to_http_media_is_followed(server, temp_root, probe_by_suffix, monkeypatch, tmp_path, capsys):
     seen: dict = {}
     _install_fake_pipeline(monkeypatch, seen)
     code, out, _ = _run_cli(
@@ -404,9 +388,7 @@ def test_remote_failures_are_bounded_and_leave_nothing(
     ("ytdlp_result", "code"),
     [
         (
-            RuntimeError(
-                "ERROR: [Site] abc: This content is only available for registered users. Use --cookies"
-            ),
+            RuntimeError("ERROR: [Site] abc: This content is only available for registered users. Use --cookies"),
             "SOURCE_LOGIN_REQUIRED",
         ),
         (RuntimeError("ERROR: [Site] abc: This video is private"), "SOURCE_ACCESS_DENIED"),
@@ -425,9 +407,7 @@ def test_direct_403_is_decided_after_one_page_resolution(server, temp_root, monk
     assert list(temp_root.iterdir()) == []
 
 
-def test_direct_403_is_fetched_when_page_resolution_finds_public_media(
-    server, temp_root, probe_by_suffix, monkeypatch
-):
+def test_direct_403_is_fetched_when_page_resolution_finds_public_media(server, temp_root, probe_by_suffix, monkeypatch):
     factory, calls = _fake_youtube_dl({"url": server + VIDEO_PATH, "protocol": "http", "ext": "mp4"})
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
     with fetch.prepare_source(f"{server}/{PATH_TOKEN}/forbidden") as ready:
@@ -496,17 +476,12 @@ def test_outdated_ytdlp_adds_a_bounded_update_hint(server, temp_root, monkeypatc
         messages[name] = payload["errors"][0]["message"]
         assert payload["result"]["failure"]["message"] == messages[name]
         _assert_no_tokens(out, err)
-    assert (
-        messages["login"]
-        == f"{evidence.failure('SOURCE_LOGIN_REQUIRED')['message']} {errors.YTDLP_UPDATE_HINT}"
-    )
+    assert messages["login"] == f"{evidence.failure('SOURCE_LOGIN_REQUIRED')['message']} {errors.YTDLP_UPDATE_HINT}"
     assert messages["missing"] == evidence.failure("SOURCE_UNAVAILABLE")["message"]
 
 
 def test_unreachable_url_is_bounded(temp_root, tmp_path, capsys):
-    exit_code, out, err = _run_cli(
-        ["extract", _closed_port_url(), "--out", str(tmp_path / "b"), "--json"], capsys
-    )
+    exit_code, out, err = _run_cli(["extract", _closed_port_url(), "--out", str(tmp_path / "b"), "--json"], capsys)
     assert exit_code == 2
     assert json.loads(out)["errors"][0]["code"] == "SOURCE_UNAVAILABLE"
     assert list(temp_root.iterdir()) == []
@@ -551,9 +526,7 @@ def test_notes_run_redacts_url_in_run_state_and_output(
     bundle = Path(state["runs"][0]["output_dir"])
     assert (bundle / "notes.md").is_file()
     assert (
-        json.loads((bundle / "synthesis_input.json").read_text(encoding="utf-8"))["video"]["input_source"][
-            "argument"
-        ]
+        json.loads((bundle / "synthesis_input.json").read_text(encoding="utf-8"))["video"]["input_source"]["argument"]
         == "http://127.0.0.1"
     )
     assert list(temp_root.iterdir()) == []
@@ -654,9 +627,7 @@ def test_page_url_downloads_the_single_progressive_format_ytdlp_selects(
                 "protocol": "https",
                 "vcodec": "none",
                 "acodec": "mp4a",
-                "formats": [
-                    {"url": "https://cdn.invalid/v.m3u8", "protocol": "m3u8_native", "vcodec": "avc1"}
-                ],
+                "formats": [{"url": "https://cdn.invalid/v.m3u8", "protocol": "m3u8_native", "vcodec": "avc1"}],
             },
             "SOURCE_UNAVAILABLE",
         ),
@@ -786,9 +757,7 @@ def test_parser_errors_do_not_echo_url_tokens(capsys, argv):
 @pytest.mark.parametrize("route", ["page-to-ftp", "html5-to-ftp"])
 @pytest.mark.url_runtime
 @pytest.mark.url_ytdlp
-def test_real_ytdlp_never_follows_a_redirect_to_ftp(
-    server, temp_root, probe_by_suffix, ftp_listener, capsys, route
-):
+def test_real_ytdlp_never_follows_a_redirect_to_ftp(server, temp_root, probe_by_suffix, ftp_listener, capsys, route):
     pytest.importorskip("yt_dlp")
     with pytest.raises(errors.RemoteSourceError) as excinfo:
         with fetch.prepare_source(f"{server}/{PATH_TOKEN}/{route}"):
@@ -827,9 +796,7 @@ def _split_page(server: str, video: tuple[str, bytes], audio: tuple[str, bytes])
     }
 
 
-def _url_and_local_evidence(
-    server, monkeypatch, tmp_path, capsys, merged_suffix: str
-) -> tuple[dict, dict, dict]:
+def _url_and_local_evidence(server, monkeypatch, tmp_path, capsys, merged_suffix: str) -> tuple[dict, dict, dict]:
     seen: dict = {}
     _install_fake_pipeline(monkeypatch, seen)
     url_code, url_out, url_err = _run_cli(
@@ -854,9 +821,7 @@ def _url_and_local_evidence(
     return json.loads(url_out)["result"], json.loads(local_out)["result"], remote_seen
 
 
-def test_split_video_and_audio_streams_merge_into_local_file_evidence(
-    server, temp_root, monkeypatch, tmp_path, capsys
-):
+def test_split_video_and_audio_streams_merge_into_local_file_evidence(server, temp_root, monkeypatch, tmp_path, capsys):
     info = _split_page(server, ("video/webm", b"VIDEO-ONLY" * 50), ("audio/mp4", b"AUDIO-ONLY" * 50))
     factory, _calls = _fake_youtube_dl(info)
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
@@ -875,9 +840,7 @@ def test_split_video_and_audio_streams_merge_into_local_file_evidence(
 
     monkeypatch.setattr(assets, "probe", fake_probe)
     monkeypatch.setattr(assets, "merge", fake_merge)
-    url_manifest, local_manifest, seen = _url_and_local_evidence(
-        server, monkeypatch, tmp_path, capsys, ".mkv"
-    )
+    url_manifest, local_manifest, seen = _url_and_local_evidence(server, monkeypatch, tmp_path, capsys, ".mkv")
 
     assert seen["video_bytes"] == b"VIDEO-ONLY" * 50 + b"AUDIO-ONLY" * 50
     assert probed == ["stream0.webm", "stream1.m4a"]
@@ -904,9 +867,7 @@ def test_real_ffmpeg_merges_split_streams_locally(server, temp_root, monkeypatch
     info = _split_page(server, ("video/webm", video.read_bytes()), ("audio/mp4", audio.read_bytes()))
     factory, _calls = _fake_youtube_dl(info)
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
-    url_manifest, local_manifest, seen = _url_and_local_evidence(
-        server, monkeypatch, tmp_path, capsys, ".mkv"
-    )
+    url_manifest, local_manifest, seen = _url_and_local_evidence(server, monkeypatch, tmp_path, capsys, ".mkv")
 
     streams = subprocess.run(
         [
@@ -1192,12 +1153,8 @@ def test_real_ytdlp_without_generic_refuses_delegation_to_generic(server, temp_r
     assert _Handler.hits.get(f"/{PATH_TOKEN}/intro.mp4") is None
 
 
-@pytest.mark.parametrize(
-    "ytdlp_error", ["ERROR: [Site] abc: This video is private", "ERROR: Unsupported URL"]
-)
-def test_login_wall_redirect_stays_login_required_when_resolution_fails(
-    server, temp_root, monkeypatch, ytdlp_error
-):
+@pytest.mark.parametrize("ytdlp_error", ["ERROR: [Site] abc: This video is private", "ERROR: Unsupported URL"])
+def test_login_wall_redirect_stays_login_required_when_resolution_fails(server, temp_root, monkeypatch, ytdlp_error):
     factory, _calls = _fake_youtube_dl(RuntimeError(ytdlp_error))
     monkeypatch.setattr(ytdlp, "http_only_ytdlp", factory)
     with pytest.raises(errors.RemoteSourceError) as excinfo:
@@ -1230,9 +1187,7 @@ def test_real_ytdlp_never_fetches_video_embedded_in_a_login_wall(server, temp_ro
     ],
 )
 @pytest.mark.url_runtime
-def test_real_probe_accepts_self_contained_direct_audio(
-    server, temp_root, tmp_path, suffix, content_type, codec
-):
+def test_real_probe_accepts_self_contained_direct_audio(server, temp_root, tmp_path, suffix, content_type, codec):
     audio = tmp_path / f"talk{suffix}"
     subprocess.run(
         [

@@ -7,7 +7,7 @@ from lectural.notes_contract import citation_problems, coverage_contract_problem
 
 def _local_notes(concepts: str, answers: list[str]) -> str:
     answer_block = "\n\n".join(answers)
-    return f'''<!-- lectural:notes -->
+    return f"""<!-- lectural:notes -->
 ## 3줄 요약
 - 요약 1
 - 요약 2
@@ -27,7 +27,7 @@ def _local_notes(concepts: str, answers: list[str]) -> str:
 {answer_block}
 ## 정리 커버리지
 - coverage
-'''
+"""
 
 
 def _transcript() -> str:
@@ -86,7 +86,10 @@ def test_youtube_contract_preserves_link_and_timing_rule():
     )
     assert citation_problems(notes, _transcript(), {"kind": "youtube", "video_id": "dQw4w9WgXcQ"}) == []
     bad = notes.replace("?t=1", "?t=20", 1)
-    assert any("1초 넘게 다릅니다" in problem for problem in citation_problems(bad, _transcript(), {"kind": "youtube", "video_id": "dQw4w9WgXcQ"}))
+    assert any(
+        "1초 넘게 다릅니다" in problem
+        for problem in citation_problems(bad, _transcript(), {"kind": "youtube", "video_id": "dQw4w9WgXcQ"})
+    )
 
 
 def test_layer1_remains_structure_only_for_local_citations():

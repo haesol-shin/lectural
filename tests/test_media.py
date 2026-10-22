@@ -27,8 +27,14 @@ def test_probe_youtube_uses_existing_metadata_command(monkeypatch):
     assert metadata.duration == 12.5
     assert metadata.video_id == "dQw4w9WgXcQ"
     assert calls[1][1] == [
-        "yt-dlp", "--quiet", "--no-warnings", "--skip-download", "--dump-json",
-        "--extractor-args", "youtube:player_client=android", source.locator,
+        "yt-dlp",
+        "--quiet",
+        "--no-warnings",
+        "--skip-download",
+        "--dump-json",
+        "--extractor-args",
+        "youtube:player_client=android",
+        source.locator,
     ]
     assert calls[1][2] == {"check": True, "capture_output": True, "text": True}
 
@@ -53,16 +59,32 @@ def test_youtube_audio_and_video_commands_remain_current(monkeypatch, tmp_path: 
     assert media.resolve_video(source, str(tmp_path)) == str(tmp_path / "video.mp4")
     assert calls[0] == ("ready",)
     assert calls[1][1] == [
-        "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
-        "--extractor-args", "youtube:player_client=android",
-        "-x", "--audio-format", "wav", "-o", str(tmp_path / "audio.%(ext)s"), source.locator,
+        "yt-dlp",
+        "--quiet",
+        "--no-warnings",
+        "--no-progress",
+        "--extractor-args",
+        "youtube:player_client=android",
+        "-x",
+        "--audio-format",
+        "wav",
+        "-o",
+        str(tmp_path / "audio.%(ext)s"),
+        source.locator,
     ]
     assert calls[2] == ("ready",)
     assert calls[3][1] == [
-        "yt-dlp", "--quiet", "--no-warnings", "--no-progress",
-        "--extractor-args", "youtube:player_client=android",
-        "-f", "bestvideo[height<=720]+bestaudio/best",
-        "-o", str(tmp_path / "video.%(ext)s"), source.locator,
+        "yt-dlp",
+        "--quiet",
+        "--no-warnings",
+        "--no-progress",
+        "--extractor-args",
+        "youtube:player_client=android",
+        "-f",
+        "bestvideo[height<=720]+bestaudio/best",
+        "-o",
+        str(tmp_path / "video.%(ext)s"),
+        source.locator,
     ]
 
 
@@ -99,8 +121,18 @@ def test_local_video_extracts_only_generated_audio_and_never_uses_ytdlp(monkeypa
     assert output == str(tmp_path / "out" / "audio.wav")
     assert calls[0] == ("require", "ffmpeg")
     assert calls[1][1] == [
-        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
-        "-y", "-i", str(path.resolve()), "-vn", "-acodec", "pcm_s16le", output,
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-y",
+        "-i",
+        str(path.resolve()),
+        "-vn",
+        "-acodec",
+        "pcm_s16le",
+        output,
     ]
     assert all("yt-dlp" not in call[1] for call in calls if call[0] == "run")
     assert path.read_bytes() == b"original-video"
@@ -112,8 +144,9 @@ def test_probe_video_resolution_uses_processed_file(monkeypatch):
     monkeypatch.setattr(
         media.subprocess,
         "run",
-        lambda command, **_kwargs: calls.append(command)
-        or type("Result", (), {"stdout": '{"streams":[{"width":1280,"height":720}]}'})(),
+        lambda command, **_kwargs: (
+            calls.append(command) or type("Result", (), {"stdout": '{"streams":[{"width":1280,"height":720}]}'})()
+        ),
     )
     assert media.probe_video_resolution("processed.mp4") == (1280, 720)
     assert calls[0] == "ffprobe"

@@ -7,9 +7,9 @@ from lectural.synthesis import (
     render_transcript_md,
 )
 
+
 def _fixture():
-    video = {"title": "운영체제 1강", "url": "u", "duration_sec": 300.0,
-             "language": "ko", "source": "caption"}
+    video = {"title": "운영체제 1강", "url": "u", "duration_sec": 300.0, "language": "ko", "source": "caption"}
     segments = [
         {"t": 0.0, "text": "안녕하세요 운영체제 강의입니다"},
         {"t": 65.0, "text": "프로세스와 스레드의 차이"},
@@ -47,5 +47,3 @@ def test_transcript_md_has_all_utterances():
     for s in segments:
         assert s["text"] in md
     assert "[00:01:05]" in md  # 65s
-
-

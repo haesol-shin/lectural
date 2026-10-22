@@ -74,7 +74,6 @@ def _reserve_output_dir(
     return candidate
 
 
-
 class _LecturalArgumentParser(argparse.ArgumentParser):
     """Root parser with a useful hint when a source is used as a command."""
 
@@ -84,8 +83,7 @@ class _LecturalArgumentParser(argparse.ArgumentParser):
         argv = self.input_argv
         if argv and _looks_like_source(argv[0]):
             message = (
-                f"unknown command {public_source_label(argv[0])!r}; to generate notes use: "
-                "lectural notes <source>"
+                f"unknown command {public_source_label(argv[0])!r}; to generate notes use: lectural notes <source>"
             )
         for token in sorted(argv, key=len, reverse=True):
             value = token.split("=", 1)[1] if token.startswith("--") and "=" in token else token
@@ -134,7 +132,9 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
     extract_parser.add_argument("--out", required=True, help="New, empty output directory")
     extract_parser.add_argument("--force-stt", action="store_true", help=argparse.SUPPRESS)
     extract_parser.add_argument("--model", default=DEFAULT_STT_MODEL, help=argparse.SUPPRESS)
-    extract_parser.add_argument("--skip-ocr", action="store_true", help="Skip OCR while retaining representative frames")
+    extract_parser.add_argument(
+        "--skip-ocr", action="store_true", help="Skip OCR while retaining representative frames"
+    )
     extract_parser.add_argument("--json", action="store_true", help="Print the versioned JSON response")
 
     notes_parser = commands.add_parser(
@@ -197,7 +197,9 @@ def _cli_parser(argv: list[str]) -> argparse.ArgumentParser:
         help="Validate the LecturAL runtime; optionally validate plugin distribution files",
         description="Validate the LecturAL runtime; use --plugin to check plugin distribution files.",
     )
-    doctor_parser.add_argument("--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg")
+    doctor_parser.add_argument(
+        "--fix", action="store_true", help="Attempt safe bounded fixes for missing yt-dlp/ffmpeg"
+    )
     doctor_parser.add_argument("--plugin", action="store_true", help="Also validate plugin files and manifests")
     doctor_parser.add_argument("--json", action="store_true", help="Print a machine-readable JSON report")
     return parser
@@ -219,6 +221,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         parser.error("--version and its --json option must be used without a command")
     return args
 
+
 def _captured_stderr(exc: BaseException) -> str:
     value = getattr(exc, "stderr", None)
     if isinstance(value, bytes):
@@ -232,6 +235,7 @@ def _run_error_message(exc: Exception) -> str:
     if stderr:
         message = f"{message}\n{stderr[-500:]}"
     return message
+
 
 def run(
     sources: list[str],
@@ -255,8 +259,7 @@ def run(
             return processor(source_argument, out_dir, force_stt, model)
 
         accepts_var_kwargs = any(
-            parameter.kind == inspect.Parameter.VAR_KEYWORD
-            for parameter in signature.parameters.values()
+            parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values()
         )
         kwargs: dict[str, object] = {}
         if accepts_var_kwargs or "keep_frames" in signature.parameters:
@@ -277,8 +280,9 @@ def run(
         )
         diagnostics = io.StringIO()
         try:
-            with (redirect_stdout(diagnostics) if private else nullcontext()), (
-                redirect_stderr(diagnostics) if private else nullcontext()
+            with (
+                redirect_stdout(diagnostics) if private else nullcontext(),
+                redirect_stderr(diagnostics) if private else nullcontext(),
             ):
                 result = _call_processor(source_argument, out_dir)
             result_output_dir = result.get("output_dir")
@@ -302,9 +306,11 @@ def run(
             results.append(result)
         except Exception as exc:  # noqa: BLE001 - record + continue
             error_message = (
-                exc.safe_message if isinstance(exc, RemoteSourceError) else
-                evidence.failure("EXTRACTION_FAILED")["message"] if private else
-                _run_error_message(exc)
+                exc.safe_message
+                if isinstance(exc, RemoteSourceError)
+                else evidence.failure("EXTRACTION_FAILED")["message"]
+                if private
+                else _run_error_message(exc)
             )
             runstate.update_run(
                 index,
@@ -356,12 +362,22 @@ def _extract_then_notes_processor(
         title = metadata.title or fallback_title
         out_root = os.path.dirname(out_dir_hint) or "."
         out_dir = _reserve_output_dir(
-            out_root, title, fallback=fallback_title, reserved_output_dirs=reserved_output_dirs,
+            out_root,
+            title,
+            fallback=fallback_title,
+            reserved_output_dirs=reserved_output_dirs,
         )
         os.makedirs(out_dir, exist_ok=True)
         result = extract.extract_source(
-            source.argument, out_dir, force_stt=force_stt, model=model, keep_frames=keep_frames,
-            skip_ocr=skip_ocr, source=source, metadata=metadata, work_dir=prepared.work_dir,
+            source.argument,
+            out_dir,
+            force_stt=force_stt,
+            model=model,
+            keep_frames=keep_frames,
+            skip_ocr=skip_ocr,
+            source=source,
+            metadata=metadata,
+            work_dir=prepared.work_dir,
         )
     notes_result = notes.generate_notes(out_dir)
     return {
@@ -402,28 +418,39 @@ def _extract_main(args: argparse.Namespace) -> int:
             source = prepared.source
             output_dir = evidence.prepare_empty_output(args.out)
             extracting = True
-            with redirect_stdout(diagnostics), (redirect_stderr(diagnostics) if remote else nullcontext()):
+            with redirect_stdout(diagnostics), redirect_stderr(diagnostics) if remote else nullcontext():
                 result = extract.extract_source(
-                    source.argument, output_dir, force_stt=args.force_stt, model=args.model,
-                    skip_ocr=args.skip_ocr, source=source, work_dir=prepared.work_dir,
+                    source.argument,
+                    output_dir,
+                    force_stt=args.force_stt,
+                    model=args.model,
+                    skip_ocr=args.skip_ocr,
+                    source=source,
+                    work_dir=prepared.work_dir,
                 )
             response = evidence.build_extract_response(result["manifest"])
     except evidence.ContractError as exc:
-        _emit_json(evidence.build_failure_response(
-            exc.code, output_dir=output_dir,
-            source=source.safe_as_dict() if source and not remote else None,
-            message=exc.safe_message if isinstance(exc, RemoteSourceError) else None,
-        ))
+        _emit_json(
+            evidence.build_failure_response(
+                exc.code,
+                output_dir=output_dir,
+                source=source.safe_as_dict() if source and not remote else None,
+                message=exc.safe_message if isinstance(exc, RemoteSourceError) else None,
+            )
+        )
         return 1 if extracting else 2
     except Exception as exc:
         if not remote:
             error_output = _captured_stderr(exc)
             if error_output:
                 print(error_output[-500:], file=sys.stderr)
-        _emit_json(evidence.build_failure_response(
-            "EXTRACTION_FAILED", output_dir=output_dir,
-            source=source.safe_as_dict() if source and not remote else None,
-        ))
+        _emit_json(
+            evidence.build_failure_response(
+                "EXTRACTION_FAILED",
+                output_dir=output_dir,
+                source=source.safe_as_dict() if source and not remote else None,
+            )
+        )
         return 1
     finally:
         if not remote and diagnostics.getvalue().strip():
@@ -468,6 +495,7 @@ def _verify_main(args: argparse.Namespace) -> int:
     else:
         print(verify_command.render_result(result))
     return 0 if result["valid"] else 1
+
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])

@@ -303,6 +303,7 @@ def select_keyframe_indices(
 
 # --- ffmpeg / OpenCV backed extraction (lazy) ------------------------------
 
+
 def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_FPS) -> list[Frame]:
     """Extract downsampled + scene-change frames with ffmpeg. Lazy/subprocess."""
     import subprocess
@@ -315,8 +316,22 @@ def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_
     # Keep scene-change frames OR a steady low-fps sample, whichever fires.
     vf = f"select='gt(scene,0.3)+eq(pict_type,I)',fps={fps}"
     subprocess.run(
-        ["ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
-         "-i", video_path, "-vf", vf, "-vsync", "vfr", "-frame_pts", "1", pattern],
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-nostats",
+            "-i",
+            video_path,
+            "-vf",
+            vf,
+            "-vsync",
+            "vfr",
+            "-frame_pts",
+            "1",
+            pattern,
+        ],
         check=True,
     )
     frames: list[Frame] = []
@@ -332,6 +347,7 @@ def extract_candidate_frames(video_path: str, out_dir: str, fps: float = SAMPLE_
                 )
             )
     return frames
+
 
 def _cv2_imread_unicode(image_path: str, flags: int, cv2, np):
     """Read an image through OpenCV without cv2.imread path encoding limits."""
@@ -387,12 +403,7 @@ def _ssim(a, b, np, win: int = 7) -> float:
         cs = np.cumsum(np.cumsum(xp, axis=0), axis=1)
         cs = np.pad(cs, ((1, 0), (1, 0)), mode="constant")
         h, w = x.shape
-        s = (
-            cs[k:k + h, k:k + w]
-            - cs[0:h, k:k + w]
-            - cs[k:k + h, 0:w]
-            + cs[0:h, 0:w]
-        )
+        s = cs[k : k + h, k : k + w] - cs[0:h, k : k + w] - cs[k : k + h, 0:w] + cs[0:h, 0:w]
         return s / (k * k)
 
     mu_a = box(a)
@@ -436,9 +447,7 @@ def _image_phash(image_path: str) -> int:
             import numpy as np  # type: ignore[no-redef]  # lazy
             from PIL import Image  # lazy
         except ImportError as pil_error:
-            raise RuntimeError(
-                "Image pHash requires OpenCV or Pillow plus numpy"
-            ) from pil_error
+            raise RuntimeError("Image pHash requires OpenCV or Pillow plus numpy") from pil_error
 
         with Image.open(image_path) as img:
             gray = img.convert("L")
@@ -494,12 +503,15 @@ def dedupe_frames(frames: list[Frame]) -> list[Frame]:
 
     first_image, cv2, np = _decode_image(frames[0].image_path)
     kept_hash = _image_phash_from_array(first_image, cv2, np)
-    frames[0].meta.update({
-        "phash": f"{kept_hash:016x}",
-        "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
-        "width": int(first_image.shape[1]), "height": int(first_image.shape[0]),
-        "dedupe_decision": "kept_initial",
-    })
+    frames[0].meta.update(
+        {
+            "phash": f"{kept_hash:016x}",
+            "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
+            "width": int(first_image.shape[1]),
+            "height": int(first_image.shape[0]),
+            "dedupe_decision": "kept_initial",
+        }
+    )
     first_image = None
     kept = [frames[0]]
     state = initial_dedupe_state(kept_hash)
@@ -510,11 +522,14 @@ def dedupe_frames(frames: list[Frame]) -> list[Frame]:
         for index, frame in enumerate(frames[1:], start=1):
             image, _cv2, _np = _decode_image(frame.image_path)
             hash_value = _image_phash_from_array(image, cv2, np)
-            frame.meta.update({
-                "phash": f"{hash_value:016x}",
-                "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
-                "width": int(image.shape[1]), "height": int(image.shape[0]),
-            })
+            frame.meta.update(
+                {
+                    "phash": f"{hash_value:016x}",
+                    "phash_hamming_threshold": PHASH_HAMMING_THRESHOLD,
+                    "width": int(image.shape[1]),
+                    "height": int(image.shape[0]),
+                }
+            )
             image = None
 
             def evaluate(kept_index: int, candidate_index: int) -> str:
@@ -557,23 +572,27 @@ def dedupe_frames(frames: list[Frame]) -> list[Frame]:
 
                 direct_metrics = result.get("direct_metrics")
                 if isinstance(direct_metrics, dict):
-                    candidate.meta.update({
-                        "hist_corr": direct_metrics.get("hist_corr"),
-                        "ssim": direct_metrics.get("ssim"),
-                    })
-                candidate.meta.update({
-                    "alignment_worker_invoked": worker_invoked,
-                    "alignment_attempted": bool(decision.get("alignment_required")),
-                    "alignment_result": decision.get("result"),
-                    "alignment_path": decision.get("path"),
-                    "alignment_first_failed_gate": decision.get("first_failed_gate"),
-                    "alignment_worker_first_failed_gate": result.get("first_failed_gate"),
-                    "alignment_metrics": {
-                        key: value
-                        for key, value in result.items()
-                        if key not in {"reference_path", "candidate_path"}
-                    },
-                })
+                    candidate.meta.update(
+                        {
+                            "hist_corr": direct_metrics.get("hist_corr"),
+                            "ssim": direct_metrics.get("ssim"),
+                        }
+                    )
+                candidate.meta.update(
+                    {
+                        "alignment_worker_invoked": worker_invoked,
+                        "alignment_attempted": bool(decision.get("alignment_required")),
+                        "alignment_result": decision.get("result"),
+                        "alignment_path": decision.get("path"),
+                        "alignment_first_failed_gate": decision.get("first_failed_gate"),
+                        "alignment_worker_first_failed_gate": result.get("first_failed_gate"),
+                        "alignment_metrics": {
+                            key: value
+                            for key, value in result.items()
+                            if key not in {"reference_path", "candidate_path"}
+                        },
+                    }
+                )
                 if decision.get("result") == "same":
                     candidate.meta["dedupe_decision"] = "structural_duplicate"
                     return "same"
@@ -582,10 +601,12 @@ def dedupe_frames(frames: list[Frame]) -> list[Frame]:
                 return "not_same"
 
             state, trace = advance_dedupe_state(state, index, hash_value, evaluate=evaluate)
-            frame.meta.update({
-                "phash_hamming_from_previous": trace["phash_hamming_from_previous"],
-                "phash_hamming_from_kept": trace["phash_hamming_from_kept"],
-            })
+            frame.meta.update(
+                {
+                    "phash_hamming_from_previous": trace["phash_hamming_from_previous"],
+                    "phash_hamming_from_kept": trace["phash_hamming_from_kept"],
+                }
+            )
             if trace["event"] == "phash_duplicate":
                 frame.meta["dedupe_decision"] = "phash_duplicate"
             elif trace["event"] == "phash_change_pending":

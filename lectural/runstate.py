@@ -23,9 +23,7 @@ DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
 
 def runstate_path() -> str:
     """Resolve the run-state file path (env override -> cwd default)."""
-    return os.environ.get("LECTURAL_RUNSTATE") or os.path.join(
-        os.getcwd(), DEFAULT_RUNSTATE_FILENAME
-    )
+    return os.environ.get("LECTURAL_RUNSTATE") or os.path.join(os.getcwd(), DEFAULT_RUNSTATE_FILENAME)
 
 
 def start_session(sources: list[str] | None = None, path: str | None = None) -> dict:

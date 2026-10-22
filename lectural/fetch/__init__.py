@@ -48,7 +48,11 @@ def prepare_source(argument: str):
     with scratch_space() as work_dir:
         fetched = fetch_url(argument, work_dir)
         source = InputSource(
-            argument=origin, kind=SourceKind.LOCAL_VIDEO if fetched.has_video else SourceKind.LOCAL_AUDIO,
-            locator=fetched.path, title_hint=origin.split("://", 1)[1], video_id=None, origin=origin,
+            argument=origin,
+            kind=SourceKind.LOCAL_VIDEO if fetched.has_video else SourceKind.LOCAL_AUDIO,
+            locator=fetched.path,
+            title_hint=origin.split("://", 1)[1],
+            video_id=None,
+            origin=origin,
         )
         yield PreparedSource(source, work_dir)

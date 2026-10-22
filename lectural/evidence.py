@@ -31,9 +31,7 @@ class ContractError(ValueError):
 _FAILURE_MESSAGES = {
     "OUTPUT_EXISTS": "The output directory already exists; choose a new --out path.",
     "OUTPUT_PATH_ESCAPE": "An artifact path would escape the requested output directory.",
-    "SOURCE_INVALID": (
-        "The source is not a supported YouTube URL, public http(s) media URL, or local media file."
-    ),
+    "SOURCE_INVALID": ("The source is not a supported YouTube URL, public http(s) media URL, or local media file."),
     "SOURCE_REDIRECT_REJECTED": "The source URL redirected to a location that is not http or https.",
     "SOURCE_LOGIN_REQUIRED": "The source URL requires a login; only public URLs are supported.",
     "SOURCE_ACCESS_DENIED": (
@@ -210,9 +208,7 @@ def _safe_source(source: dict) -> dict:
         argument = f"https://youtu.be/{citation['video_id']}"
     else:
         raw_argument = str(source.get("argument") or "local-media")
-        argument = (
-            url_origin(raw_argument) or os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
-        )
+        argument = url_origin(raw_argument) or os.path.basename(raw_argument.replace("\\", "/")) or "local-media"
     raw_resolution = source.get("resolution")
     resolution = raw_resolution if isinstance(raw_resolution, dict) else {}
 
@@ -236,8 +232,6 @@ def _safe_source(source: dict) -> dict:
         "resolution": {"width": _dimension(resolution.get("width")), "height": _dimension(resolution.get("height"))},
         "citation": safe_citation,
     }
-
-
 
 
 def build_version_response() -> dict:
@@ -290,20 +284,22 @@ def build_evidence_manifest(
     checked_frames: list[dict] = []
     for frame in frames:
         path = assert_contained(output_dir, str(frame["path"]))
-        checked_frames.append({
-            "id": str(frame["id"]),
-            "start": round(float(frame["start"]), 3),
-            "path": path,
-            "sha256": str(frame["sha256"]),
-            "width": frame.get("width"),
-            "height": frame.get("height"),
-            "ocr": {
-                "status": frame["ocr"]["status"],
-                "text": frame["ocr"].get("text"),
-                "is_slide": bool(frame["ocr"].get("is_slide")),
-                "reliable": frame["ocr"].get("reliable"),
-            },
-        })
+        checked_frames.append(
+            {
+                "id": str(frame["id"]),
+                "start": round(float(frame["start"]), 3),
+                "path": path,
+                "sha256": str(frame["sha256"]),
+                "width": frame.get("width"),
+                "height": frame.get("height"),
+                "ocr": {
+                    "status": frame["ocr"]["status"],
+                    "text": frame["ocr"].get("text"),
+                    "is_slide": bool(frame["ocr"].get("is_slide")),
+                    "reliable": frame["ocr"].get("reliable"),
+                },
+            }
+        )
 
     extraction = {
         "status": extraction_status,
@@ -333,6 +329,7 @@ def build_evidence_manifest(
         "failure": failure_info,
     }
 
+
 def build_extract_response(evidence: dict) -> dict:
     """Wrap a v2 evidence manifest in the common JSON CLI envelope."""
     status = (evidence.get("extraction") or {}).get("status")
@@ -351,7 +348,11 @@ def build_extract_response(evidence: dict) -> dict:
 
 
 def build_failure_response(
-    code: str, *, output_dir: str | None = None, source: dict | None = None, message: str | None = None,
+    code: str,
+    *,
+    output_dir: str | None = None,
+    source: dict | None = None,
+    message: str | None = None,
 ) -> dict:
     """Build a bounded response when extraction fails before a v2 manifest."""
     item = failure(code)

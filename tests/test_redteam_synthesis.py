@@ -18,6 +18,7 @@ from lectural.synthesis import (
     write_text,
 )
 
+
 def _video(duration: float = 120.0, title: str = "Redteam # [Lecture] | Δ") -> dict:
     return {
         "title": title,
@@ -49,12 +50,8 @@ def _coverage(duration: float = 120.0, slide_total: int = 0, slide_text: int = 0
     }
 
 
-
-
 def _synthesis_for(video: dict, segments: list[dict], slides: list[dict]) -> dict:
     return build_synthesis_input(video, segments, slides)
-
-
 
 
 def test_render_transcript_md_property_captures_all_speech_fixed_seed():
@@ -83,6 +80,7 @@ def test_render_transcript_md_property_captures_all_speech_fixed_seed():
         rendered_line = f"{timestamp} {text}" if text else timestamp
         assert rendered_line in md
     assert md.count("[00:00:12] duplicate-text") == 2
+
 
 def test_build_section_hints_adversarial_order_single_duplicate_and_past_duration():
     unsorted = [

@@ -121,13 +121,20 @@ def _make_run(
     out.mkdir()
     notes = out / "notes.md"
     if write_notes:
-        notes.write_text(notes_text if notes_text is not None else _notes_text(hook, frame_link=frames_png), encoding="utf-8")
+        notes.write_text(
+            notes_text if notes_text is not None else _notes_text(hook, frame_link=frames_png), encoding="utf-8"
+        )
 
     (out / "transcript.md").write_text(_transcript_text(), encoding="utf-8")
-    (out / "synthesis_input.json").write_text(json.dumps({
-        "schema_version": 2,
-        "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
-    }), encoding="utf-8")
+    (out / "synthesis_input.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "video": {"input_source": {"citation": {"kind": "youtube", "video_id": "abc12345678"}}},
+            }
+        ),
+        encoding="utf-8",
+    )
     coverage_path = out / "coverage.json"
     if malformed_coverage:
         coverage_path.write_text("{not json", encoding="utf-8")
@@ -205,8 +212,7 @@ def test_cli_run_continues_batch_on_processor_error_and_records_failure(tmp_path
             "overall_pass": True,
         }
 
-    results = cli.run(["u1", "u2", "u3"], out_root=str(tmp_path / "out"),
-                      processor=processor, runstate_file=str(rs))
+    results = cli.run(["u1", "u2", "u3"], out_root=str(tmp_path / "out"), processor=processor, runstate_file=str(rs))
 
     assert calls == ["u1", "u2", "u3"]  # batch did NOT abort
     state = json.loads(rs.read_text(encoding="utf-8"))
@@ -350,7 +356,9 @@ def test_notes_contract_adversarial_missing_youtube_fails():
 )
 def test_notes_contract_adversarial_youtube_seconds_tolerance(offset, passes):
     hook = _load_hook()
-    text = _notes_text(hook).replace("https://youtu.be/abc12345678?t=2", f"https://youtu.be/abc12345678?t={2 + offset}", 1)
+    text = _notes_text(hook).replace(
+        "https://youtu.be/abc12345678?t=2", f"https://youtu.be/abc12345678?t={2 + offset}", 1
+    )
     problems = hook_contract_problems(text, _transcript_text(), has_frames=False)
 
     assert (not [p for p in problems if "1초 넘게 다릅니다" in p]) is passes

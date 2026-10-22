@@ -67,7 +67,6 @@ def test_extract_video_id_stays_pure_and_rejects_malformed_values(tmp_path: Path
     with pytest.raises(ValueError, match="YouTube URL/ID"):
         classify_source("https://media.example.invalid/watch?v=dQw4w9WgXcQ")
 
-
     with pytest.raises(FileNotFoundError, match="missing.wav"):
         classify_source(str(tmp_path / "missing.wav"))
     directory = tmp_path / "lecture.mp4"
@@ -111,9 +110,7 @@ def test_tilde_and_symlink_normalize_without_modifying_target(tmp_path: Path, mo
     assert target.read_bytes() == b"unchanged"
 
 
-def test_tilde_path_uses_isolated_expanduser_environment_without_symlink(
-    tmp_path: Path, monkeypatch
-):
+def test_tilde_path_uses_isolated_expanduser_environment_without_symlink(tmp_path: Path, monkeypatch):
     home = tmp_path / "isolated-home"
     home.mkdir()
     target = home / "lecture.mp4"

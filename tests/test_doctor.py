@@ -52,7 +52,9 @@ def _write_distribution(root: Path) -> None:
 def _stub_runtime_ok(monkeypatch):
     monkeypatch.setattr(doctor, "RUN_PYTHON_REQUIREMENTS", ())
     monkeypatch.setattr(doctor, "_python_core_item", lambda: doctor.ok("lectural", "python", "version 0.1.0"))
-    monkeypatch.setattr(doctor.deps, "binary_status", lambda name: SimpleNamespace(name=name, kind="binary", available=True, detail=""))
+    monkeypatch.setattr(
+        doctor.deps, "binary_status", lambda name: SimpleNamespace(name=name, kind="binary", available=True, detail="")
+    )
 
 
 def _statuses(report):
@@ -60,11 +62,7 @@ def _statuses(report):
 
 
 def _item(report, name, kind=None):
-    return next(
-        item
-        for item in report["items"]
-        if item["name"] == name and (kind is None or item["kind"] == kind)
-    )
+    return next(item for item in report["items"] if item["name"] == name and (kind is None or item["kind"] == kind))
 
 
 def test_exit_code_mapping_for_all_status_classes():
@@ -87,7 +85,6 @@ def test_report_all_ok(tmp_path, monkeypatch):
     assert report["exit_code"] == 0
     assert report["overall_status"] == "ready"
     assert {item["status"] for item in report["items"]} == {"ok"}
-
 
 
 def test_runtime_report_does_not_require_plugin_distribution(tmp_path, monkeypatch):
@@ -133,7 +130,9 @@ def test_python_incompatible_maps_to_incompatible_and_exit_2(tmp_path, monkeypat
     monkeypatch.setattr(
         doctor.deps,
         "python_status",
-        lambda *a, **k: SimpleNamespace(available=False, detail="`cv2` version 4.8 does not satisfy opencv-python<=4.6"),
+        lambda *a, **k: SimpleNamespace(
+            available=False, detail="`cv2` version 4.8 does not satisfy opencv-python<=4.6"
+        ),
     )
 
     report = doctor.build_report(tmp_path)
@@ -170,6 +169,7 @@ def test_doctor_accepts_distribution_version_when_provider_list_empty_for_non_cv
     item = _item(report, "yt_dlp (yt-dlp)", "python")
     assert report["exit_code"] == 0
     assert item["status"] == "ok"
+
 
 def test_doctor_enforces_fallback_numpy_runtime_constraint(tmp_path, monkeypatch):
     _write_distribution(tmp_path)
@@ -214,6 +214,7 @@ def test_doctor_accepts_fallback_paddlepaddle_valid_version_with_empty_provider_
     item = _item(report, "paddle", "python")
     assert report["exit_code"] == 0
     assert item["status"] == "ok"
+
 
 def test_doctor_keeps_cv2_provider_mismatch_incompatible(tmp_path, monkeypatch):
     _write_distribution(tmp_path)

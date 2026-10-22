@@ -60,14 +60,16 @@ def remote_url_origin(value: str) -> str | None:
 def has_url_scheme(value: str) -> bool:
     return bool(_SCHEME.match(value) and not _DRIVE.match(value))
 
+
 def is_url_like(value: str) -> bool:
     if _DRIVE.match(value):
         return False
     head = value.split("/", 1)[0]
-    return bool(_SCHEME.match(value) or value.startswith("//") or (
-        "." in head and "/" in value and not value.startswith(("/", "./", "../", "~"))
-    ))
-
+    return bool(
+        _SCHEME.match(value)
+        or value.startswith("//")
+        or ("." in head and "/" in value and not value.startswith(("/", "./", "../", "~")))
+    )
 
 
 def public_source_label(value: str) -> str:

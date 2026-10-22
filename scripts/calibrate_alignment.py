@@ -168,17 +168,11 @@ def _passes(measurement: dict[str, Any], thresholds: dict[str, float]) -> bool:
 
 
 def _candidate_values(measurements: list[dict[str, Any]], field: str) -> list[float]:
-    values = {
-        value
-        for measurement in measurements
-        if (value := _measurement_value(measurement, field)) is not None
-    }
+    values = {value for measurement in measurements if (value := _measurement_value(measurement, field)) is not None}
     return sorted(values)
 
 
-def _positive_metric_failures(
-    rows: list[dict[str, Any]], measurements: list[dict[str, Any]]
-) -> list[dict[str, Any]]:
+def _positive_metric_failures(rows: list[dict[str, Any]], measurements: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Report unavailable/non-finite prerequisites before threshold search."""
     failures = []
     required_fields = tuple(dict.fromkeys(raw_field for raw_field, _name, _direction in _THRESHOLD_ORDER))
@@ -190,9 +184,13 @@ def _positive_metric_failures(
         if not _finite(ratio_count) or float(ratio_count) < 2:
             missing.append("ratio_match_count")
         affine = measurement.get("affine")
-        if not isinstance(affine, list) or len(affine) != 2 or any(
-            not isinstance(line, list) or len(line) != 3 or any(not _finite(value) for value in line)
-            for line in affine
+        if (
+            not isinstance(affine, list)
+            or len(affine) != 2
+            or any(
+                not isinstance(line, list) or len(line) != 3 or any(not _finite(value) for value in line)
+                for line in affine
+            )
         ):
             missing.append("affine")
         determinant = measurement.get("determinant")
@@ -275,7 +273,9 @@ def _find_thresholds(rows: list[dict[str, Any]], measurements: list[dict[str, An
     return selected
 
 
-def _confusion(rows: list[dict[str, Any]], measurements: list[dict[str, Any]], thresholds: dict[str, float] | None) -> dict[str, int]:
+def _confusion(
+    rows: list[dict[str, Any]], measurements: list[dict[str, Any]], thresholds: dict[str, float] | None
+) -> dict[str, int]:
     result = {"true_positive": 0, "false_positive": 0, "true_negative": 0, "false_negative": 0}
     for row, measurement in zip(rows, measurements):
         predicted_same = bool(thresholds and _passes(measurement, thresholds))
@@ -351,7 +351,9 @@ def _decision_signature(
             "result": decision["result"],
             "first_failed_gate": decision["first_failed_gate"],
         }
-        for decision in (evaluate_alignment_metadata(measurement, thresholds, complete=True) for measurement in measurements)
+        for decision in (
+            evaluate_alignment_metadata(measurement, thresholds, complete=True) for measurement in measurements
+        )
     ]
 
 
@@ -380,18 +382,14 @@ def _run_reproducibility(tasks: list[tuple[str, str]]) -> dict[str, Any]:
     }
 
 
-def _finalize_reproducibility(
-    reproducibility: dict[str, Any], thresholds: dict[str, float] | None
-) -> dict[str, Any]:
+def _finalize_reproducibility(reproducibility: dict[str, Any], thresholds: dict[str, float] | None) -> dict[str, Any]:
     groups = {
         "same_session": reproducibility.get("same_session_runs", []),
         "fresh_worker": reproducibility.get("fresh_worker_runs", []),
     }
     runs = [run for group in groups.values() for run in group]
     hashes = {name: [_serialized_measurement_hash(run) for run in group] for name, group in groups.items()}
-    integer_signatures = {
-        name: [_required_integer_signature(run) for run in group] for name, group in groups.items()
-    }
+    integer_signatures = {name: [_required_integer_signature(run) for run in group] for name, group in groups.items()}
     decision_signatures = {
         name: [_decision_signature(run, thresholds) for run in group] for name, group in groups.items()
     }
@@ -411,11 +409,7 @@ def _finalize_reproducibility(
         "required_integer_counts": integer_signatures,
         "decision_signatures": decision_signatures,
         "identical": identical,
-        "passed": (
-            identical
-            and len(groups["same_session"]) == 10
-            and len(groups["fresh_worker"]) == 2
-        ),
+        "passed": (identical and len(groups["same_session"]) == 10 and len(groups["fresh_worker"]) == 2),
     }
 
 
@@ -439,6 +433,7 @@ def replay_sequence(sequence: dict[str, Any], thresholds: dict[str, Any] | None)
     measurements = dict(sequence.get("event_measurements", {}))
     events: list[dict[str, Any]] = []
     for index, frame in enumerate(frames[1:], start=1):
+
         def decide(kept_index: int, candidate_index: int) -> str:
             event_id = _sequence_event_id(sequence_id, index, candidate_index)
             measurement = measurements.get(event_id)
@@ -447,37 +442,35 @@ def replay_sequence(sequence: dict[str, Any], thresholds: dict[str, Any] | None)
             else:
                 evaluation_measurement = measurement
                 if thresholds is not None and isinstance(thresholds.get("pixel_delta"), int):
-                    selected = _event_metadata_at_delta(
-                        {"measurement": measurement}, thresholds["pixel_delta"]
-                    )
+                    selected = _event_metadata_at_delta({"measurement": measurement}, thresholds["pixel_delta"])
                     if selected is not None:
                         evaluation_measurement = selected
-                decision = evaluate_visual_candidate(
-                    evaluation_measurement, thresholds, complete=True
-                )
+                decision = evaluate_visual_candidate(evaluation_measurement, thresholds, complete=True)
             expected = (
                 "same"
                 if frames[kept_index].get("expected_visual_id") == frames[candidate_index].get("expected_visual_id")
                 else "different"
             )
-            events.append({
-                "event_id": event_id,
-                "sequence_id": sequence_id,
-                "confirmation_frame_index": index,
-                "candidate_start_index": candidate_index,
-                "kept_index": kept_index,
-                "expected_label": expected,
-                "predicted_label": "same" if decision["result"] == "same" else "different",
-                "result": decision["result"],
-                "first_failed_gate": decision["first_failed_gate"],
-                "path": decision.get("path"),
-                "alignment_required": decision.get("alignment_required"),
-                "transform_class": sequence.get("transform_class"),
-                "source_content_id": sequence.get("source_content_id"),
-                "required_fallback": bool(sequence.get("required_fallback")),
-                "fallback_direction": sequence.get("fallback_direction"),
-                "measurement": measurement,
-            })
+            events.append(
+                {
+                    "event_id": event_id,
+                    "sequence_id": sequence_id,
+                    "confirmation_frame_index": index,
+                    "candidate_start_index": candidate_index,
+                    "kept_index": kept_index,
+                    "expected_label": expected,
+                    "predicted_label": "same" if decision["result"] == "same" else "different",
+                    "result": decision["result"],
+                    "first_failed_gate": decision["first_failed_gate"],
+                    "path": decision.get("path"),
+                    "alignment_required": decision.get("alignment_required"),
+                    "transform_class": sequence.get("transform_class"),
+                    "source_content_id": sequence.get("source_content_id"),
+                    "required_fallback": bool(sequence.get("required_fallback")),
+                    "fallback_direction": sequence.get("fallback_direction"),
+                    "measurement": measurement,
+                }
+            )
             return "same" if decision["result"] == "same" else "not_same"
 
         state, _trace = advance_dedupe_state(state, index, hashes[index], evaluate=decide)
@@ -549,8 +542,7 @@ def _expected_production_path(event: dict[str, Any]) -> str:
     """Return the authored branch contract used for fitting, never a guess."""
     measurement = event.get("measurement") or {}
     if event.get("required_fallback") or (
-        measurement.get("direct_same") is True
-        and event.get("expected_label") == "different"
+        measurement.get("direct_same") is True and event.get("expected_label") == "different"
     ):
         return "alignment_content_change"
     return "identity_content_change" if measurement.get("direct_same") is True else "alignment_content_change"
@@ -574,7 +566,11 @@ def _event_matches_decision(event: dict[str, Any], decision: dict[str, Any]) -> 
 
 def _content_metric_for_event(event: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any] | None:
     """Select only the content metric invoked by the authored production path."""
-    key = "identity_content_change" if _expected_production_path(event) == "identity_content_change" else "aligned_content_change"
+    key = (
+        "identity_content_change"
+        if _expected_production_path(event) == "identity_content_change"
+        else "aligned_content_change"
+    )
     value = metadata.get(key)
     return value if isinstance(value, dict) else None
 
@@ -585,10 +581,17 @@ def _rss_bytes() -> int | None:
         return None
     try:
         import ctypes
+
         class Counters(ctypes.Structure):
-            _fields_ = [("cb", ctypes.c_ulong), ("PageFaultCount", ctypes.c_ulong),
-                ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t)]
-        counters = Counters(); counters.cb = ctypes.sizeof(Counters)
+            _fields_ = [
+                ("cb", ctypes.c_ulong),
+                ("PageFaultCount", ctypes.c_ulong),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+            ]
+
+        counters = Counters()
+        counters.cb = ctypes.sizeof(Counters)
         ok = ctypes.windll.psapi.GetProcessMemoryInfo(
             ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb
         )
@@ -598,7 +601,10 @@ def _rss_bytes() -> int | None:
 
 
 def find_sequence_thresholds(
-    events: list[dict[str, Any]], *, max_states: int = 1_000_000, max_seconds: float = 120.0,
+    events: list[dict[str, Any]],
+    *,
+    max_states: int = 1_000_000,
+    max_seconds: float = 120.0,
     max_rss_bytes: int = 512 * 1024 * 1024,
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """Find the first separating 14-field vector with exact monotone pruning.
@@ -616,7 +622,8 @@ def find_sequence_thresholds(
     alignment_events = populations["alignment_fit"]
     alignment_measurements = [event["measurement"].get("alignment", {}) for event in alignment_events]
     alignment_positives = [
-        measurement for event, measurement in zip(alignment_events, alignment_measurements)
+        measurement
+        for event, measurement in zip(alignment_events, alignment_measurements)
         if event["expected_label"] == "same"
     ]
     if not alignment_positives:
@@ -650,10 +657,7 @@ def find_sequence_thresholds(
         return None
 
     def evaluate_events(resolved_events: list[tuple[dict[str, Any], dict[str, Any]]], vector: dict[str, Any]):
-        return [
-            evaluate_visual_candidate(metadata, vector, complete=True)
-            for _event, metadata in resolved_events
-        ]
+        return [evaluate_visual_candidate(metadata, vector, complete=True) for _event, metadata in resolved_events]
 
     diagnostics: dict[str, Any] = {
         "search_cap_exceeded": False,
@@ -678,12 +682,25 @@ def find_sequence_thresholds(
                 content = value.get(key)
                 if isinstance(content, dict):
                     values.append(content)
-        changed = sorted({_measurement_value(value, "changed_fraction") for value in values if _measurement_value(value, "changed_fraction") is not None})
-        largest = sorted({_measurement_value(value, "largest_changed_component_fraction") for value in values if _measurement_value(value, "largest_changed_component_fraction") is not None})
+        changed = sorted(
+            {
+                _measurement_value(value, "changed_fraction")
+                for value in values
+                if _measurement_value(value, "changed_fraction") is not None
+            }
+        )
+        largest = sorted(
+            {
+                _measurement_value(value, "largest_changed_component_fraction")
+                for value in values
+                if _measurement_value(value, "largest_changed_component_fraction") is not None
+            }
+        )
         if not changed or not largest:
             continue
         content_positives = [
-            content for event, metadata in zip(populations["content_fit"], resolved)
+            content
+            for event, metadata in zip(populations["content_fit"], resolved)
             if event["expected_label"] == "same"
             for content in [_content_metric_for_event(event, metadata)]
             if content is not None
@@ -695,7 +712,9 @@ def find_sequence_thresholds(
         ):
             continue
         changed_bound = max(_measurement_value(value, "changed_fraction") for value in content_positives)
-        largest_bound = max(_measurement_value(value, "largest_changed_component_fraction") for value in content_positives)
+        largest_bound = max(
+            _measurement_value(value, "largest_changed_component_fraction") for value in content_positives
+        )
         full_domains = dict(domains)
         full_domains["pixel_delta"] = [pixel_delta]
         full_domains["changed_fraction_max"] = [value for value in changed if value >= changed_bound]
@@ -705,8 +724,7 @@ def find_sequence_thresholds(
         order = tuple(name for _raw, name, _direction in _THRESHOLD_ORDER)
         directions = {name: direction for _raw, name, direction in _THRESHOLD_ORDER}
         diagnostics["domain_sizes"][str(pixel_delta)] = {
-            name: len(full_domains[name])
-            for name in tuple(name for _raw, name, _direction in THRESHOLD_ORDER_14)
+            name: len(full_domains[name]) for name in tuple(name for _raw, name, _direction in THRESHOLD_ORDER_14)
         }
 
         def content_passes(metadata: Any, changed_max: float, largest_max: float) -> bool:
@@ -736,9 +754,7 @@ def find_sequence_thresholds(
                             viable = False
                             break
                     if event["expected_label"] == "same" and expected_path == "alignment_content_change":
-                        if not content_passes(
-                            metadata.get("aligned_content_change"), changed_max, largest_max
-                        ):
+                        if not content_passes(metadata.get("aligned_content_change"), changed_max, largest_max):
                             viable = False
                             break
                 if viable:
@@ -746,7 +762,6 @@ def find_sequence_thresholds(
         diagnostics["domain_sizes"][str(pixel_delta)]["viable_content_pairs"] = len(content_pairs)
         if not content_pairs:
             continue
-
 
         def complete(prefix: dict[str, Any], *, strictest: bool) -> dict[str, Any]:
             result = dict(prefix)
@@ -784,8 +799,7 @@ def find_sequence_thresholds(
                     "path": decision.get("path"),
                 }
                 for (event, _metadata), decision in zip(resolved_events, weakest_decisions)
-                if event["expected_label"] == "same"
-                and not _event_matches_decision(event, decision)
+                if event["expected_label"] == "same" and not _event_matches_decision(event, decision)
             ]
             if failed_positives:
                 if not prefix:
@@ -797,9 +811,7 @@ def find_sequence_thresholds(
             for event, metadata in resolved_events:
                 if event["expected_label"] != "different":
                     continue
-                alignment = evaluate_alignment_metadata(
-                    dict(metadata.get("alignment") or {}), strictest, complete=True
-                )
+                alignment = evaluate_alignment_metadata(dict(metadata.get("alignment") or {}), strictest, complete=True)
                 if alignment["result"] != "same":
                     continue
                 aligned_content = metadata.get("aligned_content_change")
@@ -914,7 +926,9 @@ def validate_sequence_manifest(manifest: dict[str, Any]) -> list[str]:
     return errors
 
 
-def _sequence_event_tasks(sequences: list[dict[str, Any]]) -> tuple[list[tuple[str, str]], list[tuple[dict[str, Any], str]]]:
+def _sequence_event_tasks(
+    sequences: list[dict[str, Any]],
+) -> tuple[list[tuple[str, str]], list[tuple[dict[str, Any], str]]]:
     """Derive persistent candidate tasks from the same state machine as replay."""
     tasks: list[tuple[str, str]] = []
     links: list[tuple[dict[str, Any], str]] = []
@@ -925,11 +939,13 @@ def _sequence_event_tasks(sequences: list[dict[str, Any]]) -> tuple[list[tuple[s
         hashes = _sequence_replay_hashes(frames)
         state = initial_dedupe_state(hashes[0])
         for index, frame in enumerate(frames[1:], start=1):
+
             def collect(kept_index: int, candidate_index: int) -> str:
                 event_id = _sequence_event_id(str(sequence["sequence_id"]), index, candidate_index)
                 tasks.append((_worker_frame_path(frames[kept_index]), _worker_frame_path(frames[candidate_index])))
                 links.append((sequence, event_id))
                 return "not_same"
+
             state, _trace = advance_dedupe_state(state, index, hashes[index], evaluate=collect)
     return tasks, links
 
@@ -987,7 +1003,8 @@ def _with_worker_measurements(
                     frame["_staged_path"] = str(snapshot)
                     staged_hashes[str(snapshot)] = snapshot_digest
                     source_provenance[str(snapshot)] = {
-                        "path": str(frame["path"]), "sha256": expected,
+                        "path": str(frame["path"]),
+                        "sha256": expected,
                     }
             for sequence in sequences:
                 for frame in sequence.get("frames", []):
@@ -1021,7 +1038,9 @@ def _with_worker_measurements(
         raw = {
             "baseline_measurements": baseline,
             "inspections": inspections,
-            "worker_pids": sorted({item.get("worker_pid") for item in inspections + baseline if item.get("worker_pid") is not None}),
+            "worker_pids": sorted(
+                {item.get("worker_pid") for item in inspections + baseline if item.get("worker_pid") is not None}
+            ),
         }
         if len(baseline) != len(links):
             return copied, {"worker_measurement_error": "worker task/result count mismatch", **raw}
@@ -1031,15 +1050,28 @@ def _with_worker_measurements(
             # Every field below is a worker result derived from decoded source
             # pixels. Existing cache values are overwritten, never consulted.
             for key in (
-                "direct_same", "direct_metrics", "source_phash",
-                "identity_content_change", "aligned_content_change",
+                "direct_same",
+                "direct_metrics",
+                "source_phash",
+                "identity_content_change",
+                "aligned_content_change",
             ):
                 cache[key] = result.get(key)
-            cache["alignment"] = {key: value for key, value in result.items() if key not in {
-                "direct_same", "direct_metrics", "source_phash",
-                "identity_content_change", "aligned_content_change", "worker_pid",
-                "reference_path", "candidate_path",
-            }}
+            cache["alignment"] = {
+                key: value
+                for key, value in result.items()
+                if key
+                not in {
+                    "direct_same",
+                    "direct_metrics",
+                    "source_phash",
+                    "identity_content_change",
+                    "aligned_content_change",
+                    "worker_pid",
+                    "reference_path",
+                    "candidate_path",
+                }
+            }
             cache["cache_provenance"] = {
                 "reference_path": source_provenance[task[0]]["path"],
                 "candidate_path": source_provenance[task[1]]["path"],
@@ -1078,6 +1110,7 @@ def _full_sequence_reproducibility(manifest: dict[str, Any]) -> dict[str, Any]:
     decision_hashes: dict[str, list[str]] = {"same_session": [], "fresh_worker": []}
     worker_pids: dict[str, list[int]] = {"same_session": [], "fresh_worker": []}
     errors: list[str] = []
+
     def run_once(group: str, worker: AlignmentWorker) -> None:
         validation = validate_sequence_manifest(manifest)
         if validation:
@@ -1100,8 +1133,7 @@ def _full_sequence_reproducibility(manifest: dict[str, Any]) -> dict[str, Any]:
             errors.append("reproducibility run did not resolve exactly the pinned opencv-python provider")
             return
         events = [
-            event for sequence in measured.get("development_sequences", [])
-            for event in replay_sequence(sequence, None)
+            event for sequence in measured.get("development_sequences", []) for event in replay_sequence(sequence, None)
         ]
         thresholds, search = find_sequence_thresholds(events)
         if thresholds is None or search.get("search_cap_exceeded") or search.get("reason") is not None:
@@ -1109,24 +1141,33 @@ def _full_sequence_reproducibility(manifest: dict[str, Any]) -> dict[str, Any]:
             return
         replay = {
             split: [
-                event for sequence in measured.get(f"{split}_sequences", [])
+                event
+                for sequence in measured.get(f"{split}_sequences", [])
                 for event in replay_sequence(sequence, thresholds)
             ]
             for split in ("development", "held_out")
         }
         threshold_hashes[group].append(_canonical_hash(thresholds))
-        decision_hashes[group].append(_canonical_hash([
-            (split, event["event_id"], event["result"], event["first_failed_gate"])
-            for split in ("development", "held_out")
-            for event in replay[split]
-        ]))
-        payload_hashes[group].append(_canonical_hash({
-            "manifest": _canonical_decoded_manifest(measured),
-            "worker": _canonical_worker_measurements(raw.get("baseline_measurements", [])),
-            "thresholds": thresholds,
-            "search": search,
-            "replay": replay,
-        }))
+        decision_hashes[group].append(
+            _canonical_hash(
+                [
+                    (split, event["event_id"], event["result"], event["first_failed_gate"])
+                    for split in ("development", "held_out")
+                    for event in replay[split]
+                ]
+            )
+        )
+        payload_hashes[group].append(
+            _canonical_hash(
+                {
+                    "manifest": _canonical_decoded_manifest(measured),
+                    "worker": _canonical_worker_measurements(raw.get("baseline_measurements", [])),
+                    "thresholds": thresholds,
+                    "search": search,
+                    "replay": replay,
+                }
+            )
+        )
 
     try:
         same_worker = AlignmentWorker()
@@ -1187,8 +1228,7 @@ def validate_complete_sequence_population(events: list[dict[str, Any]], split: s
     if labels != {"same", "different"}:
         errors.append(f"{split} lacks both semantic labels")
     direct_values = {
-        event["measurement"].get("direct_same")
-        for event in events if isinstance(event.get("measurement"), dict)
+        event["measurement"].get("direct_same") for event in events if isinstance(event.get("measurement"), dict)
     }
     if direct_values != {True, False}:
         errors.append(f"{split} lacks both direct_same paths")
@@ -1200,9 +1240,9 @@ def validate_complete_sequence_population(events: list[dict[str, Any]], split: s
     # directions.  It is a branch contract, not an optional corpus anecdote.
     fallback_events = [event for event in events if event.get("required_fallback")]
     fallback_labels = {
-        event.get("expected_label") for event in fallback_events
-        if event.get("measurement", {}).get("direct_same") is True
-        and event.get("alignment_required") is True
+        event.get("expected_label")
+        for event in fallback_events
+        if event.get("measurement", {}).get("direct_same") is True and event.get("alignment_required") is True
     }
     if fallback_labels != {"same", "different"}:
         errors.append(f"{split} lacks both identity-veto fallback labels")
@@ -1215,8 +1255,7 @@ def validate_complete_sequence_population(events: list[dict[str, Any]], split: s
     actual_fallbacks = {
         (event.get("expected_label"), event.get("transform_class"), event.get("fallback_direction"))
         for event in fallback_events
-        if event.get("measurement", {}).get("direct_same") is True
-        and event.get("alignment_required") is True
+        if event.get("measurement", {}).get("direct_same") is True and event.get("alignment_required") is True
     }
     missing_fallbacks = required_fallbacks - actual_fallbacks
     if missing_fallbacks:
@@ -1243,13 +1282,22 @@ def _canonical_json_value(value: Any) -> Any:
 
 def _canonical_hash(value: Any) -> str:
     return hashlib.sha256(
-        json.dumps(_canonical_json_value(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        json.dumps(
+            _canonical_json_value(value), ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
     ).hexdigest()
 
 
 def _canonical_worker_measurements(measurements: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Drop transport topology from the pixel-derived canonical payload."""
-    return [{key: value for key, value in measurement.items() if key not in {"worker_pid", "reference_path", "candidate_path"}} for measurement in measurements]
+    return [
+        {
+            key: value
+            for key, value in measurement.items()
+            if key not in {"worker_pid", "reference_path", "candidate_path"}
+        }
+        for measurement in measurements
+    ]
 
 
 def _canonical_decoded_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -1294,34 +1342,19 @@ def validate_sequence_lineage(manifest: dict[str, Any], raw_manifest: bytes) -> 
         ("held-out", held_out, held_out_counts),
     ):
         for transform_class in REQUIRED_TRANSFORM_CLASSES:
-            if sum(
-                sequence.get("transform_class") == transform_class
-                for sequence in sequences
-            ) != expected_counts.get(transform_class):
-                errors.append(
-                    f"{split_name} corpus has the wrong replica count for {transform_class}"
-                )
+            if sum(sequence.get("transform_class") == transform_class for sequence in sequences) != expected_counts.get(
+                transform_class
+            ):
+                errors.append(f"{split_name} corpus has the wrong replica count for {transform_class}")
         if any(len(sequence.get("frames", [])) != 3 for sequence in sequences):
             errors.append(f"{split_name} corpus sequence does not contain exactly three frames")
     all_sequences = development + held_out
-    all_paths = [
-        frame.get("path")
-        for sequence in all_sequences
-        for frame in sequence.get("frames", [])
-    ]
+    all_paths = [frame.get("path") for sequence in all_sequences for frame in sequence.get("frames", [])]
     expected_path_count = 3 * len(all_sequences)
     if len(all_paths) != expected_path_count or len(set(all_paths)) != expected_path_count:
         errors.append("sequence corpus does not contain the declared unique frame paths")
-    development_digests = {
-        frame.get("sha256")
-        for sequence in development
-        for frame in sequence.get("frames", [])
-    }
-    held_out_digests = {
-        frame.get("sha256")
-        for sequence in held_out
-        for frame in sequence.get("frames", [])
-    }
+    development_digests = {frame.get("sha256") for sequence in development for frame in sequence.get("frames", [])}
+    held_out_digests = {frame.get("sha256") for sequence in held_out for frame in sequence.get("frames", [])}
     if development_digests & held_out_digests:
         errors.append("development and held-out frame SHA-256 values overlap")
     generator_version = manifest.get("generator_version")
@@ -1350,30 +1383,24 @@ def validate_sequence_lineage(manifest: dict[str, Any], raw_manifest: bytes) -> 
         errors.append("retired held-out lineage is missing")
         retired = []
     current_hash = hashlib.sha256(raw_manifest).hexdigest()
-    held_out_seeds = {
-        row.get("generator_seed") for row in held_out
-        if isinstance(row.get("generator_seed"), int)
-    }
+    held_out_seeds = {row.get("generator_seed") for row in held_out if isinstance(row.get("generator_seed"), int)}
     for entry in retired:
-        if not isinstance(entry, dict) or not re.fullmatch(
-            r"[0-9a-f]{64}", str(entry.get("manifest_sha256", ""))
-        ):
+        if not isinstance(entry, dict) or not re.fullmatch(r"[0-9a-f]{64}", str(entry.get("manifest_sha256", ""))):
             errors.append("retired held-out lineage has an invalid manifest SHA-256")
             continue
         if entry["manifest_sha256"] == current_hash:
             errors.append("current held-out manifest is already retired")
         retired_seed_start = entry.get("held_out_seed_start")
         if isinstance(retired_seed_start, int) and any(
-            retired_seed_start <= seed < retired_seed_start + 1000
-            for seed in held_out_seeds
+            retired_seed_start <= seed < retired_seed_start + 1000 for seed in held_out_seeds
         ):
             errors.append("final held-out seeds reuse a retired split")
     lineage = manifest.get("lineage")
-    if not isinstance(lineage, dict) or lineage.get(
-        "development_protocol"
-    ) != "frozen-before-final-held-out-generation" or lineage.get(
-        "held_out_protocol"
-    ) != "fresh-after-generator-and-search-protocol-freeze":
+    if (
+        not isinstance(lineage, dict)
+        or lineage.get("development_protocol") != "frozen-before-final-held-out-generation"
+        or lineage.get("held_out_protocol") != "fresh-after-generator-and-search-protocol-freeze"
+    ):
         errors.append("final held-out lineage protocol is missing")
     return errors
 
@@ -1396,9 +1423,7 @@ def calibrate_sequence_manifest(manifest: dict[str, Any], raw_manifest: bytes) -
             if isinstance(measurement, dict)
         ]
         unique_provenances = {
-            _canonical_hash(provenance): provenance
-            for provenance in provenances
-            if isinstance(provenance, dict)
+            _canonical_hash(provenance): provenance for provenance in provenances if isinstance(provenance, dict)
         }
         if len(unique_provenances) == 1:
             provider_provenance = next(iter(unique_provenances.values()))
@@ -1443,22 +1468,24 @@ def calibrate_sequence_manifest(manifest: dict[str, Any], raw_manifest: bytes) -
         }
     baseline_hashes = {
         "threshold_vector": _canonical_hash(thresholds),
-        "ordered_decisions": _canonical_hash([
-            (split, event["event_id"], event["result"], event["first_failed_gate"])
-            for split in ("development", "held_out")
-            for event in evaluated_events_by_split[split]
-        ]),
-        "canonical_payload": _canonical_hash({
-            "manifest": _canonical_decoded_manifest(measured_manifest)
-            if not errors
-            else None,
-            "worker": _canonical_worker_measurements(
-                worker_run.get("baseline_measurements", []) if worker_run else []
-            ),
-            "thresholds": thresholds,
-            "search": search,
-            "replay": evaluated_events_by_split,
-        }),
+        "ordered_decisions": _canonical_hash(
+            [
+                (split, event["event_id"], event["result"], event["first_failed_gate"])
+                for split in ("development", "held_out")
+                for event in evaluated_events_by_split[split]
+            ]
+        ),
+        "canonical_payload": _canonical_hash(
+            {
+                "manifest": _canonical_decoded_manifest(measured_manifest) if not errors else None,
+                "worker": _canonical_worker_measurements(
+                    worker_run.get("baseline_measurements", []) if worker_run else []
+                ),
+                "thresholds": thresholds,
+                "search": search,
+                "replay": evaluated_events_by_split,
+            }
+        ),
     }
 
     promotion_errors: list[str] = []
@@ -1478,15 +1505,10 @@ def calibrate_sequence_manifest(manifest: dict[str, Any], raw_manifest: bytes) -
             ("canonical_payload_hashes", "canonical_payload"),
         ):
             consensus = (
-                full_reproducibility[report_field]["same_session"]
-                + full_reproducibility[report_field]["fresh_worker"]
+                full_reproducibility[report_field]["same_session"] + full_reproducibility[report_field]["fresh_worker"]
             )
-            if not consensus or any(
-                value != baseline_hashes[baseline_field] for value in consensus
-            ):
-                promotion_errors.append(
-                    f"promoted baseline {baseline_field} does not match 10+2 consensus"
-                )
+            if not consensus or any(value != baseline_hashes[baseline_field] for value in consensus):
+                promotion_errors.append(f"promoted baseline {baseline_field} does not match 10+2 consensus")
     for name, rows in populations.items():
         if {row["expected_label"] for row in rows} != {"same", "different"}:
             promotion_errors.append(f"{name} lacks both semantic labels")
@@ -1531,10 +1553,7 @@ def calibrate_sequence_manifest(manifest: dict[str, Any], raw_manifest: bytes) -
         "events": evaluated_events_by_split,
         "development_confusion": development_confusion,
         "held_out_confusion": held_out_confusion,
-        "fitting_populations": {
-            name: [row["event_id"] for row in rows]
-            for name, rows in populations.items()
-        },
+        "fitting_populations": {name: [row["event_id"] for row in rows] for name, rows in populations.items()},
         "reproducibility": reproducibility,
         "lineage": manifest.get("lineage"),
         "retired_holdouts": list(manifest.get("retired_holdouts", [])),
@@ -1564,19 +1583,12 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
         if positive_metric_failures
         else _find_thresholds(rows_by_split["development"], split_measurements["development"])
     )
-    classes_by_split = {
-        split: {row.get("transform_class") for row in rows}
-        for split, rows in rows_by_split.items()
-    }
+    classes_by_split = {split: {row.get("transform_class") for row in rows} for split, rows in rows_by_split.items()}
     missing_by_split = {
-        split: sorted(REQUIRED_TRANSFORM_CLASSES - classes)
-        for split, classes in classes_by_split.items()
+        split: sorted(REQUIRED_TRANSFORM_CLASSES - classes) for split, classes in classes_by_split.items()
     }
     label_counts_by_split = {
-        split: {
-            label: sum(1 for row in rows if row.get("expected_label") == label)
-            for label in ("same", "different")
-        }
+        split: {label: sum(1 for row in rows if row.get("expected_label") == label) for label in ("same", "different")}
         for split, rows in rows_by_split.items()
     }
     missing_labels_by_split = {
@@ -1666,10 +1678,10 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
         "requested_threads": 1,
         "settings": next((m.get("settings") for m in measurements if m.get("settings")), None),
         "thresholds": thresholds,
-        "thresholds_ieee754_hex": {
-            name: float(value).hex() for name, value in (thresholds or {}).items()
-        },
-        "development_confusion": _confusion(rows_by_split["development"], split_measurements["development"], thresholds),
+        "thresholds_ieee754_hex": {name: float(value).hex() for name, value in (thresholds or {}).items()},
+        "development_confusion": _confusion(
+            rows_by_split["development"], split_measurements["development"], thresholds
+        ),
         "held_out_confusion": _confusion(rows_by_split["held_out"], split_measurements["held_out"], thresholds),
         "required_transform_classes": sorted(REQUIRED_TRANSFORM_CLASSES),
         "missing_transform_classes_by_split": missing_by_split,

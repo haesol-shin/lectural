@@ -18,6 +18,7 @@ Contract dependencies:
     frame_recall_and_duplicate_rate, ocr_quality) is an interface dependency imported lazily;
     if unavailable in the environment, benchmark execution gracefully notes its status.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,6 +34,7 @@ import tempfile
 import time
 from typing import Any, Callable
 from unittest.mock import patch
+
 # Make `import lectural` and `from scripts.perf_smoke ...` work regardless of launch directory.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _REPO_ROOT not in sys.path:
@@ -51,6 +53,7 @@ except ImportError:
 # ============================================================================
 # Pure Helper Functions
 # ============================================================================
+
 
 def measure_directory_bytes(path: str | os.PathLike) -> int:
     """Calculate the total size of all files in a directory tree in bytes. Pure.
@@ -191,9 +194,7 @@ def summarize_alignment_observability(frames: list[Any]) -> dict[str, Any]:
         counts["alignment_attempts"] += int(meta.get("alignment_attempted") is True)
         outcome = str(meta.get("alignment_result") or "unknown")
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
-        failure = meta.get("alignment_first_failed_gate") or meta.get(
-            "alignment_worker_first_failed_gate"
-        )
+        failure = meta.get("alignment_first_failed_gate") or meta.get("alignment_worker_first_failed_gate")
         if failure:
             failure_name = str(failure)
             failure_gates[failure_name] = failure_gates.get(failure_name, 0) + 1
@@ -255,9 +256,11 @@ def summarize_alignment_observability(frames: list[Any]) -> dict[str, Any]:
         "opencv_runtime": runtime,
     }
 
+
 # ============================================================================
 # Caption and Fallback Injection Function
 # ============================================================================
+
 
 def acquire_speech_with_caption_injection(
     gt: dict[str, Any],
@@ -343,7 +346,7 @@ def acquire_speech_with_caption_injection(
         else:
             raise ValueError(f"Unknown caption_variant: {caption_variant!r}")
 
-    force_stt_arg = (caption_variant == "force_stt")
+    force_stt_arg = caption_variant == "force_stt"
     resolved_audio_str = str(audio_path)
 
     # 4. Apply mocks via unittest.mock.patch
@@ -354,7 +357,11 @@ def acquire_speech_with_caption_injection(
     if transcribe_mock is not None:
         patches.append(patch("lectural.speech.transcribe_audio", transcribe_mock))
 
-    with patches[0], patches[1], patch("lectural.speech.detect_audio_language", return_value=gt.get("language") or "en"):
+    with (
+        patches[0],
+        patches[1],
+        patch("lectural.speech.detect_audio_language", return_value=gt.get("language") or "en"),
+    ):
         if len(patches) > 2:
             with patches[2]:
                 return acquire_speech(source, str(out_dir), force_stt=force_stt_arg, model=model)
@@ -365,6 +372,7 @@ def acquire_speech_with_caption_injection(
 # ============================================================================
 # Quality Metrics Evaluation (Interface Dependency on lectural_bench.metrics)
 # ============================================================================
+
 
 def slide_cer_reference(slides_text: dict[str, Any] | None) -> str | None:
     """Join unique authored slide texts, skipping near-duplicate copies. Pure.
@@ -498,9 +506,7 @@ def evaluate_quality_metrics(
     # 6. OCR quality
     key_fields = gt.get("key_fields", {})
     usable_thresh = int(gt.get("usable_ocr_threshold_chars", 12))
-    combined_ocr = " ".join(
-        getattr(f, "ocr_text", "") for f in slide_frames if getattr(f, "ocr_text", "")
-    )
+    combined_ocr = " ".join(getattr(f, "ocr_text", "") for f in slide_frames if getattr(f, "ocr_text", ""))
     from lectural.config import OCR_RELIABLE_CONFIDENCE_THRESHOLD
 
     accepted_frames = [
@@ -564,8 +570,7 @@ def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[P
     if slide_4_ref:
         ref_lower = slide_4_ref.lower()
         slide_4_key_fields = {
-            k: v for k, v in key_fields.items()
-            if str(v).lower() in ref_lower or k.lower() in ref_lower
+            k: v for k, v in key_fields.items() if str(v).lower() in ref_lower or k.lower() in ref_lower
         }
         if not slide_4_key_fields:
             slide_4_key_fields = key_fields
@@ -576,10 +581,7 @@ def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[P
     for path in degraded_slide_paths:
         try:
             text, engine_used, confidence = ocr_image(str(path), lang=ocr_lang)
-            reliable = (
-                isinstance(confidence, (int, float))
-                and confidence >= OCR_RELIABLE_CONFIDENCE_THRESHOLD
-            )
+            reliable = isinstance(confidence, (int, float)) and confidence >= OCR_RELIABLE_CONFIDENCE_THRESHOLD
             raw_quality = ocr_quality(
                 slide_4_key_fields,
                 text,
@@ -606,6 +608,7 @@ def evaluate_degraded_slide_ocr(gt: dict[str, Any], degraded_slide_paths: list[P
 # ============================================================================
 # Resource Measurement Function (StageSampler Integration)
 # ============================================================================
+
 
 def measure_fixture_run(
     fixture_data: dict[str, Any] | str | os.PathLike,
@@ -652,11 +655,7 @@ def measure_fixture_run(
         if p.is_dir():
             fixture_dir = p
             # Search for gt.json, ground_truth.json, or any json with fixture_id
-            gt_candidates = (
-                list(p.glob("gt.json"))
-                or list(p.glob("ground_truth.json"))
-                or list(p.glob("*.json"))
-            )
+            gt_candidates = list(p.glob("gt.json")) or list(p.glob("ground_truth.json")) or list(p.glob("*.json"))
             if gt_candidates:
                 gt = json.loads(gt_candidates[0].read_text(encoding="utf-8"))
         elif p.is_file():
@@ -672,9 +671,7 @@ def measure_fixture_run(
     if fixture_dir is not None:
         if audio_path is None:
             if media_variant == "degraded":
-                audio_candidates = list(fixture_dir.glob("audio_degraded.wav")) or list(
-                    fixture_dir.glob("audio.wav")
-                )
+                audio_candidates = list(fixture_dir.glob("audio_degraded.wav")) or list(fixture_dir.glob("audio.wav"))
             else:
                 audio_candidates = (
                     list(fixture_dir.glob("audio.wav"))
@@ -685,9 +682,7 @@ def measure_fixture_run(
                 audio_path = audio_candidates[0]
         if video_path is None:
             if media_variant == "degraded":
-                video_candidates = list(fixture_dir.glob("video_360p.mp4")) or list(
-                    fixture_dir.glob("video.mp4")
-                )
+                video_candidates = list(fixture_dir.glob("video_360p.mp4")) or list(fixture_dir.glob("video.mp4"))
             else:
                 video_candidates = (
                     list(fixture_dir.glob("video.mp4"))
@@ -701,10 +696,7 @@ def measure_fixture_run(
             if variant_vtt.is_file():
                 vtt_path = variant_vtt
             else:
-                vtt_candidates = (
-                    list(fixture_dir.glob("captions.vtt"))
-                    or list(fixture_dir.glob("*.vtt"))
-                )
+                vtt_candidates = list(fixture_dir.glob("captions.vtt")) or list(fixture_dir.glob("*.vtt"))
                 if vtt_candidates:
                     vtt_path = vtt_candidates[0]
     fixture_duration_sec = compute_fixture_duration_sec(gt)
@@ -770,7 +762,9 @@ def measure_fixture_run(
             from lectural.deps import DependencyError
             from lectural.vad import detect_speech_spans
 
-            target_audio = str(audio_path or (track.meta.get("audio_path", resolved_audio) if track else resolved_audio))
+            target_audio = str(
+                audio_path or (track.meta.get("audio_path", resolved_audio) if track else resolved_audio)
+            )
             if os.path.isfile(target_audio):
                 try:
                     return detect_speech_spans(target_audio, fixture_duration_sec)
@@ -864,9 +858,7 @@ def measure_fixture_run(
     # 6. Resource metrics & RTF aggregation
     sampler_summary = sampler.summary() if sampler is not None else {}
     total_wall_time = round(sum(stage_wall_times.values()), 4)
-    overall_rtf = (
-        round(total_wall_time / fixture_duration_sec, 4) if fixture_duration_sec > 0 else 0.0
-    )
+    overall_rtf = round(total_wall_time / fixture_duration_sec, 4) if fixture_duration_sec > 0 else 0.0
 
     per_stage: dict[str, dict[str, Any]] = {}
     for stage, wall_sec in stage_wall_times.items():
@@ -991,9 +983,7 @@ def run_fixture_repetitions(
             "stages": stage_aggregates,
         },
         "quality_metrics": first_run.get("quality_metrics", {}),
-        "alignment_observability": first_run.get(
-            "alignment_observability", summarize_alignment_observability([])
-        ),
+        "alignment_observability": first_run.get("alignment_observability", summarize_alignment_observability([])),
         "runs": runs,
     }
 
@@ -1034,6 +1024,7 @@ def find_fixture_dirs(fixtures_dir: str | os.PathLike) -> list[Path]:
 # ============================================================================
 # CLI Implementation
 # ============================================================================
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the benchmark harness argument parser."""
@@ -1188,9 +1179,7 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     if args.observational_perf_smoke:
-        report["observational_results"].append(
-            build_observational_entry(args.observational_perf_smoke)
-        )
+        report["observational_results"].append(build_observational_entry(args.observational_perf_smoke))
 
     print(
         f"LecturAL Benchmark Harness [Platform: {args.platform_label}, Mode: {cache_mode}, Reps: {args.reps}, Skip-OCR: {args.skip_ocr}]"

@@ -258,14 +258,20 @@ def test_ocr_frames_constructs_one_paddle_engine_and_threads_confidence(monkeypa
     engine = object()
     monkeypatch.setattr(ocr, "_create_paddle_engine", lambda _lang: created.append(engine) or engine)
     monkeypatch.setattr(
-        ocr, "ocr_image",
-        lambda _path, prefer="paddle", lang="korean", paddle_engine=None: ("Enough text for a slide", "paddleocr", 0.97),
+        ocr,
+        "ocr_image",
+        lambda _path, prefer="paddle", lang="korean", paddle_engine=None: (
+            "Enough text for a slide",
+            "paddleocr",
+            0.97,
+        ),
     )
     frames = [Frame(0.0, "a.png"), Frame(1.0, "b.png")]
     kept, used = ocr.ocr_frames(frames)
     assert created == [engine]
     assert used == "paddleocr"
     assert all(frame.ocr_confidence == 0.97 for frame in kept)
+
 
 def test_ocr_frames_prefers_reliable_duplicate_text(monkeypatch):
     engine = object()
@@ -293,6 +299,7 @@ def test_tesseract_multiple_output_normalizes_tsv_confidence(monkeypatch):
     class FakeImage:
         def __enter__(self):
             return self
+
         def __exit__(self, *_args):
             return False
 

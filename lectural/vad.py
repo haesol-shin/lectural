@@ -16,6 +16,7 @@ Span = tuple[float, float]
 
 # --- Interval algebra (pure) -----------------------------------------------
 
+
 def merge_spans(spans: list[Span]) -> list[Span]:
     """Sort and merge overlapping/adjacent intervals. Pure."""
     norm = [(min(a, b), max(a, b)) for a, b in spans if b > a or b == a]
@@ -68,6 +69,7 @@ def subtract_spans(base: list[Span], cut: list[Span]) -> list[Span]:
 
 
 # --- Transcript coverage + gap metric (pure) -------------------------------
+
 
 def transcript_coverage_spans(segment_times: list[float], duration: float) -> list[Span]:
     """Turn transcript start times into covered intervals. Pure.
@@ -143,9 +145,18 @@ def detect_speech_spans(audio_path: str, duration: float, noise_db: int = -30, m
     require_binary("ffmpeg")
     proc = subprocess.run(
         [
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
-            "-i", audio_path, "-af", f"silencedetect=noise={noise_db}dB:d={min_silence}",
-            "-f", "null", "-",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-nostats",
+            "-i",
+            audio_path,
+            "-af",
+            f"silencedetect=noise={noise_db}dB:d={min_silence}",
+            "-f",
+            "null",
+            "-",
         ],
         capture_output=True,
         text=True,
@@ -153,8 +164,5 @@ def detect_speech_spans(audio_path: str, duration: float, noise_db: int = -30, m
     if proc.returncode != 0:
         # Surface the real ffmpeg failure instead of silently returning
         # "all speech" (which would cause a spurious completeness FAIL).
-        raise RuntimeError(
-            f"ffmpeg silencedetect failed (code {proc.returncode}): "
-            f"{proc.stderr.strip()[-500:]}"
-        )
+        raise RuntimeError(f"ffmpeg silencedetect failed (code {proc.returncode}): {proc.stderr.strip()[-500:]}")
     return parse_silencedetect(proc.stderr, duration)

@@ -67,6 +67,7 @@ def normalize_korean(text: str) -> str:
     # Preserves digits and ASCII letters for technical terms (e.g. 1956, 256, AI).
     return re.sub(r"[^\uac00-\ud7a30-9a-zA-Z]", "", text)
 
+
 def normalize_basic(text: str) -> str:
     """Pure: basic text normalization: lowercase, strip punctuation, collapse whitespace."""
     if not text:
@@ -270,9 +271,7 @@ def wer_cer(ground_truth_text: str, hypothesis_text: str, language: str) -> dict
     return {"wer": wer, "cer": cer}
 
 
-def terminology_recall(
-    ground_truth_terms: list[str], hypothesis_text: str, language: str
-) -> float:
+def terminology_recall(ground_truth_terms: list[str], hypothesis_text: str, language: str) -> float:
     """Pure: compute technical terminology recall (0.0 to 1.0).
 
     Checks whether each ground-truth technical term is present in the hypothesis text
@@ -300,9 +299,7 @@ def terminology_recall(
     return float(recalled / len(ground_truth_terms))
 
 
-def timestamp_error(
-    ground_truth_cue_times: list[float], hypothesis_cue_times: list[float]
-) -> dict:
+def timestamp_error(ground_truth_cue_times: list[float], hypothesis_cue_times: list[float]) -> dict:
     """Pure: compute cue-level nearest-neighbor absolute timestamp error.
 
     Returns {"median_sec": float, "p95_sec": float}.

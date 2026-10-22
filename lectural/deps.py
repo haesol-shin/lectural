@@ -53,7 +53,7 @@ _PYTHON_HINTS = {
     "yt_dlp": 'Install run extras: `uv pip install "lectural[run]"` or install the tool binary: `uv tool install yt-dlp`.',
     "pytesseract": 'Install run extras: `uv pip install "lectural[run]"`.',
     "PIL": 'Install run extras: `uv pip install "lectural[run]"`.',
-    "webrtcvad": 'Optional VAD backend: `uv pip install webrtcvad`.',
+    "webrtcvad": "Optional VAD backend: `uv pip install webrtcvad`.",
     "psutil": 'Install run extras: `uv pip install "lectural[run]"`.',
 }
 _PYTHON_REQUIREMENTS = {
@@ -116,6 +116,7 @@ def _satisfies_version(version: str, specifier: str) -> bool:
             return False
     return True
 
+
 def _release_prefix_matches(module_version: str, distribution_version: str) -> bool:
     module_parts = _parse_version(module_version)
     distribution_parts = _parse_version(distribution_version)
@@ -157,6 +158,7 @@ def _module_version(module: str, package: str, imported: object) -> str | None:
     if version is not None:
         return str(version)
     return importlib_metadata.version(package)
+
 
 def has_python_module(module: str) -> bool:
     """True when a Python module can be imported successfully."""

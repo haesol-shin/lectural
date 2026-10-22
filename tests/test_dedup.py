@@ -46,6 +46,8 @@ def test_over_dedup_guard_requires_both_metrics():
 
 def test_single_or_empty_frame_sequence():
     assert select_keyframe_indices([]) == [0]
+
+
 def test_phash_threshold_edges():
     base = 0
     near = (1 << 10) - 1
@@ -122,7 +124,9 @@ def test_dedupe_frames_confirms_persistent_change_with_bounded_decodes(tmp_path)
     base = Image.new("RGB", (80, 40), "white")
     changed = Image.new("RGB", (80, 40), "black")
     paths = [tmp_path / name for name in ("a.png", "b1.png", "b2.png")]
-    base.save(paths[0]); changed.save(paths[1]); changed.save(paths[2])
+    base.save(paths[0])
+    changed.save(paths[1])
+    changed.save(paths[2])
     frames = [Frame(float(index), str(path)) for index, path in enumerate(paths)]
 
     assert visual.dedupe_frames(frames) == [frames[0], frames[1]]
@@ -139,7 +143,10 @@ def test_structural_duplicate_decodes_each_host_frame_once(tmp_path, monkeypatch
     for x in range(15):
         drift.putpixel((x, 0), (0, 0, 0))
     paths = [tmp_path / f"{index}.png" for index in range(4)]
-    base.save(paths[0]); drift.save(paths[1]); drift.save(paths[2]); base.save(paths[3])
+    base.save(paths[0])
+    drift.save(paths[1])
+    drift.save(paths[2])
+    base.save(paths[3])
     frames = [Frame(float(index), str(path)) for index, path in enumerate(paths)]
     decoded = []
     real_decode = visual._decode_image

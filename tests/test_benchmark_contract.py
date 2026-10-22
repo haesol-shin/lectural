@@ -27,9 +27,7 @@ BENCHMARK_SCRIPT = REPO_ROOT / "scripts" / "benchmark.py"
 SCHEMA_PATH = REPO_ROOT / "docs" / "contracts" / "benchmark.schema.json"
 DEFINITION_PATH = REPO_ROOT / "docs" / "benchmark_definition.md"
 FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures" / "benchmark"
-OBSERVATIONAL_PATH = (
-    REPO_ROOT / "docs" / "reports" / "observational_555s_perf_smoke_2026-06-14.json"
-)
+OBSERVATIONAL_PATH = REPO_ROOT / "docs" / "reports" / "observational_555s_perf_smoke_2026-06-14.json"
 
 # The exact set of heavy/optional benchmark dependencies that must never be
 # imported merely by parsing scripts/benchmark.py's CLI (they are all lazy,
@@ -74,6 +72,7 @@ def test_schema_requires_speech_source():
     assert "speech_source" in fixture_result_def["required"]
     assert "speech_source" in fixture_result_def["properties"]
     assert set(fixture_result_def["properties"]["speech_source"]["enum"]) == {"caption", "stt", "unknown"}
+
 
 def _validate_against_schema(report: dict, schema: dict) -> None:
     """Minimal structural validator: required-key presence and basic typing.

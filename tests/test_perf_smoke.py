@@ -4,6 +4,7 @@ These cover the deterministic logic of `scripts/perf_smoke.py` without any
 network, binaries, or models. The real end-to-end run and its metrics live in
 `docs/perf_smoke_2026-06-13.md` and `artifacts/g003-perf_metrics.json`.
 """
+
 from __future__ import annotations
 
 import importlib.util

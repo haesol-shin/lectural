@@ -98,11 +98,7 @@ def scene_coverage(
 
     uncovered = sorted(b for b in speech_bins if b not in covered)
     timeline_pass = True if not visual_required else duration_valid and not uncovered
-    slide_text_pass = (
-        (not ocr_failed and slide_frames_with_text >= slide_frames_total)
-        if ocr_required
-        else True
-    )
+    slide_text_pass = (not ocr_failed and slide_frames_with_text >= slide_frames_total) if ocr_required else True
     return {
         "bins": bins,
         "carry_max_sec": carry_max_sec,
@@ -219,6 +215,8 @@ def coverage_inputs_from_extraction(
         transcript_text=transcript_text,
         notes_text=notes_text,
     )
+
+
 def build_coverage(inp: CoverageInputs) -> dict:
     """Assemble the full coverage.json structure. Pure (except file stat)."""
     duration = _normalized_duration(inp.duration_sec)

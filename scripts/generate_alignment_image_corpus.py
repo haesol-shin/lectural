@@ -41,20 +41,35 @@ def _canvas(seed: int, *, changed: bool = False) -> np.ndarray:
     image[:, :, 0] = np.linspace(228, 250, 640, dtype=np.uint8)
     accent = tuple(int(value) for value in rng.integers(35, 180, size=3))
     cv2.rectangle(image, (24, 22), (616, 72), accent, -1)
-    cv2.putText(image, f"LECTURAL EVIDENCE {seed}", (42, 56), cv2.FONT_HERSHEY_SIMPLEX, .72, (255, 255, 255), 2, cv2.LINE_AA)
-    cv2.putText(image, "Transform-aware visual evidence", (42, 118), cv2.FONT_HERSHEY_SIMPLEX, .72, (20, 24, 36), 2, cv2.LINE_AA)
-    lines = ["An authored screen must remain one visual identity.", "Incremental content is a different evidence event.", "Calibration uses immutable decoded image bytes."]
+    cv2.putText(
+        image, f"LECTURAL EVIDENCE {seed}", (42, 56), cv2.FONT_HERSHEY_SIMPLEX, 0.72, (255, 255, 255), 2, cv2.LINE_AA
+    )
+    cv2.putText(
+        image,
+        "Transform-aware visual evidence",
+        (42, 118),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.72,
+        (20, 24, 36),
+        2,
+        cv2.LINE_AA,
+    )
+    lines = [
+        "An authored screen must remain one visual identity.",
+        "Incremental content is a different evidence event.",
+        "Calibration uses immutable decoded image bytes.",
+    ]
     for index, line in enumerate(lines):
         y = 158 + index * 38
         cv2.circle(image, (52, y - 6), 6, accent, -1)
-        cv2.putText(image, line, (72, y), cv2.FONT_HERSHEY_SIMPLEX, .46, (28, 32, 40), 1, cv2.LINE_AA)
+        cv2.putText(image, line, (72, y), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (28, 32, 40), 1, cv2.LINE_AA)
     for index in range(9):
         x = 48 + index * 61
         height = int(rng.integers(14, 64))
         cv2.rectangle(image, (x, 334 - height), (x + 35, 334), tuple(int(v) for v in rng.integers(30, 220, size=3)), -1)
     if changed:
         cv2.rectangle(image, (388, 190), (602, 272), (32, 32, 180), -1)
-        cv2.putText(image, "CHANGED", (404, 238), cv2.FONT_HERSHEY_SIMPLEX, .72, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(image, "CHANGED", (404, 238), cv2.FONT_HERSHEY_SIMPLEX, 0.72, (255, 255, 255), 2, cv2.LINE_AA)
     return image
 
 
@@ -69,7 +84,7 @@ def _candidate(reference: np.ndarray, transform_class: str, seed: int) -> np.nda
     if transform_class == "pan_zoom":
         return _zoom_pan(reference, 1.16, -44, -23)
     if transform_class == "pan_zoom_reverse":
-        return _zoom_pan(reference, .86, 46, 27)
+        return _zoom_pan(reference, 0.86, 46, 27)
     if transform_class in {"static_duplicate", "static_shift"}:
         return _zoom_pan(reference, 1.05, -16, -8)
     if transform_class == "out_of_scale":
@@ -77,10 +92,10 @@ def _candidate(reference: np.ndarray, transform_class: str, seed: int) -> np.nda
     if transform_class in {"incremental_build", "pan_zoom_incremental"}:
         result = reference.copy()
         cv2.rectangle(result, (360, 204), (607, 286), (14, 100, 38), -1)
-        cv2.putText(result, "NEW FACT", (381, 253), cv2.FONT_HERSHEY_SIMPLEX, .7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(result, "NEW FACT", (381, 253), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
         return _zoom_pan(result, 1.11, -32, -18) if transform_class.startswith("pan_") else result
     if transform_class == "pan_zoom_shared_template":
-        return _zoom_pan(_canvas(seed + 50000, changed=True), .88, 42, 24)
+        return _zoom_pan(_canvas(seed + 50000, changed=True), 0.88, 42, 24)
     if transform_class == "too_few_descriptors":
         return np.full_like(reference, 127)
     if transform_class == "collinear_inliers":
@@ -104,7 +119,7 @@ def _candidate(reference: np.ndarray, transform_class: str, seed: int) -> np.nda
     if transform_class == "outlier_heavy":
         result = _canvas(seed + 40000, changed=True)
         noise = np.random.default_rng(seed + 7).integers(0, 255, result.shape, dtype=np.uint8)
-        return cv2.addWeighted(result, .52, noise, .48, 0)
+        return cv2.addWeighted(result, 0.52, noise, 0.48, 0)
     # true_transition and ransac_failure are independently authored changed screens.
     return _canvas(seed + 10000, changed=True)
 
@@ -153,7 +168,11 @@ def _sequence(split: str, transform_class: str, seed: int) -> dict[str, Any]:
 
 def build_manifest() -> dict[str, Any]:
     classes = sorted(REQUIRED_TRANSFORM_CLASSES)
-    development = [_sequence("development", name, 11000 + index * 10 + replica) for index, name in enumerate(classes) for replica in range(2)]
+    development = [
+        _sequence("development", name, 11000 + index * 10 + replica)
+        for index, name in enumerate(classes)
+        for replica in range(2)
+    ]
     held_out = [_sequence("held_out", name, 21000 + index * 10) for index, name in enumerate(classes)]
     return {
         "manifest_version": 3,

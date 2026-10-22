@@ -55,8 +55,7 @@ def test_quiet_speech_fixture_small_gap_passes():
 
 def test_parse_silencedetect_inverts_to_speech():
     stderr = (
-        "[silencedetect @ 0x1] silence_start: 30.0\n"
-        "[silencedetect @ 0x1] silence_end: 600.0 | silence_duration: 570\n"
+        "[silencedetect @ 0x1] silence_start: 30.0\n[silencedetect @ 0x1] silence_end: 600.0 | silence_duration: 570\n"
     )
     speech = parse_silencedetect(stderr, duration=630.0)
     assert speech == [(0.0, 30.0), (600.0, 630.0)]

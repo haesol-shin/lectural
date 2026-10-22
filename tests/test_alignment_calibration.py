@@ -82,7 +82,9 @@ def _write_manifest(tmp_path: Path, development: list[dict], held_out: list[dict
     return path
 
 
-def _patch_measurements(monkeypatch: pytest.MonkeyPatch, development: list[dict], held_out: list[dict], *, version: str = "4.6.0"):
+def _patch_measurements(
+    monkeypatch: pytest.MonkeyPatch, development: list[dict], held_out: list[dict], *, version: str = "4.6.0"
+):
     rows = development + held_out
 
     def fake_measurements():
@@ -292,7 +294,9 @@ def test_legacy_pair_manifest_cannot_freeze_even_with_complete_pair_metrics(monk
     report = calibration.calibrate(manifest)
     repeat = calibration.calibrate(manifest)
     assert report["frozen"] is False
-    assert "legacy pair manifest is diagnostic-only; sequence replay evidence is required for freeze" in report["blockers"]
+    assert (
+        "legacy pair manifest is diagnostic-only; sequence replay evidence is required for freeze" in report["blockers"]
+    )
     assert report["thresholds"] == repeat["thresholds"]
     assert report["thresholds_ieee754_hex"]["ratio_matches_min"]
     assert report["reproducibility"]["passed"] is True
@@ -345,7 +349,9 @@ def test_monotone_threshold_search_matches_exhaustive_oracle_with_scale_endpoint
         rng = random.Random(seed)
         positive = calibration_measurement = _measurement("same")
         for field in ("ratio_matches", "inlier_count", "inlier_ratio", "hull_support", "eigenvalue_ratio"):
-            positive[field] = round(rng.uniform(0.55, 0.95) * (100 if field in {"ratio_matches", "inlier_count"} else 1), 3)
+            positive[field] = round(
+                rng.uniform(0.55, 0.95) * (100 if field in {"ratio_matches", "inlier_count"} else 1), 3
+            )
         positive["coverage"] = None
         positive["forward_coverage"] = round(rng.uniform(0.75, 0.95), 3)
         positive["reverse_coverage"] = round(rng.uniform(0.75, 0.95), 3)
@@ -455,12 +461,32 @@ def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
     reference_path = str(reference.relative_to(REPO_ROOT)).replace("\\", "/")
     candidate_path = str(candidate.relative_to(REPO_ROOT)).replace("\\", "/")
     sequence = {
-        "sequence_id": "provenance", "transform_class": "pan_zoom",
-        "source_content_id": "canvas", "generator_seed": 1,
+        "sequence_id": "provenance",
+        "transform_class": "pan_zoom",
+        "source_content_id": "canvas",
+        "generator_seed": 1,
         "frames": [
-            {"timestamp": 0, "phash": 0, "expected_visual_id": "a", "path": reference_path, "sha256": digest(reference)},
-            {"timestamp": 1, "phash": 1, "expected_visual_id": "b", "path": candidate_path, "sha256": digest(candidate)},
-            {"timestamp": 2, "phash": 1, "expected_visual_id": "b", "path": candidate_path, "sha256": digest(candidate)},
+            {
+                "timestamp": 0,
+                "phash": 0,
+                "expected_visual_id": "a",
+                "path": reference_path,
+                "sha256": digest(reference),
+            },
+            {
+                "timestamp": 1,
+                "phash": 1,
+                "expected_visual_id": "b",
+                "path": candidate_path,
+                "sha256": digest(candidate),
+            },
+            {
+                "timestamp": 2,
+                "phash": 1,
+                "expected_visual_id": "b",
+                "path": candidate_path,
+                "sha256": digest(candidate),
+            },
         ],
         "event_measurements": {
             "provenance:2:1": {"direct_same": True, "poison": "first"},
@@ -474,7 +500,9 @@ def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
     # must remain exactly the same.
     for frame in sequence["frames"]:
         frame["phash"] = 0
-    second, _raw_second = calibration._with_worker_measurements({"development_sequences": [sequence], "held_out_sequences": []})
+    second, _raw_second = calibration._with_worker_measurements(
+        {"development_sequences": [sequence], "held_out_sequences": []}
+    )
     cache = first["development_sequences"][0]["event_measurements"]["provenance:2:1"]
     assert raw["worker_pids"] and len(raw["worker_pids"]) == 1
     assert "poison" not in cache
@@ -496,13 +524,16 @@ def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
 
 def test_replay_fails_closed_for_partial_decoded_phash_trace():
     with pytest.raises(ValueError, match="decoded pHash trace is incomplete"):
-        calibration.replay_sequence({
-            "sequence_id": "partial",
-            "frames": [
-                {"timestamp": 0, "phash": 0, "recomputed_phash": 0, "expected_visual_id": "a"},
-                {"timestamp": 1, "phash": 1, "expected_visual_id": "b"},
-            ],
-        }, None)
+        calibration.replay_sequence(
+            {
+                "sequence_id": "partial",
+                "frames": [
+                    {"timestamp": 0, "phash": 0, "recomputed_phash": 0, "expected_visual_id": "a"},
+                    {"timestamp": 1, "phash": 1, "expected_visual_id": "b"},
+                ],
+            },
+            None,
+        )
 
 
 def test_source_frame_sha_mutation_fails_before_worker_or_reproducibility(monkeypatch, tmp_path):
@@ -515,26 +546,35 @@ def test_source_frame_sha_mutation_fails_before_worker_or_reproducibility(monkey
     copied.write_bytes(copied.read_bytes() + b"manifest-mutation")
     monkeypatch.setattr(calibration, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(
-        calibration, "_with_worker_measurements",
+        calibration,
+        "_with_worker_measurements",
         lambda *_args, **_kwargs: pytest.fail("worker must not run after SHA preflight failure"),
     )
     manifest = {
-        "development_sequences": [{
-            "sequence_id": "mutated-dev", "transform_class": "static_shift",
-            "source_content_id": "canvas", "generator_seed": 3,
-            "frames": [
-                {"timestamp": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
-                {"timestamp": 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
-            ],
-        }],
-        "held_out_sequences": [{
-            "sequence_id": "mutated-held", "transform_class": "static_shift",
-            "source_content_id": "canvas", "generator_seed": 4,
-            "frames": [
-                {"timestamp": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
-                {"timestamp": 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
-            ],
-        }],
+        "development_sequences": [
+            {
+                "sequence_id": "mutated-dev",
+                "transform_class": "static_shift",
+                "source_content_id": "canvas",
+                "generator_seed": 3,
+                "frames": [
+                    {"timestamp": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
+                    {"timestamp": 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
+                ],
+            }
+        ],
+        "held_out_sequences": [
+            {
+                "sequence_id": "mutated-held",
+                "transform_class": "static_shift",
+                "source_content_id": "canvas",
+                "generator_seed": 4,
+                "frames": [
+                    {"timestamp": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
+                    {"timestamp": 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
+                ],
+            }
+        ],
     }
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -562,24 +602,30 @@ def test_source_mutation_after_staged_inspect_blocks_worker_measurement(monkeypa
         def compare(self, reference, candidate):
             # Runs after both staged inspections but cannot alter snapshots.
             copied.write_bytes(copied.read_bytes() + b"late-mutation")
-            return {**_measurement("same"), "worker_pid": 42,
-                    "reference_path": reference, "candidate_path": candidate,
-                    "direct_same": False,
-                    "direct_metrics": {"hist_corr": 0.0, "ssim": 0.0},
-                    "source_phash": {"reference": 0, "candidate": 0},
-                    "identity_content_change": {"by_pixel_delta": {}},
-                    "aligned_content_change": {"by_pixel_delta": {}}}
+            return {
+                **_measurement("same"),
+                "worker_pid": 42,
+                "reference_path": reference,
+                "candidate_path": candidate,
+                "direct_same": False,
+                "direct_metrics": {"hist_corr": 0.0, "ssim": 0.0},
+                "source_phash": {"reference": 0, "candidate": 0},
+                "identity_content_change": {"by_pixel_delta": {}},
+                "aligned_content_change": {"by_pixel_delta": {}},
+            }
 
         def close(self):
             pass
 
     sequence = {
-        "sequence_id": "toctou", "transform_class": "static_shift",
-        "source_content_id": "canvas", "generator_seed": 5,
+        "sequence_id": "toctou",
+        "transform_class": "static_shift",
+        "source_content_id": "canvas",
+        "generator_seed": 5,
         "frames": [
             {"timestamp": 0, "phash": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
-                {"timestamp": 1, "phash": (1 << 17) - 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
-                {"timestamp": 2, "phash": (1 << 17) - 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
+            {"timestamp": 1, "phash": (1 << 17) - 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
+            {"timestamp": 2, "phash": (1 << 17) - 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
         ],
     }
     _measured, raw = calibration._with_worker_measurements(
@@ -606,20 +652,26 @@ def test_worker_mutated_staged_candidate_blocks_worker_measurement(monkeypatch, 
 
         def compare(self, reference, candidate):
             Path(candidate).write_bytes(Path(candidate).read_bytes() + b"worker-mutation")
-            return {**_measurement("same"), "worker_pid": 77,
-                    "reference_path": reference, "candidate_path": candidate,
-                    "direct_same": False,
-                    "direct_metrics": {"hist_corr": 0.0, "ssim": 0.0},
-                    "source_phash": {"reference": 0, "candidate": 0},
-                    "identity_content_change": {"by_pixel_delta": {}},
-                    "aligned_content_change": {"by_pixel_delta": {}}}
+            return {
+                **_measurement("same"),
+                "worker_pid": 77,
+                "reference_path": reference,
+                "candidate_path": candidate,
+                "direct_same": False,
+                "direct_metrics": {"hist_corr": 0.0, "ssim": 0.0},
+                "source_phash": {"reference": 0, "candidate": 0},
+                "identity_content_change": {"by_pixel_delta": {}},
+                "aligned_content_change": {"by_pixel_delta": {}},
+            }
 
         def close(self):
             pass
 
     sequence = {
-        "sequence_id": "staged-toctou", "transform_class": "static_shift",
-        "source_content_id": "canvas", "generator_seed": 6,
+        "sequence_id": "staged-toctou",
+        "transform_class": "static_shift",
+        "source_content_id": "canvas",
+        "generator_seed": 6,
         "frames": [
             {"timestamp": 0, "phash": 0, "expected_visual_id": "a", "path": "frame.png", "sha256": digest},
             {"timestamp": 1, "phash": (1 << 17) - 1, "expected_visual_id": "b", "path": "frame.png", "sha256": digest},
@@ -635,9 +687,7 @@ def test_worker_mutated_staged_candidate_blocks_worker_measurement(monkeypatch, 
     assert all("_staged_path" not in frame and "recomputed_phash" not in frame for frame in returned["frames"])
     # The failure return itself contains no deleted snapshot pointer or partial
     # evidence: it can be handed back to the same pipeline safely.
-    repeated, repeat_raw = calibration._with_worker_measurements(
-        measured, worker=SnapshotMutatingWorker()
-    )
+    repeated, repeat_raw = calibration._with_worker_measurements(measured, worker=SnapshotMutatingWorker())
     assert repeat_raw["worker_measurement_error"] == "staged frame SHA-256 mismatch after worker execution"
     repeated_frame = repeated["development_sequences"][0]["frames"][0]
     assert "_staged_path" not in repeated_frame
@@ -651,15 +701,38 @@ def test_full_decoded_pipeline_has_exact_worker_pid_topology():
     digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
     path = lambda value: str(value.relative_to(REPO_ROOT)).replace("\\", "/")
     sequence = {
-        "sequence_id": "pid-topology", "transform_class": "true_transition",
-        "source_content_id": "canvas", "generator_seed": 2, "event_measurements": {},
+        "sequence_id": "pid-topology",
+        "transform_class": "true_transition",
+        "source_content_id": "canvas",
+        "generator_seed": 2,
+        "event_measurements": {},
         "frames": [
-            {"timestamp": 0, "phash": 0, "expected_visual_id": "a", "path": path(reference), "sha256": digest(reference)},
-            {"timestamp": 1, "phash": 1, "expected_visual_id": "b", "path": path(candidate), "sha256": digest(candidate)},
-            {"timestamp": 2, "phash": 1, "expected_visual_id": "b", "path": path(candidate), "sha256": digest(candidate)},
+            {
+                "timestamp": 0,
+                "phash": 0,
+                "expected_visual_id": "a",
+                "path": path(reference),
+                "sha256": digest(reference),
+            },
+            {
+                "timestamp": 1,
+                "phash": 1,
+                "expected_visual_id": "b",
+                "path": path(candidate),
+                "sha256": digest(candidate),
+            },
+            {
+                "timestamp": 2,
+                "phash": 1,
+                "expected_visual_id": "b",
+                "path": path(candidate),
+                "sha256": digest(candidate),
+            },
         ],
     }
-    result = calibration._full_sequence_reproducibility({"development_sequences": [sequence], "held_out_sequences": [sequence]})
+    result = calibration._full_sequence_reproducibility(
+        {"development_sequences": [sequence], "held_out_sequences": [sequence]}
+    )
     assert len(result["worker_pids"]["same_session"]) == 10
     assert len(set(result["worker_pids"]["same_session"])) == 1
     assert len(result["worker_pids"]["fresh_worker"]) == 2
@@ -668,20 +741,24 @@ def test_full_decoded_pipeline_has_exact_worker_pid_topology():
 
 def test_sequence_calibration_is_fail_closed_without_complete_fit_evidence(tmp_path):
     manifest = {
-        "development_sequences": [{
-            "sequence_id": "dev",
-            "frames": [
-                {"timestamp": 0, "phash": 0, "expected_visual_id": "a"},
-                {"timestamp": 1, "phash": 1 << 17, "expected_visual_id": "a"},
-            ],
-        }],
-        "held_out_sequences": [{
-            "sequence_id": "held",
-            "frames": [
-                {"timestamp": 0, "phash": 0, "expected_visual_id": "a"},
-                {"timestamp": 1, "phash": 1 << 17, "expected_visual_id": "a"},
-            ],
-        }],
+        "development_sequences": [
+            {
+                "sequence_id": "dev",
+                "frames": [
+                    {"timestamp": 0, "phash": 0, "expected_visual_id": "a"},
+                    {"timestamp": 1, "phash": 1 << 17, "expected_visual_id": "a"},
+                ],
+            }
+        ],
+        "held_out_sequences": [
+            {
+                "sequence_id": "held",
+                "frames": [
+                    {"timestamp": 0, "phash": 0, "expected_visual_id": "a"},
+                    {"timestamp": 1, "phash": 1 << 17, "expected_visual_id": "a"},
+                ],
+            }
+        ],
         "retired_holdouts": [],
     }
     path = tmp_path / "sequence-manifest.json"
@@ -697,15 +774,22 @@ def test_sequence_calibration_is_fail_closed_without_complete_fit_evidence(tmp_p
 def test_sequence_threshold_search_is_bounded_and_never_returns_partial_vector():
     # A direct-only event cannot make alignment_fit viable, so the fitter must
     # fail closed rather than infer any of the 14 production fields.
-    events = [{
-        "expected_label": "same",
-        "measurement": {
-            "direct_same": True,
-            "identity_content_change": {"by_pixel_delta": {"8": {
-                "changed_fraction": 0.0, "largest_changed_component_fraction": 0.0,
-            }}},
-        },
-    }]
+    events = [
+        {
+            "expected_label": "same",
+            "measurement": {
+                "direct_same": True,
+                "identity_content_change": {
+                    "by_pixel_delta": {
+                        "8": {
+                            "changed_fraction": 0.0,
+                            "largest_changed_component_fraction": 0.0,
+                        }
+                    }
+                },
+            },
+        }
+    ]
     thresholds, diagnostics = calibration.find_sequence_thresholds(events, max_states=1)
     assert thresholds is None
     assert diagnostics["reason"] == "fit population incomplete"
@@ -759,7 +843,8 @@ def _sequence_exhaustive_oracle(events):
     """Independent bounded Cartesian reference for the branch-and-bound test."""
     alignment = [event["measurement"]["alignment"] for event in events if event["measurement"]["direct_same"] is False]
     positives = [
-        event["measurement"]["alignment"] for event in events
+        event["measurement"]["alignment"]
+        for event in events
         if event["measurement"]["direct_same"] is False and event["expected_label"] == "same"
     ]
     domains = {}
@@ -767,11 +852,19 @@ def _sequence_exhaustive_oracle(events):
         values = calibration._candidate_values(alignment, raw)
         if direction == "min":
             domains[name] = sorted(
-                (value for value in values if value <= min(calibration._measurement_value(item, raw) for item in positives)),
+                (
+                    value
+                    for value in values
+                    if value <= min(calibration._measurement_value(item, raw) for item in positives)
+                ),
                 reverse=True,
             )
         elif direction == "max":
-            domains[name] = sorted(value for value in values if value >= max(calibration._measurement_value(item, raw) for item in positives))
+            domains[name] = sorted(
+                value
+                for value in values
+                if value >= max(calibration._measurement_value(item, raw) for item in positives)
+            )
         elif direction == "scale_min":
             domains[name] = [0.80]
         else:
@@ -781,9 +874,13 @@ def _sequence_exhaustive_oracle(events):
         active = [calibration._content_metric_for_event(event, item) for event, item in zip(events, resolved)]
         changed = sorted({item["changed_fraction"] for item in active})
         largest = sorted({item["largest_changed_component_fraction"] for item in active})
-        for values in itertools.product(*(domains[name] for _raw, name, _direction in calibration._THRESHOLD_ORDER), changed, largest):
+        for values in itertools.product(
+            *(domains[name] for _raw, name, _direction in calibration._THRESHOLD_ORDER), changed, largest
+        ):
             vector = dict(zip((name for _raw, name, _direction in calibration._THRESHOLD_ORDER), values[:11]))
-            vector.update(pixel_delta=delta, changed_fraction_max=values[-2], largest_changed_component_fraction_max=values[-1])
+            vector.update(
+                pixel_delta=delta, changed_fraction_max=values[-2], largest_changed_component_fraction_max=values[-1]
+            )
             if all(
                 calibration._event_matches_decision(
                     event, calibration.evaluate_visual_candidate(item, vector, complete=True)
@@ -800,8 +897,22 @@ def test_sequence_branch_and_bound_matches_independent_full_cartesian_oracle():
     events = [
         _sequence_event("aligned-positive", "same", _sequence_measurement(direct_same=False)),
         _sequence_event("aligned-negative", "different", _sequence_measurement(direct_same=False, ratio_matches=1)),
-        {**_sequence_event("fallback-positive", "same", _sequence_measurement(direct_same=True, identity_changed=0.10, aligned_changed=0.0)), "required_fallback": True},
-        {**_sequence_event("fallback-negative", "different", _sequence_measurement(direct_same=True, identity_changed=0.20, aligned_changed=0.20)), "required_fallback": True},
+        {
+            **_sequence_event(
+                "fallback-positive",
+                "same",
+                _sequence_measurement(direct_same=True, identity_changed=0.10, aligned_changed=0.0),
+            ),
+            "required_fallback": True,
+        },
+        {
+            **_sequence_event(
+                "fallback-negative",
+                "different",
+                _sequence_measurement(direct_same=True, identity_changed=0.20, aligned_changed=0.20),
+            ),
+            "required_fallback": True,
+        },
         _sequence_event(
             "direct-true-negative",
             "different",
@@ -833,8 +944,22 @@ def test_sequence_branch_and_bound_matches_oracle_when_distinct_branch_metrics_h
     events = [
         _sequence_event("aligned-positive", "same", _sequence_measurement(direct_same=False)),
         _sequence_event("aligned-negative", "different", _sequence_measurement(direct_same=False, ratio_matches=1)),
-        {**_sequence_event("impossible-fallback", "same", _sequence_measurement(direct_same=True, identity_changed=0.0, aligned_changed=0.0)), "required_fallback": True},
-        {**_sequence_event("fallback-negative", "different", _sequence_measurement(direct_same=True, identity_changed=0.20, aligned_changed=0.20)), "required_fallback": True},
+        {
+            **_sequence_event(
+                "impossible-fallback",
+                "same",
+                _sequence_measurement(direct_same=True, identity_changed=0.0, aligned_changed=0.0),
+            ),
+            "required_fallback": True,
+        },
+        {
+            **_sequence_event(
+                "fallback-negative",
+                "different",
+                _sequence_measurement(direct_same=True, identity_changed=0.20, aligned_changed=0.20),
+            ),
+            "required_fallback": True,
+        },
     ]
     expected = _sequence_exhaustive_oracle(events)
     actual, diagnostics = calibration.find_sequence_thresholds(events)
@@ -849,18 +974,29 @@ def test_synthetic_sequence_generator_covers_all_required_paths_and_classes():
     manifest = build_synthetic_sequence_manifest()
     errors = calibration.validate_sequence_manifest(manifest)
     replay_thresholds = {
-            "ratio_matches_min": 2, "inlier_count_min": 1, "inlier_ratio_min": 0,
-            "hull_support_min": 0, "eigenvalue_ratio_min": 0, "coverage_min": 0,
-            "ssim_min": 0, "residual_median_max": 1, "residual_p95_max": 1,
-            "scale_min": .8, "scale_max": 1.25, "pixel_delta": 8,
-            "changed_fraction_max": 0.01, "largest_changed_component_fraction_max": 0.01,
+        "ratio_matches_min": 2,
+        "inlier_count_min": 1,
+        "inlier_ratio_min": 0,
+        "hull_support_min": 0,
+        "eigenvalue_ratio_min": 0,
+        "coverage_min": 0,
+        "ssim_min": 0,
+        "residual_median_max": 1,
+        "residual_p95_max": 1,
+        "scale_min": 0.8,
+        "scale_max": 1.25,
+        "pixel_delta": 8,
+        "changed_fraction_max": 0.01,
+        "largest_changed_component_fraction_max": 0.01,
     }
     development = [
-        event for sequence in manifest["development_sequences"]
+        event
+        for sequence in manifest["development_sequences"]
         for event in calibration.replay_sequence(sequence, replay_thresholds)
     ]
     held_out = [
-        event for sequence in manifest["held_out_sequences"]
+        event
+        for sequence in manifest["held_out_sequences"]
         for event in calibration.replay_sequence(sequence, replay_thresholds)
     ]
     # The generator is metadata-only by design; it proves synthetic branch

@@ -130,11 +130,17 @@ def classify_source(argument: str) -> InputSource:
     expanded = os.path.expanduser(argument)
     suffix = Path(expanded).suffix.lower()
     exists_as_regular_file = os.path.isfile(expanded)
-    if not exists_as_regular_file and is_url_like(argument) and not (
-        is_youtube_url(argument) and extract_video_id(argument)
+    if (
+        not exists_as_regular_file
+        and is_url_like(argument)
+        and not (is_youtube_url(argument) and extract_video_id(argument))
     ):
-        if (suffix in _SUPPORTED_SUFFIXES and not has_url_scheme(argument)
-                and not argument.startswith("//") and not os.path.isdir(expanded)):
+        if (
+            suffix in _SUPPORTED_SUFFIXES
+            and not has_url_scheme(argument)
+            and not argument.startswith("//")
+            and not os.path.isdir(expanded)
+        ):
             raise FileNotFoundError("Local source does not exist")
         raise ValueError("Input must be a YouTube URL/ID or an existing supported local file")
     if exists_as_regular_file:
@@ -154,9 +160,7 @@ def classify_source(argument: str) -> InputSource:
         )
 
     if os.path.isdir(expanded):
-        raise ValueError(
-            f"Input must be a YouTube URL/ID or an existing supported local file: {argument!r}"
-        )
+        raise ValueError(f"Input must be a YouTube URL/ID or an existing supported local file: {argument!r}")
     if suffix in _SUPPORTED_SUFFIXES:
         raise FileNotFoundError(f"Local source does not exist: {argument!r}")
 
@@ -169,6 +173,4 @@ def classify_source(argument: str) -> InputSource:
             title_hint="",
             video_id=video_id,
         )
-    raise ValueError(
-        "Input must be a YouTube URL/ID or an existing supported local file"
-    )
+    raise ValueError("Input must be a YouTube URL/ID or an existing supported local file")

@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8")
@@ -47,7 +48,6 @@ except Exception as exc:  # noqa: BLE001
 _DEFAULT_RUNSTATE_FILENAME = ".lectural_runstate.json"
 
 
-
 def _read_runstate() -> dict | None:
     """Self-contained run-state reader (no lectural import -> fails closed).
 
@@ -55,17 +55,14 @@ def _read_runstate() -> dict | None:
     turn was not a LecturAL run). A present-but-unreadable file is treated as a
     failure by returning a sentinel that the gate rejects.
     """
-    path = os.environ.get("LECTURAL_RUNSTATE") or os.path.join(
-        os.getcwd(), _DEFAULT_RUNSTATE_FILENAME
-    )
+    path = os.environ.get("LECTURAL_RUNSTATE") or os.path.join(os.getcwd(), _DEFAULT_RUNSTATE_FILENAME)
     if not os.path.isfile(path):
         return None
     try:
         with open(path, encoding="utf-8") as fh:
             return json.load(fh)
     except (OSError, json.JSONDecodeError):
-        return {"runs": [{"status": "failed", "error": f"unreadable run-state: {path}",
-                          "output_dir": path}]}
+        return {"runs": [{"status": "failed", "error": f"unreadable run-state: {path}", "output_dir": path}]}
 
 
 def _resolve_notes_path(run: dict, cov_path: str) -> str:
@@ -91,9 +88,7 @@ def _has_frame_png(run: dict, notes_path: str) -> bool:
     for root in roots:
         frames_dir = os.path.join(root, "frames")
         try:
-            if os.path.isdir(frames_dir) and any(
-                name.lower().endswith(".png") for name in os.listdir(frames_dir)
-            ):
+            if os.path.isdir(frames_dir) and any(name.lower().endswith(".png") for name in os.listdir(frames_dir)):
                 return True
         except OSError:
             continue
@@ -153,7 +148,6 @@ def _validate_notes(run: dict, cov_path: str) -> list[str]:
     )
 
 
-
 def _validate_run(run: dict) -> list[str]:
     problems: list[str] = []
     status = run.get("status")
@@ -174,8 +168,7 @@ def _validate_run(run: dict) -> list[str]:
         arts = cov.get("artifacts", {})
         if not gap.get("pass"):
             problems.append(
-                f"대사 공백 초과: {gap.get('max_untranscribed_speech_gap_sec')}s "
-                f"> {gap.get('threshold_sec')}s"
+                f"대사 공백 초과: {gap.get('max_untranscribed_speech_gap_sec')}s > {gap.get('threshold_sec')}s"
             )
         if not scene.get("pass"):
             problems.append(
