@@ -10,9 +10,9 @@ instead of a deep ImportError/FileNotFoundError stack.
 from __future__ import annotations
 
 import importlib
-from importlib import metadata as importlib_metadata
 import shutil
 from dataclasses import dataclass
+from importlib import metadata as importlib_metadata
 
 
 class DependencyError(RuntimeError):

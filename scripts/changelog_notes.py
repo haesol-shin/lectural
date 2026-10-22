@@ -64,10 +64,7 @@ def main(argv: list[str]) -> int:
         print("usage: changelog_notes.py <version> [changelog_path] [--link]", file=sys.stderr)
         return 2
     version = args[0].strip()
-    if len(args) >= 2:
-        changelog_path = Path(args[1])
-    else:
-        changelog_path = Path(__file__).resolve().parents[1] / "CHANGELOG.md"
+    changelog_path = Path(args[1]) if len(args) >= 2 else Path(__file__).resolve().parents[1] / "CHANGELOG.md"
     text = changelog_path.read_text(encoding="utf-8")
     if want_link:
         link = extract_link(text, version)

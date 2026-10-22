@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from lectural import acquisition, cli, coverage, doctor, media, vad, visual
+from lectural import acquisition, cli, doctor, media, vad, visual
 from lectural.source import SourceKind
 
 

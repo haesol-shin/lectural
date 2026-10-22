@@ -9,17 +9,16 @@ It never changes production configuration and never recalibrates at runtime.
 from __future__ import annotations
 
 import argparse
-import itertools
-from datetime import date
 import hashlib
 import json
 import math
-from pathlib import Path
+import os
 import re
 import sys
 import tempfile
 import time
-import os
+from datetime import date
+from pathlib import Path
 from typing import Any
 
 # Keep direct ``python scripts/calibrate_alignment.py`` invocation equivalent
@@ -28,7 +27,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from lectural.alignment import (
+from lectural.alignment import (  # noqa: E402, F401  # path setup; CANONICAL_GATE_ORDER re-exported for tests
     CANONICAL_GATE_ORDER,
     OPENCV_CONSTRAINT,
     PROTOCOL_VERSION,
@@ -38,8 +37,7 @@ from lectural.alignment import (
     opencv_provenance,
     run_alignment_batch,
 )
-from lectural.visual import advance_dedupe_state, initial_dedupe_state
-
+from lectural.visual import advance_dedupe_state, initial_dedupe_state  # noqa: E402  # imported after repository-root path setup
 
 DEFAULT_MANIFEST = REPO_ROOT / "tests" / "fixtures" / "visual_alignment" / "manifest.json"
 THRESHOLD_FIELDS = (
@@ -724,7 +722,6 @@ def find_sequence_thresholds(
         if not full_domains["changed_fraction_max"] or not full_domains["largest_changed_component_fraction_max"]:
             continue
         order = tuple(name for _raw, name, _direction in _THRESHOLD_ORDER)
-        directions = {name: direction for _raw, name, direction in _THRESHOLD_ORDER}
         diagnostics["domain_sizes"][str(pixel_delta)] = {
             name: len(full_domains[name]) for name in tuple(name for _raw, name, _direction in THRESHOLD_ORDER_14)
         }

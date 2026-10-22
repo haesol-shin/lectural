@@ -8,11 +8,11 @@ need them, so deterministic logic can be unit-tested offline.
 from .config import (
     DEDUP_HIST_THRESHOLD,
     DEDUP_SSIM_THRESHOLD,
+    EXTRACTION_CONTRACT_VERSION,
+    EXTRACTION_SCHEMA_VERSION,
     MAX_GAP_SEC,
     SCENE_BINS_N,
     SCHEMA_VERSION,
-    EXTRACTION_CONTRACT_VERSION,
-    EXTRACTION_SCHEMA_VERSION,
 )
 
 __all__ = [

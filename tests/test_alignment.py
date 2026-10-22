@@ -7,12 +7,11 @@ from pathlib import Path
 import pytest
 
 from lectural.alignment import (
-    AlignmentWorker,
     PROTOCOL_VERSION,
+    AlignmentWorker,
     evaluate_visual_candidate,
     run_alignment_batch,
 )
-
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "benchmark" / "en_terms_01" / "slides"
 REFERENCE = FIXTURE_DIR / "slide_01_concept.png"

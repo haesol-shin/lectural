@@ -7,13 +7,14 @@ settings are process-global, so the host process must never mutate them.
 
 from __future__ import annotations
 
+import contextlib
 import math
 import multiprocessing
 import os
+from collections.abc import Iterable
 from importlib import metadata as importlib_metadata
 from pathlib import Path
-from typing import Any, Iterable
-
+from typing import Any
 
 PROTOCOL_VERSION = 1
 OPENCV_CONSTRAINT = ">=4.5,<=4.6.0.66"
@@ -52,7 +53,7 @@ _METRIC_KEYS = (
 
 
 def _unavailable_metrics() -> dict[str, Any]:
-    return {key: "not_evaluated" for key in _METRIC_KEYS}
+    return dict.fromkeys(_METRIC_KEYS, "not_evaluated")
 
 
 def _result(
@@ -1017,7 +1018,7 @@ def _worker_entry(connection, thresholds: dict[str, Any]) -> None:
             result["worker_pid"] = os.getpid()
             connection.send(result)
     except BaseException as exc:
-        try:
+        with contextlib.suppress(BrokenPipeError, EOFError, OSError):
             connection.send(
                 {
                     "ok": False,
@@ -1025,8 +1026,6 @@ def _worker_entry(connection, thresholds: dict[str, Any]) -> None:
                     "error": f"{type(exc).__name__}: {exc}",
                 }
             )
-        except (BrokenPipeError, EOFError, OSError):
-            pass
     finally:
         connection.close()
 

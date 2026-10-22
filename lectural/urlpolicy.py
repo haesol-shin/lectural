@@ -14,7 +14,7 @@ def _parts(value: str):
     try:
         parsed = urlsplit(value)
         if parsed.hostname and not any(c.isspace() for c in parsed.netloc):
-            parsed.port
+            parsed.port  # noqa: B018  # accessing the port validates it
             return parsed
     except ValueError:
         pass
@@ -45,7 +45,7 @@ def is_youtube_url(value: str) -> bool:
         if not candidate and _SCHEME.match(value):
             return False
         if parts.netloc:
-            parts.port
+            parts.port  # noqa: B018  # accessing the port validates it
             if any(c.isspace() for c in parts.netloc):
                 return False
         return not parts.netloc or (parts.hostname or "").lower().rstrip(".") in _YOUTUBE_HOSTS

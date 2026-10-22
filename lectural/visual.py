@@ -8,16 +8,15 @@ real slide changes survive.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import os
 import re
 import shutil
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
 from .alignment import AlignmentWorker, evaluate_visual_candidate, visual_metadata_from_worker_result
 from .config import ALIGNMENT_THRESHOLDS, DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, SAMPLE_FPS
-
 
 PHASH_HAMMING_THRESHOLD = 12
 PHASH_CHANGE_PERSISTENCE = 2

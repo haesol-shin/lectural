@@ -21,16 +21,13 @@ from __future__ import annotations
 import argparse
 import io
 import json
-import os
 import random
-import re
 import shutil
 import subprocess
 import wave
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Data Models & Schemas
@@ -439,7 +436,7 @@ def assemble_speech_track(
     # Lead-in silence
     write_silence(lead_in_silence)
 
-    for i, (utt_path, dur) in enumerate(utterance_files):
+    for i, (utt_path, _dur) in enumerate(utterance_files):
         with wave.open(str(utt_path), "rb") as w:
             frames = w.readframes(w.getnframes())
             actual_dur = w.getnframes() / w.getframerate()

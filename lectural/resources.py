@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 import os
 import threading
 import time
-from typing import Iterator
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 
 class ResourceSampler:
@@ -25,7 +25,7 @@ class ResourceSampler:
         self._thread: threading.Thread | None = None
         self._started = 0.0
 
-    def start(self) -> "ResourceSampler":
+    def start(self) -> ResourceSampler:
         self._started = time.perf_counter()
         try:
             import psutil

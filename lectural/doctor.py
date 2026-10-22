@@ -7,17 +7,17 @@ side-effect free unless ``fix=True`` is requested.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 import importlib
-from importlib import metadata as importlib_metadata
 import json
 import platform
-from pathlib import Path
+import shlex
 import shutil
 import subprocess
-import shlex
 import sys
-from typing import Callable, Iterable
+from collections.abc import Iterable
+from dataclasses import asdict, dataclass
+from importlib import metadata as importlib_metadata
+from pathlib import Path
 
 from . import deps
 

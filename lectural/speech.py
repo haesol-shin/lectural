@@ -6,8 +6,8 @@ faster-whisper is imported lazily so the package stays import-safe offline.
 
 from __future__ import annotations
 
-import re
 import io
+import re
 import subprocess
 
 from .acquisition import Segment, SpeechTrack

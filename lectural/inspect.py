@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
 import stat
+from datetime import datetime, timezone
 from typing import Any
 
 from . import __version__
@@ -66,7 +66,6 @@ def inventory(bundle: Bundle) -> dict[str, Any]:
     reason_codes = [
         item.get("code") for item in reasons if isinstance(item, dict) and isinstance(item.get("code"), str)
     ]
-    artifacts = _mapping(manifest.get("artifacts"))
     resources = _mapping(manifest.get("resources"))
     stages = _mapping(resources.get("stages"))
     duration = source.get("duration_sec")

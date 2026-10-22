@@ -18,7 +18,6 @@ from typing import Any
 
 from scripts.calibrate_alignment import REQUIRED_TRANSFORM_CLASSES
 
-
 PIXEL_DELTAS = (8, 12, 16, 24, 32, 48, 64)
 
 

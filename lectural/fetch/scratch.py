@@ -1,6 +1,5 @@
 """Private scratch lifetime, advisory locks and stale-run recovery."""
 
-from contextlib import contextmanager
 import os
 import shutil
 import signal
@@ -9,6 +8,7 @@ import sys
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
 
 try:
     import fcntl

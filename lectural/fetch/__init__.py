@@ -1,13 +1,13 @@
 """Prepare public URLs as disposable ordinary local sources."""
 
+import os
 from contextlib import contextmanager
 from dataclasses import dataclass
-import os
 
 from ..source import InputSource, SourceKind, classify_source
 from ..urlpolicy import remote_url_origin
 from . import assets, http, ytdlp
-from .errors import RemoteSourceError, ACCESS_DENIED, LOGIN_REQUIRED, REDIRECT_REJECTED
+from .errors import ACCESS_DENIED, LOGIN_REQUIRED, REDIRECT_REJECTED, RemoteSourceError
 from .scratch import scratch_space
 
 

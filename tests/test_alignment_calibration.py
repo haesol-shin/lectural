@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import itertools
 import json
-from pathlib import Path
 import random
 import shutil
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import calibrate_alignment as calibration
+from scripts import calibrate_alignment as calibration  # noqa: E402  # imported after repository-root path setup
 
 
 def _require_calibrated_opencv():
@@ -353,7 +353,7 @@ def _exhaustive_threshold_oracle(rows, measurements):
 def test_monotone_threshold_search_matches_exhaustive_oracle_with_scale_endpoints():
     for seed in range(5):
         rng = random.Random(seed)
-        positive = calibration_measurement = _measurement("same")
+        positive = _measurement("same")
         for field in ("ratio_matches", "inlier_count", "inlier_ratio", "hull_support", "eigenvalue_ratio"):
             positive[field] = round(
                 rng.uniform(0.55, 0.95) * (100 if field in {"ratio_matches", "inlier_count"} else 1), 3
@@ -463,7 +463,10 @@ def test_decoded_fixture_pipeline_ignores_manifest_cache_and_authored_phash():
     _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
-    digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
+    def digest(path):
+        return __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
     reference_path = str(reference.relative_to(REPO_ROOT)).replace("\\", "/")
     candidate_path = str(candidate.relative_to(REPO_ROOT)).replace("\\", "/")
     sequence = {
@@ -704,8 +707,13 @@ def test_full_decoded_pipeline_has_exact_worker_pid_topology():
     _require_calibrated_opencv()
     reference = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_01_concept.png"
     candidate = REPO_ROOT / "tests/fixtures/benchmark/en_terms_01/slides/slide_00_title.png"
-    digest = lambda path: __import__("hashlib").sha256(path.read_bytes()).hexdigest()
-    path = lambda value: str(value.relative_to(REPO_ROOT)).replace("\\", "/")
+
+    def digest(path):
+        return __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+
+    def path(value):
+        return str(value.relative_to(REPO_ROOT)).replace("\\", "/")
+
     sequence = {
         "sequence_id": "pid-topology",
         "transform_class": "true_transition",

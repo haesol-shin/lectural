@@ -9,7 +9,6 @@ import pytest
 from lectural import acquisition, media, speech
 from lectural.source import InputSource, SourceKind
 
-
 VTT = "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nOriginal speech one\n\n00:00:01.000 --> 00:00:02.000\nOriginal speech two\n\n00:00:02.000 --> 00:00:03.000\nOriginal speech three\n"
 
 

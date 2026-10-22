@@ -1,13 +1,13 @@
 """Validate downloaded containers and assemble local split streams."""
 
-from dataclasses import dataclass
 import json
 import os
 import subprocess
+from dataclasses import dataclass
 
 from ..deps import require_binary
 from . import http
-from .errors import RemoteSourceError, UNAVAILABLE
+from .errors import UNAVAILABLE, RemoteSourceError
 
 INPUT_GUARD = (
     "-protocol_whitelist",

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import os
+from dataclasses import dataclass
 from typing import Any
 
 from .config import EXTRACTION_CONTRACT_VERSION, EXTRACTION_SCHEMA_VERSION
@@ -70,7 +70,7 @@ def load_bundle(path: str | os.PathLike[str]) -> Bundle:
     if not _contained(root, evidence_path):
         raise BundleError("BUNDLE_CONTAINMENT", "The evidence manifest is outside its bundle.")
     try:
-        with open(evidence_path, "r", encoding="utf-8") as stream:
+        with open(evidence_path, encoding="utf-8") as stream:
             manifest = json.load(stream)
     except FileNotFoundError as exc:
         raise BundleError("BUNDLE_UNAVAILABLE", "The evidence manifest is unavailable.") from exc

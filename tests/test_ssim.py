@@ -7,7 +7,7 @@ import pytest
 
 np = pytest.importorskip("numpy")
 
-from lectural.visual import _ssim
+from lectural.visual import _ssim  # noqa: E402  # imported after numpy importorskip
 
 
 def test_identical_images_ssim_is_one():

@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
 import math
 import os
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import datetime, timezone
+from typing import Any
 
 from . import __version__
 from .bundle import Bundle, BundleError, load_bundle
 from .config import EXTRACTION_CONTRACT_VERSION, EXTRACTION_SCHEMA_VERSION
 from .coverage import gap_check, scene_coverage
 from .source import classify_source
-
 
 _SEGMENT_ID = re.compile(r"^s[0-9]{4,}$")
 _FRAME_ID = re.compile(r"^f[0-9]{4,}$")
@@ -112,22 +112,26 @@ def _valid_failure(value: object) -> bool:
 
 
 def _valid_source(value: object) -> bool:
-    citation = lambda item: _object(
-        item,
-        {"kind"},
-        {
-            "kind": _enum("youtube", "transcript"),
-            "video_id": lambda val: _string(val, pattern=re.compile(r"^[A-Za-z0-9_-]{11}$")),
-        },
-    )
-    resolution = lambda item: _object(
-        item,
-        {"width", "height"},
-        {
-            "width": _nullable(lambda val: _integer(val, minimum=1)),
-            "height": _nullable(lambda val: _integer(val, minimum=1)),
-        },
-    )
+    def citation(item):
+        return _object(
+            item,
+            {"kind"},
+            {
+                "kind": _enum("youtube", "transcript"),
+                "video_id": lambda val: _string(val, pattern=re.compile(r"^[A-Za-z0-9_-]{11}$")),
+            },
+        )
+
+    def resolution(item):
+        return _object(
+            item,
+            {"width", "height"},
+            {
+                "width": _nullable(lambda val: _integer(val, minimum=1)),
+                "height": _nullable(lambda val: _integer(val, minimum=1)),
+            },
+        )
+
     return _object(
         value,
         {"id", "kind", "argument", "title", "duration_sec", "has_video", "resolution", "citation"},
@@ -145,9 +149,8 @@ def _valid_source(value: object) -> bool:
 
 
 def _valid_speech(value: object) -> bool:
-    fallback = lambda item: (
-        item is None
-        or _object(
+    def fallback(item):
+        return item is None or _object(
             item,
             {"code"},
             {
@@ -161,7 +164,7 @@ def _valid_speech(value: object) -> bool:
                 )
             },
         )
-    )
+
     return _object(
         value,
         {"source", "language", "model", "fallback"},
@@ -203,16 +206,18 @@ def _valid_completeness(value: object) -> bool:
 
 
 def _valid_frame(value: object) -> bool:
-    ocr = lambda item: _object(
-        item,
-        {"status", "text", "is_slide", "reliable"},
-        {
-            "status": _enum("text", "no-text", "skipped", "failed"),
-            "text": _nullable(lambda val: isinstance(val, str)),
-            "is_slide": lambda val: isinstance(val, bool),
-            "reliable": _nullable(lambda val: isinstance(val, bool)),
-        },
-    )
+    def ocr(item):
+        return _object(
+            item,
+            {"status", "text", "is_slide", "reliable"},
+            {
+                "status": _enum("text", "no-text", "skipped", "failed"),
+                "text": _nullable(lambda val: isinstance(val, str)),
+                "is_slide": lambda val: isinstance(val, bool),
+                "reliable": _nullable(lambda val: isinstance(val, bool)),
+            },
+        )
+
     nullable_dimension = _nullable(lambda item: _integer(item, minimum=1))
     return _object(
         value,
@@ -230,66 +235,80 @@ def _valid_frame(value: object) -> bool:
 
 
 def _valid_manifest_shape(manifest: dict[str, Any]) -> bool:
-    segment = lambda item: _object(
-        item,
-        {"id", "start", "end", "text"},
-        {
-            "id": lambda val: _string(val, pattern=_SEGMENT_ID),
-            "start": lambda val: _number(val, minimum=0),
-            "end": lambda val: _number(val, minimum=0),
-            "text": lambda val: isinstance(val, str),
-        },
-    )
-    transcript = lambda item: _object(item, {"segments"}, {"segments": lambda val: _valid_array(val, segment)})
-    artifacts = lambda item: _object(
-        item,
-        {"evidence", "transcript", "frames_dir", "output_dir"},
-        {
-            "evidence": lambda val: _string(val, minimum=1),
-            "transcript": lambda val: _string(val, minimum=1),
-            "frames_dir": _nullable(lambda val: _string(val, minimum=1)),
-            "output_dir": lambda val: _string(val, minimum=1),
-        },
-    )
-    extraction_ocr = lambda item: _object(
-        item,
-        {"status", "engine", "annotation_only"},
-        {
-            "status": _enum("skipped", "completed-no-text", "completed-with-text", "failed", "not_applicable"),
-            "engine": lambda val: isinstance(val, str),
-            "annotation_only": lambda val: val is True,
-        },
-        additional=True,
-    )
-    extraction = lambda item: _object(
-        item,
-        {"status", "reasons", "speech_completeness", "visual_completeness", "timestamp_integrity", "ocr"},
-        {
-            "status": _enum("pass", "warn", "fail"),
-            "reasons": lambda val: _valid_array(val, _valid_failure),
-            "speech_completeness": _valid_completeness,
-            "visual_completeness": _valid_completeness,
-            "timestamp_integrity": _valid_completeness,
-            "ocr": extraction_ocr,
-        },
-    )
-    stages = lambda item: _object(
-        item,
-        {"speech", "frames", "dedupe", "ocr"},
-        {key: lambda val: _number(val, minimum=0) for key in ("speech", "frames", "dedupe", "ocr")},
-    )
-    resources = lambda item: _object(
-        item,
-        {"wall_sec", "stages", "peak_rss_mb", "artifact_bytes", "frames_candidate", "frames_retained"},
-        {
-            "wall_sec": lambda val: _number(val, minimum=0),
-            "stages": stages,
-            "peak_rss_mb": _nullable(lambda val: _number(val, minimum=0)),
-            "artifact_bytes": lambda val: _integer(val, minimum=0),
-            "frames_candidate": lambda val: _integer(val, minimum=0),
-            "frames_retained": lambda val: _integer(val, minimum=0),
-        },
-    )
+    def segment(item):
+        return _object(
+            item,
+            {"id", "start", "end", "text"},
+            {
+                "id": lambda val: _string(val, pattern=_SEGMENT_ID),
+                "start": lambda val: _number(val, minimum=0),
+                "end": lambda val: _number(val, minimum=0),
+                "text": lambda val: isinstance(val, str),
+            },
+        )
+
+    def transcript(item):
+        return _object(item, {"segments"}, {"segments": lambda val: _valid_array(val, segment)})
+
+    def artifacts(item):
+        return _object(
+            item,
+            {"evidence", "transcript", "frames_dir", "output_dir"},
+            {
+                "evidence": lambda val: _string(val, minimum=1),
+                "transcript": lambda val: _string(val, minimum=1),
+                "frames_dir": _nullable(lambda val: _string(val, minimum=1)),
+                "output_dir": lambda val: _string(val, minimum=1),
+            },
+        )
+
+    def extraction_ocr(item):
+        return _object(
+            item,
+            {"status", "engine", "annotation_only"},
+            {
+                "status": _enum("skipped", "completed-no-text", "completed-with-text", "failed", "not_applicable"),
+                "engine": lambda val: isinstance(val, str),
+                "annotation_only": lambda val: val is True,
+            },
+            additional=True,
+        )
+
+    def extraction(item):
+        return _object(
+            item,
+            {"status", "reasons", "speech_completeness", "visual_completeness", "timestamp_integrity", "ocr"},
+            {
+                "status": _enum("pass", "warn", "fail"),
+                "reasons": lambda val: _valid_array(val, _valid_failure),
+                "speech_completeness": _valid_completeness,
+                "visual_completeness": _valid_completeness,
+                "timestamp_integrity": _valid_completeness,
+                "ocr": extraction_ocr,
+            },
+        )
+
+    def stages(item):
+        return _object(
+            item,
+            {"speech", "frames", "dedupe", "ocr"},
+            {key: lambda val: _number(val, minimum=0) for key in ("speech", "frames", "dedupe", "ocr")},
+        )
+
+    def resources(item):
+        return _object(
+            item,
+            {"wall_sec", "stages", "peak_rss_mb", "artifact_bytes", "frames_candidate", "frames_retained"},
+            {
+                "wall_sec": lambda val: _number(val, minimum=0),
+                "stages": stages,
+                "peak_rss_mb": _nullable(lambda val: _number(val, minimum=0)),
+                "artifact_bytes": lambda val: _integer(val, minimum=0),
+                "frames_candidate": lambda val: _integer(val, minimum=0),
+                "frames_retained": lambda val: _integer(val, minimum=0),
+            },
+        )
+
     top = {
         "schema_version": lambda val: type(val) is int and val == EXTRACTION_SCHEMA_VERSION,
         "contract_version": lambda val: type(val) is int and val == EXTRACTION_CONTRACT_VERSION,

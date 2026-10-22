@@ -5,8 +5,7 @@ import urllib.request
 from urllib.parse import urljoin
 
 from ..urlpolicy import HTTP_SCHEMES, is_http_url
-from .errors import DependencyError, RemoteSourceError, REDIRECT_REJECTED, UNAVAILABLE
-from .errors import YTDLP_HINT, classify_ytdlp_error
+from .errors import REDIRECT_REJECTED, UNAVAILABLE, YTDLP_HINT, DependencyError, RemoteSourceError, classify_ytdlp_error
 from .http import TIMEOUT
 
 _PROTOCOL_FILTER = "[protocol~='^(" + "|".join(HTTP_SCHEMES) + ")$']"

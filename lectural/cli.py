@@ -15,21 +15,19 @@ checks their structural and completeness integrity, and notes consumes them.
 from __future__ import annotations
 
 import argparse
-from contextlib import redirect_stdout, redirect_stderr, nullcontext
-import io
 import inspect
+import io
 import json
 import os
 import re
 import sys
+from contextlib import nullcontext, redirect_stderr, redirect_stdout
 
-from . import evidence
-from . import runstate
+from . import evidence, fetch, runstate
 from .config import DEFAULT_STT_MODEL
-from .source import classify_source
-from . import fetch
 from .fetch.errors import RemoteSourceError
 from .fetch.scratch import CLEANUP_WARNING
+from .source import classify_source
 from .urlpolicy import public_source_label, remote_url_origin
 
 

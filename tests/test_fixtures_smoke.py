@@ -10,12 +10,12 @@ from lectural.acquisition import captions_are_usable, parse_vtt
 from lectural.ocr import dedupe_incremental_texts
 from lectural.visual import (
     PHASH_HAMMING_THRESHOLD,
-    _image_phash,
-    phash_hamming_distance,
-    select_phash_keyframe_indices,
     Frame,
+    _image_phash,
     dedupe_frames,
     is_same_slide,
+    phash_hamming_distance,
+    select_phash_keyframe_indices,
 )
 
 BENCHMARK_DIR = Path(__file__).parent / "fixtures" / "benchmark"
@@ -214,8 +214,8 @@ def test_gt_contains_slide_text_references(fixture_id: str):
     slides_text = data["slides_text"]
     assert isinstance(slides_text, dict)
     assert len(slides_text) >= 5
-    assert any("slide_04" in k for k in slides_text.keys())
-    for k, v in slides_text.items():
+    assert any("slide_04" in k for k in slides_text)
+    for _k, v in slides_text.items():
         assert isinstance(v, str) and len(v) > 0
 
 

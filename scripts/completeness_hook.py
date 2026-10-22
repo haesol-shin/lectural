@@ -13,15 +13,14 @@ script resolves the repo root itself so `import lectural` works.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
 
 for _stream in (sys.stdout, sys.stderr):
-    try:
+    with contextlib.suppress(Exception):
         _stream.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
 # Make `import lectural` work regardless of where the hook is launched from.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +29,7 @@ if _REPO_ROOT not in sys.path:
 
 _CONTRACT_IMPORT_ERROR: Exception | None = None
 try:
-    from lectural.notes_contract import (
+    from lectural.notes_contract import (  # noqa: F401  # re-exported for tests and hook callers
         NOTES_CONCEPTS_ANCHOR,
         NOTES_CONTRACT_VERSION,
         NOTES_COVERAGE_ANCHOR,
@@ -159,7 +158,8 @@ def _validate_run(run: dict) -> list[str]:
     if not os.path.isfile(cov_path):
         return [f"coverage.json 없음: {cov_path}"]
     try:
-        cov = json.loads(open(cov_path, encoding="utf-8").read())
+        with open(cov_path, encoding="utf-8") as fh:
+            cov = json.load(fh)
     except (OSError, json.JSONDecodeError) as exc:
         return [f"coverage.json 읽기 실패: {exc}"]
     if not cov.get("overall_pass"):
@@ -183,10 +183,8 @@ def _validate_run(run: dict) -> list[str]:
 
 def main() -> int:
     # Drain stdin (Claude passes hook JSON); we don't need it.
-    try:
+    with contextlib.suppress(Exception):
         sys.stdin.read()
-    except Exception:  # noqa: BLE001
-        pass
 
     state = _read_runstate()
     if state is None or not state.get("runs"):

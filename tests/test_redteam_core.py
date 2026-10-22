@@ -7,10 +7,10 @@ import random
 
 import pytest
 
-from lectural.source import extract_video_id
 from lectural.acquisition import parse_json3, parse_vtt
 from lectural.config import CUE_MAX_COVER_SEC, DEDUP_HIST_THRESHOLD, DEDUP_SSIM_THRESHOLD, MAX_GAP_SEC
 from lectural.ocr import classify_slide_transition, dedupe_incremental_texts
+from lectural.source import extract_video_id
 from lectural.vad import (
     max_non_silence_untranscribed_gap,
     merge_spans,

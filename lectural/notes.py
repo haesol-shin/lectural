@@ -11,7 +11,7 @@ from .synthesis import build_synthesis_input, render_notes_md, write_synthesis_i
 
 
 def _read_json(path: str) -> dict:
-    with open(path, "r", encoding="utf-8") as stream:
+    with open(path, encoding="utf-8") as stream:
         value = json.load(stream)
     if not isinstance(value, dict):
         raise evidence.ContractError("SOURCE_INVALID", "The evidence bundle is invalid.")
@@ -34,7 +34,7 @@ def generate_notes(bundle_dir: str) -> dict:
     transcript_path = evidence.assert_contained(output_dir, artifacts.get("transcript") or "")
     if not os.path.isfile(transcript_path):
         raise evidence.ContractError("ARTIFACT_INCOMPLETE", "The evidence transcript is missing.")
-    with open(transcript_path, "r", encoding="utf-8") as stream:
+    with open(transcript_path, encoding="utf-8") as stream:
         transcript_text = stream.read()
 
     source = manifest.get("source") or {}

@@ -187,7 +187,7 @@ def coverage_inputs_from_extraction(
     ocr_failed: bool = False,
     transcript_text: str | None = None,
     notes_text: str | None = None,
-) -> "CoverageInputs":
+) -> CoverageInputs:
     """Enforce the scene-coverage contract at the call site (the orchestrator).
 
     `raw_sample_times` MUST be the RAW sampled keyframe timestamps from

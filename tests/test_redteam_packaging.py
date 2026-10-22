@@ -4,16 +4,14 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import re
 import shlex
 import subprocess
-import sys
+from pathlib import Path
 
 import pytest
 
 from lectural import cli
-
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_JSON = ROOT / ".claude-plugin" / "plugin.json"
