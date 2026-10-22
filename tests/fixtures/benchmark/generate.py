@@ -645,7 +645,7 @@ def assemble_video_from_slides(
     with open(concat_file, "w", encoding="utf-8") as f:
         f.write("ffconcat version 1.0\n")
         elapsed = 0.0
-        for i, (s_path, dur) in enumerate(zip(slide_files, slide_durations)):
+        for _i, (s_path, dur) in enumerate(zip(slide_files, slide_durations, strict=False)):
             rel_path = s_path.relative_to(parent_dir).as_posix()
             f.write(f"file {rel_path}\n")
             f.write(f"duration {dur:.2f}\n")
@@ -748,7 +748,7 @@ def generate_usable_vtt(
     Passes lectural.acquisition.captions_are_usable heuristic (>=3 segments, >=20 chars).
     """
     lines = ["WEBVTT", ""]
-    for i, (sent, (start, end)) in enumerate(zip(sentences, speech_spans)):
+    for _i, (sent, (start, end)) in enumerate(zip(sentences, speech_spans, strict=False)):
         t_start = format_vtt_timestamp(start)
         t_end = format_vtt_timestamp(end)
         lines.append(f"{t_start} --> {t_end}")

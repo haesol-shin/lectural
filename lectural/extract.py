@@ -133,7 +133,7 @@ def _extract_source(
             video_path = media.resolve_video(source, out_dir)
             if video_path is None:
                 raise RuntimeError("Video source did not resolve to a video path")
-            source_resolution = dict(zip(("width", "height"), media.probe_video_resolution(video_path)))
+            source_resolution = dict(zip(("width", "height"), media.probe_video_resolution(video_path), strict=False))
             raw_frames = visual.extract_candidate_frames(video_path, frames_dir)
         with resources.stage("dedupe"):
             representative_frames = sorted(visual.dedupe_frames(raw_frames), key=lambda frame: float(frame.timestamp))

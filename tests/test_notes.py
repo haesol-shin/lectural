@@ -90,7 +90,7 @@ def test_render_transcript_md_emits_anchor_per_cue():
     md = render_transcript_md(video, segments)
     ids = build_transcript_anchor_ids(segments)
 
-    for segment, anchor_id in zip(segments, ids):
+    for segment, anchor_id in zip(segments, ids, strict=False):
         assert f'<a id="{anchor_id}"></a> ' in md
         assert f"[{format_timestamp(float(segment['t']))}]" in md
         assert segment["text"] in md

@@ -306,8 +306,14 @@ def test_legacy_pair_manifest_cannot_freeze_even_with_complete_pair_metrics(monk
 
 
 def _exhaustive_threshold_oracle(rows, measurements):
-    positives = [measurement for row, measurement in zip(rows, measurements) if row["expected_label"] == "same"]
-    negatives = [measurement for row, measurement in zip(rows, measurements) if row["expected_label"] == "different"]
+    positives = [
+        measurement for row, measurement in zip(rows, measurements, strict=False) if row["expected_label"] == "same"
+    ]
+    negatives = [
+        measurement
+        for row, measurement in zip(rows, measurements, strict=False)
+        if row["expected_label"] == "different"
+    ]
     if not positives or not negatives:
         return None
     domains = {}
@@ -334,7 +340,7 @@ def _exhaustive_threshold_oracle(rows, measurements):
         values = domains[threshold_name]
         ordered_domains.append(sorted(values, reverse=direction in {"min", "scale_min"}))
     for values in itertools.product(*ordered_domains):
-        candidate = dict(zip((name for _field, name, _direction in calibration._THRESHOLD_ORDER), values))
+        candidate = dict(zip((name for _field, name, _direction in calibration._THRESHOLD_ORDER), values, strict=False))
         if candidate["scale_min"] > candidate["scale_max"]:
             continue
         if all(calibration._passes(measurement, candidate) for measurement in positives) and all(
@@ -871,13 +877,17 @@ def _sequence_exhaustive_oracle(events):
             domains[name] = [1.25]
     for delta in calibration.CONTENT_PIXEL_DELTAS:
         resolved = [calibration._event_metadata_at_delta(event, delta) for event in events]
-        active = [calibration._content_metric_for_event(event, item) for event, item in zip(events, resolved)]
+        active = [
+            calibration._content_metric_for_event(event, item) for event, item in zip(events, resolved, strict=False)
+        ]
         changed = sorted({item["changed_fraction"] for item in active})
         largest = sorted({item["largest_changed_component_fraction"] for item in active})
         for values in itertools.product(
             *(domains[name] for _raw, name, _direction in calibration._THRESHOLD_ORDER), changed, largest
         ):
-            vector = dict(zip((name for _raw, name, _direction in calibration._THRESHOLD_ORDER), values[:11]))
+            vector = dict(
+                zip((name for _raw, name, _direction in calibration._THRESHOLD_ORDER), values[:11], strict=False)
+            )
             vector.update(
                 pixel_delta=delta, changed_fraction_max=values[-2], largest_changed_component_fraction_max=values[-1]
             )
@@ -885,7 +895,7 @@ def _sequence_exhaustive_oracle(events):
                 calibration._event_matches_decision(
                     event, calibration.evaluate_visual_candidate(item, vector, complete=True)
                 )
-                for event, item in zip(events, resolved)
+                for event, item in zip(events, resolved, strict=False)
             ):
                 return vector
     return None

@@ -352,7 +352,7 @@ def _verify_frame_hashes(bundle: Bundle) -> bool:
     _, frames = _manifest_items(bundle)
     if len(bundle.frame_paths) != len(frames):
         return False
-    for frame, path in zip(frames, bundle.frame_paths):
+    for frame, path in zip(frames, bundle.frame_paths, strict=False):
         if not isinstance(frame, dict) or path is None:
             return False
         try:
@@ -381,7 +381,7 @@ def _verify_identifiers(bundle: Bundle) -> bool:
         return False
     for items, ids, field in ((segments, segment_ids, "start"), (frames, frame_ids, "start")):
         try:
-            ordered = sorted(zip(items, ids), key=lambda pair: float(pair[0][field]))
+            ordered = sorted(zip(items, ids, strict=False), key=lambda pair: float(pair[0][field]))
         except (KeyError, TypeError, ValueError, OverflowError):
             return False
         if any(

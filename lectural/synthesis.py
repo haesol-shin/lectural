@@ -157,7 +157,7 @@ def render_transcript_md(video: dict, segments: list[dict]) -> str:
     src = video.get("speech_source", video.get("source", "unknown"))
     # Keep transcript anchors stable because notes cite them as evidence.
     lines = [f"# {title} — Full transcript (raw)", "", f"- Source: {src}", ""]
-    for s, anchor_id in zip(segments, build_transcript_anchor_ids(segments)):
+    for s, anchor_id in zip(segments, build_transcript_anchor_ids(segments), strict=False):
         lines.append(
             f'<a id="{anchor_id}"></a> [{format_timestamp(float(s.get("t", 0.0)))}] {s.get("text", "").strip()}'
         )

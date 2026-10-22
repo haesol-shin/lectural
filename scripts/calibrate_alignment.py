@@ -176,7 +176,7 @@ def _positive_metric_failures(rows: list[dict[str, Any]], measurements: list[dic
     """Report unavailable/non-finite prerequisites before threshold search."""
     failures = []
     required_fields = tuple(dict.fromkeys(raw_field for raw_field, _name, _direction in _THRESHOLD_ORDER))
-    for row, measurement in zip(rows, measurements):
+    for row, measurement in zip(rows, measurements, strict=False):
         if row.get("expected_label") != "same":
             continue
         missing = []
@@ -206,7 +206,7 @@ def _positive_metric_failures(rows: list[dict[str, Any]], measurements: list[dic
 
 
 def _find_thresholds(rows: list[dict[str, Any]], measurements: list[dict[str, Any]]) -> dict[str, float] | None:
-    development = list(zip(rows, measurements))
+    development = list(zip(rows, measurements, strict=False))
     positives = [measurement for row, measurement in development if row["expected_label"] == "same"]
     negatives = [measurement for row, measurement in development if row["expected_label"] == "different"]
     if not positives or not negatives:
@@ -277,7 +277,7 @@ def _confusion(
     rows: list[dict[str, Any]], measurements: list[dict[str, Any]], thresholds: dict[str, float] | None
 ) -> dict[str, int]:
     result = {"true_positive": 0, "false_positive": 0, "true_negative": 0, "false_negative": 0}
-    for row, measurement in zip(rows, measurements):
+    for row, measurement in zip(rows, measurements, strict=False):
         predicted_same = bool(thresholds and _passes(measurement, thresholds))
         expected_same = row["expected_label"] == "same"
         if expected_same and predicted_same:
@@ -623,7 +623,7 @@ def find_sequence_thresholds(
     alignment_measurements = [event["measurement"].get("alignment", {}) for event in alignment_events]
     alignment_positives = [
         measurement
-        for event, measurement in zip(alignment_events, alignment_measurements)
+        for event, measurement in zip(alignment_events, alignment_measurements, strict=False)
         if event["expected_label"] == "same"
     ]
     if not alignment_positives:
@@ -672,7 +672,9 @@ def find_sequence_thresholds(
         resolved = [_event_metadata_at_delta(event, pixel_delta) for event in populations["content_fit"]]
         if any(value is None for value in resolved):
             continue
-        resolved_events = list(zip(events, (_event_metadata_at_delta(event, pixel_delta) for event in events)))
+        resolved_events = list(
+            zip(events, (_event_metadata_at_delta(event, pixel_delta) for event in events), strict=False)
+        )
         if any(metadata is None for _event, metadata in resolved_events):
             continue
         resolved_events = [(event, metadata) for event, metadata in resolved_events if metadata is not None]
@@ -700,7 +702,7 @@ def find_sequence_thresholds(
             continue
         content_positives = [
             content
-            for event, metadata in zip(populations["content_fit"], resolved)
+            for event, metadata in zip(populations["content_fit"], resolved, strict=False)
             if event["expected_label"] == "same"
             for content in [_content_metric_for_event(event, metadata)]
             if content is not None
@@ -798,7 +800,7 @@ def find_sequence_thresholds(
                     "first_failed_gate": decision.get("first_failed_gate"),
                     "path": decision.get("path"),
                 }
-                for (event, _metadata), decision in zip(resolved_events, weakest_decisions)
+                for (event, _metadata), decision in zip(resolved_events, weakest_decisions, strict=False)
                 if event["expected_label"] == "same" and not _event_matches_decision(event, decision)
             ]
             if failed_positives:
@@ -846,7 +848,7 @@ def find_sequence_thresholds(
                     decisions = evaluate_events(resolved_events, vector)
                     if all(
                         _event_matches_decision(event, decision)
-                        for (event, _metadata), decision in zip(resolved_events, decisions)
+                        for (event, _metadata), decision in zip(resolved_events, decisions, strict=False)
                     ):
                         return vector
                 return None
@@ -1044,7 +1046,7 @@ def _with_worker_measurements(
         }
         if len(baseline) != len(links):
             return copied, {"worker_measurement_error": "worker task/result count mismatch", **raw}
-        for (sequence, event_id), result, task in zip(links, baseline, tasks):
+        for (sequence, event_id), result, task in zip(links, baseline, tasks, strict=False):
             sequence["event_measurements"][event_id] = {}
             cache = sequence["event_measurements"][event_id]
             # Every field below is a worker result derived from decoded source
@@ -1600,7 +1602,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
     )
     holdout_pass = bool(thresholds) and all(
         _passes(measurement, thresholds) == (row["expected_label"] == "same")
-        for row, measurement in zip(rows_by_split["held_out"], split_measurements["held_out"])
+        for row, measurement in zip(rows_by_split["held_out"], split_measurements["held_out"], strict=False)
     )
     # A semantic corpus label is independently authored ``same``/``different``
     # truth.  The first failed implementation gate is threshold-dependent
@@ -1609,7 +1611,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
     # not make a semantic row's guessed failure family a freeze predicate.
     first_failure_distribution: dict[str, int] = {}
     for split in ("development", "held_out"):
-        for row, measurement in zip(rows_by_split[split], split_measurements[split]):
+        for _row, measurement in zip(rows_by_split[split], split_measurements[split], strict=False):
             actual = _first_failed_inequality(measurement, thresholds)
             key = str(actual or "none")
             first_failure_distribution[key] = first_failure_distribution.get(key, 0) + 1
@@ -1651,7 +1653,7 @@ def calibrate(manifest_path: Path) -> dict[str, Any]:
         blockers.append("no frozen threshold artifact; production config and visual integration remain disabled")
     calibrated_measurements = []
     for split in ("development", "held_out"):
-        for row, measurement in zip(rows_by_split[split], split_measurements[split]):
+        for row, measurement in zip(rows_by_split[split], split_measurements[split], strict=False):
             report_measurement = dict(measurement)
             # Keep a committed report portable; the manifest row already names
             # the exact pair while the worker needs absolute paths to decode.
