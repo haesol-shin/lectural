@@ -426,6 +426,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     assert args.warm is False
     assert args.model == "medium"
     # Custom flags
+    # fmt: off
     custom = parser.parse_args([
         "--fixtures-dir", "custom/fixtures",
         "--out", "custom/out",
@@ -436,6 +437,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
         "--sample-interval", "0.5",
         "--model", "medium",
     ])
+    # fmt: on
     assert custom.fixtures_dir == "custom/fixtures"
     assert custom.out == "custom/out"
     assert custom.reps == 5

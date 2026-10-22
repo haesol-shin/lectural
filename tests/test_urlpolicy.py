@@ -103,6 +103,7 @@ def test_windows_drive_paths_are_not_url_schemes():
         classify_source("C:\\missing\\missing.wav")
 
 
+# fmt: off
 @pytest.mark.parametrize(
     ("value", "origin"),
     [
@@ -113,6 +114,7 @@ def test_windows_drive_paths_are_not_url_schemes():
         ("http://user:secret@[2001:db8::1]:8765/private?tok=secret#secret", "http://[2001:db8::1]"),
     ],
 )
+# fmt: on
 def test_origin_omits_credentials_port_path_query_and_fragment(value, origin, monkeypatch):
     monkeypatch.setattr(fetch, "fetch_url", lambda url, dest: FetchedMedia(str(Path(dest) / "media"), False))
     assert url_origin(value) == public_source_label(value) == origin
