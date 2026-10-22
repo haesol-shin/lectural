@@ -432,9 +432,9 @@ def replay_sequence(sequence: dict[str, Any], thresholds: dict[str, Any] | None)
     state = initial_dedupe_state(hashes[0])
     measurements = dict(sequence.get("event_measurements", {}))
     events: list[dict[str, Any]] = []
-    for index, frame in enumerate(frames[1:], start=1):
+    for index, _frame in enumerate(frames[1:], start=1):
 
-        def decide(kept_index: int, candidate_index: int) -> str:
+        def decide(kept_index: int, candidate_index: int, index: int = index) -> str:
             event_id = _sequence_event_id(sequence_id, index, candidate_index)
             measurement = measurements.get(event_id)
             if not isinstance(measurement, dict):
@@ -755,17 +755,28 @@ def find_sequence_thresholds(
                         if identity_passes != (expected_path == "identity_content_change"):
                             viable = False
                             break
-                    if event["expected_label"] == "same" and expected_path == "alignment_content_change":
-                        if not content_passes(metadata.get("aligned_content_change"), changed_max, largest_max):
-                            viable = False
-                            break
+                    if (
+                        event["expected_label"] == "same"
+                        and expected_path == "alignment_content_change"
+                        and not content_passes(metadata.get("aligned_content_change"), changed_max, largest_max)
+                    ):
+                        viable = False
+                        break
                 if viable:
                     content_pairs.append((changed_max, largest_max))
         diagnostics["domain_sizes"][str(pixel_delta)]["viable_content_pairs"] = len(content_pairs)
         if not content_pairs:
             continue
 
-        def complete(prefix: dict[str, Any], *, strictest: bool) -> dict[str, Any]:
+        def complete(
+            prefix: dict[str, Any],
+            *,
+            strictest: bool,
+            order: tuple[str, ...] = order,
+            full_domains: dict[str, Any] = full_domains,
+            content_pairs: list[tuple[float, float]] = content_pairs,
+            pixel_delta: int = pixel_delta,
+        ) -> dict[str, Any]:
             result = dict(prefix)
             for name in order:
                 if name in result:
@@ -782,7 +793,17 @@ def find_sequence_thresholds(
         memo: set[tuple[int, tuple[tuple[str, Any], ...], tuple[str, ...]]] = set()
         aborted: str | None = None
 
-        def visit(position: int, prefix: dict[str, Any]) -> dict[str, Any] | None:
+        def visit(
+            position: int,
+            prefix: dict[str, Any],
+            *,
+            resolved_events: list[tuple[dict[str, Any], dict[str, Any]]] = resolved_events,
+            content_pairs: list[tuple[float, float]] = content_pairs,
+            memo: set[tuple[int, tuple[tuple[str, Any], ...], tuple[str, ...]]] = memo,
+            order: tuple[str, ...] = order,
+            full_domains: dict[str, Any] = full_domains,
+            pixel_delta: int = pixel_delta,
+        ) -> dict[str, Any] | None:
             nonlocal states, aborted
             if aborted:
                 return None
@@ -940,9 +961,16 @@ def _sequence_event_tasks(
             continue
         hashes = _sequence_replay_hashes(frames)
         state = initial_dedupe_state(hashes[0])
-        for index, frame in enumerate(frames[1:], start=1):
+        for index, _frame in enumerate(frames[1:], start=1):
 
-            def collect(kept_index: int, candidate_index: int) -> str:
+            def collect(
+                kept_index: int,
+                candidate_index: int,
+                *,
+                sequence: dict[str, Any] = sequence,
+                index: int = index,
+                frames: list[dict[str, Any]] = frames,
+            ) -> str:
                 event_id = _sequence_event_id(str(sequence["sequence_id"]), index, candidate_index)
                 tasks.append((_worker_frame_path(frames[kept_index]), _worker_frame_path(frames[candidate_index])))
                 links.append((sequence, event_id))
