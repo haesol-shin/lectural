@@ -51,7 +51,7 @@ Use Conventional Commits with these common types:
 - `chore:` maintenance without behavior change
 - `refactor:` behavior-preserving code change
 
-A squash-merge commit message additionally carries a scope naming the functional area it changed: `type(scope): imperative summary` (e.g. `feat(visual): reduce near-duplicate keyframes`). Common scopes match `lectural/` modules — `acquisition`, `visual`, `ocr`, `speech`, `vad`, `evidence`, `coverage`, `media`, `source`, `synthesis`, `cli` — plus `bench` (benchmark harness), `ops` (repository-operations tooling/plans), `docs`, and `ci`. Rebase-and-merge commits are not required to carry a scope.
+A squash-merge commit message additionally carries a scope naming the functional area it changed: `type(scope): imperative summary` (e.g. `feat(visual): reduce near-duplicate keyframes`). Common scopes match `lectural/` modules — `acquisition`, `visual`, `ocr`, `speech`, `vad`, `evidence`, `coverage`, `media`, `source`, `synthesis`, `cli` — plus `bench` (benchmark harness), `ops` (repository-operations tooling/plans), `docs`, and `ci`.
 
 ## Pull requests
 
@@ -59,11 +59,9 @@ A squash-merge commit message additionally carries a scope naming the functional
 - Body: follow `.github/PULL_REQUEST_TEMPLATE.md` exactly — `## Summary`, `## Changes`, `## Validation`, `## Checklist`, `## Related`. Link issues under **Related** with `Closes #N`.
 - The web UI pre-fills the template automatically. When opening a PR non-interactively (`gh pr create --body-file`, or the API), the template is NOT injected — scaffold the body from `.github/PULL_REQUEST_TEMPLATE.md` and fill every section. The non-blocking `PR Check` workflow warns when a required section is missing.
 - Merge only with maintainer approval.
-- Merge strategy:
-  - **Squash and merge** (default): one PR becomes one `main` entry, easy to read and revert. The squash commit message MUST be the Conventional Commit PR title, because it becomes the `main` history entry.
-    Supply the subject and body explicitly instead of GitHub's generated commit list: the subject is the PR title plus `(#<number>)`; the body is one to four `- ` bullets, each one delivered outcome, behavior or contract change, or compatibility constraint, without intermediate commits, review history, verification results or file lists. Add a `BREAKING CHANGE: <description>` footer only for an incompatible public contract change.
-  - **Rebase and merge**: only when the branch holds independently meaningful Conventional Commits that must stay separate in `main`.
-  - Avoid merge commits; keep `main` linear.
+- Merge strategy: every PR is squash merged, so `main` has one entry per PR, easy to read and revert. Merge commits and rebase merging are off in the repository settings.
+  - The squash commit message MUST be the Conventional Commit PR title, because it becomes the `main` history entry. Supply the subject and body explicitly instead of GitHub's generated commit list: the subject is the PR title plus `(#<number>)`; the body is one to four `- ` bullets, each one delivered outcome, behavior or contract change, or compatibility constraint, without intermediate commits, review history, verification results or file lists. Add a `BREAKING CHANGE: <description>` footer only for an incompatible public contract change.
+  - Split a large change into PRs that can each be reviewed and merged on their own ([Google, Small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html)).
 
 ## Markdown
 
