@@ -22,11 +22,11 @@ Enrich `notes.md` in place.
 
 Replace the prose in exactly the five sections that carry `<!-- 미보강 -->`:
 
-1. `## 3줄 요약` — exactly 3 bullet lines (`- ...`), conclusion-style, citation-exempt.
-2. `## 흐름` — 4~6 short bullets, ordered from opening to development to closing, citation-exempt; keep each bullet roughly one line.
-3. `## 핵심 개념·이론` — short term → definition bullets, ordered by importance.
-4. `## 정리 노트` — per-slide condensed summaries: 3~6 bullets per slide, not transcript paraphrase, not one bullet per utterance, and citation-exempt.
-5. `## 복습 질문` — 3~5 higher-order self-check questions with hidden answers in `<details>` blocks.
+1. `## 3줄 요약`: exactly 3 bullet lines (`- ...`), conclusion-style, citation-exempt.
+2. `## 흐름`: 4~6 short bullets, ordered from opening to development to closing, citation-exempt; keep each bullet roughly one line.
+3. `## 핵심 개념·이론`: short term → definition bullets, ordered by importance.
+4. `## 정리 노트`: per-slide condensed summaries: 3~6 bullets per slide, not transcript paraphrase, not one bullet per utterance, and citation-exempt.
+5. `## 복습 질문`: 3~5 higher-order self-check questions with hidden answers in `<details>` blocks.
 </task>
 
 <output_contract>

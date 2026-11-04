@@ -1,4 +1,4 @@
-# Multi-language STT extraction baseline — 2026-09-19
+# Multi-language STT extraction baseline: 2026-09-19
 
 Official CPU STT and OCR extraction quality and resource baseline for Issue #21, establishing decision-grade performance metrics on committed synthetic fixtures before Issue #22 (visual) and Issue #23 (speech) implementation.
 

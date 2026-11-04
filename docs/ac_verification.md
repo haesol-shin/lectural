@@ -41,7 +41,7 @@ python scripts/completeness_hook.py < /dev/null                   # AC-13 (after
 
 Deterministic logic (dedup, gap, OCR re-split, anchors, coverage, hook, CLI orchestration) is fully proven offline; only the external-binary I/O edges are smoke-only.
 
-## Next Release (2026-06-13) — AC-A..AC-J
+## Next Release (2026-06-13): AC-A..AC-J
 
 Offline command: `uv run --with pytest --with numpy pytest -q` (adds CLI exit-code + deps OS-label tests).
 
@@ -52,7 +52,7 @@ Offline command: `uv run --with pytest --with numpy pytest -q` (adds CLI exit-co
 | AC-C | README documents Windows/Linux/macOS install + uvx run-extra path | `README.md` install section (winget/apt\|dnf/brew) + uvx section | artifact ✅ |
 | AC-D | preflight emits OS-aware (win/linux/macos) hints; DepStatus/return shape unchanged | `lectural/deps.py` `_BINARY_HINTS` widened (strings only) + `tests/test_deps.py` label assertions | unit ✅ |
 | AC-E | README positioning broadened to "YouTube video → complete notes" (lecture sweet spot) | `README.md` intro/tagline | artifact ✅ |
-| AC-F | One real-video uvx e2e exits 0 + offline tests green | RESOLVED — `[run]` now pins `paddleocr>=2.7,<3` + `paddlepaddle>=2.6,<3` + `numpy<2`; `lectural doctor --json` reports `overall_status: ready`; real-video before/after recorded in `docs/wu6_verification_2026-06-14.md`. | ✅ |
+| AC-F | One real-video uvx e2e exits 0 + offline tests green | RESOLVED: `[run]` now pins `paddleocr>=2.7,<3` + `paddlepaddle>=2.6,<3` + `numpy<2`; `lectural doctor --json` reports `overall_status: ready`; real-video before/after recorded in `docs/wu6_verification_2026-06-14.md`. | ✅ |
 | AC-G | Language rule (README + contributor docs English; product `notes.md` output + `summary_prompt.md` Korean instruction/few-shot + Korean section-name literals stay Korean; identifiers English) | Hangul over English repo surfaces limited to protected product literals; `tests/test_redteam_readme.py` FORBIDDEN guards | ✅ |
 | AC-H | Work-unit git commits (uv/uvx) | 806b92f, c66f0e2, 49a6723, 5e5bce1, 83ce571, 6940b7a | ✅ |
 | AC-I | README·AGENTS.md·`commands/` share the two-layer gate wording; no "hook wraps CLI"/equivalence | grep forbidden phrasing = 0 | ✅ |

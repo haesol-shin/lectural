@@ -47,10 +47,10 @@ For `/lectural:notes` runs, after the CLI succeeds, the host agent MUST enrich o
 | `## 복습 질문` | `NOTES_QUESTIONS_ANCHOR` | review-question section |
 | `## 정리 커버리지` | `NOTES_COVERAGE_ANCHOR` | coverage footer section |
 | `<!-- 미보강 -->` | `NOTES_UNENRICHED_MARKER` | deterministic placeholder marker for host-agent prose enrichment |
-| `![...](frames/...)` | — | slide image link (present when slide frames exist) |
-| `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | — | YouTube: `youtu.be` seconds. Local: exact relative `transcript.md#tHHMMSS[-n]` only |
+| `![...](frames/...)` | - | slide image link (present when slide frames exist) |
+| `transcript.md#t<id>` + `youtu.be/<VID>?t=<sec>` | - | YouTube: `youtu.be` seconds. Local: exact relative `transcript.md#tHHMMSS[-n]` only |
 
-The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven section anchors, and — when `frames/` images exist for the run — at least one `frames/` slide image link.
+The hook checks `notes.md` for `NOTES_ENRICH_MARKER` on line 1, all seven section anchors, and, when `frames/` images exist for the run, at least one `frames/` slide image link.
 
 ### Artifact-directory collision policy
 

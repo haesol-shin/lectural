@@ -1,4 +1,4 @@
-# AI SLOP CLEANUP REPORT — v0.1.1 (release/0.1.1)
+# AI SLOP CLEANUP REPORT: v0.1.1 (release/0.1.1)
 
 Scope: files changed in `git diff main..HEAD` for the v0.1.1 release story.
 

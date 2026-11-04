@@ -1,4 +1,4 @@
-# First real benchmark harness validation smoke run — 2026-09-19
+# First real benchmark harness validation smoke run: 2026-09-19
 
 > **Notice on Scope & Metrics:**
 > - **Caption Fidelity, not STT Accuracy:** The `wer_cer: {wer: 0.0, cer: 0.0}` recorded in this run reflects parsed VTT caption round-trip fidelity (`speech_source: "caption"`), NOT speech-to-text (STT) model recognition accuracy.
@@ -40,7 +40,7 @@ Raw reports: [`real_run_x86_64-win_2026-09-19.json`](real_run_x86_64-win_2026-09
 
 Caption path (usable VTT, mocked `fetch_caption_segments`, `speech_source: "caption"`) produced a byte-for-byte matching transcript on both platforms (`wer`/`cer` 0.0), confirming the caption-injection mechanism reaches the real `acquire_speech` code path identically cross-platform (this is caption round-trip fidelity, not STT accuracy). `degraded_slide_ocr` is identical on both platforms (deterministic PaddleOCR output on the same committed PNG), a useful cross-platform determinism check.
 
-ARM64's ~5x higher RTF matches the 4-vs-8-core gap plus per-core throughput difference; ARM64's OCR CPU% is lower in relative percent (4 cores, less headroom to exceed 100%) despite taking longer in wall time — consistent with `docs/perf_smoke_2026-06-13.md`'s observation that OCR is the dominant, most multi-core-hungry stage.
+ARM64's ~5x higher RTF matches the 4-vs-8-core gap plus per-core throughput difference; ARM64's OCR CPU% is lower in relative percent (4 cores, less headroom to exceed 100%) despite taking longer in wall time, consistent with `docs/perf_smoke_2026-06-13.md`'s observation that OCR is the dominant, most multi-core-hungry stage.
 
 ## `--media-variant degraded` and `--skip-ocr` (x86_64 only, this pass)
 
@@ -54,12 +54,12 @@ ARM64's ~5x higher RTF matches the 4-vs-8-core gap plus per-core throughput diff
 
 ## Bugs found and fixed by this real run (not caught by offline mocks)
 
-1. **`wer_cer` empty-reference edge case with real `jiwer` installed** (`lectural_bench/metrics.py`): the pure-Python fallback path correctly capped empty-reference WER/CER at 1.0, but the `jiwer`-backed path had no such guard and returned unbounded values (`wer: 2.0`, `cer: 7.0`) once `jiwer` was actually installed and exercised — invisible in the offline suite, which never has `jiwer` installed. Fixed by guarding both branches identically before delegating to `jiwer`.
+1. **`wer_cer` empty-reference edge case with real `jiwer` installed** (`lectural_bench/metrics.py`): the pure-Python fallback path correctly capped empty-reference WER/CER at 1.0, but the `jiwer`-backed path had no such guard and returned unbounded values (`wer: 2.0`, `cer: 7.0`) once `jiwer` was actually installed and exercised, invisible in the offline suite, which never has `jiwer` installed. Fixed by guarding both branches identically before delegating to `jiwer`.
 2. **`degraded_slide_ocr` never populated** (`scripts/benchmark.py`): the glob for `slide_degraded_l*.png` searched the fixture root, but the generator writes those files under `slides/`. Fixed with a fallback glob; confirmed populated and cross-platform-identical after the fix.
 
 ## Observational reference
 
-The pre-existing real 555-second YouTube run ([`observational_555s_perf_smoke_2026-06-14.json`](observational_555s_perf_smoke_2026-06-14.json), `scripts/perf_smoke.py`) remains an `observational: true` reference only — not part of this fixture-based controlled comparison, and not re-run here. Note that in that observational run, `faster_whisper` and `webrtcvad` were missing (`ModuleNotFoundError`), so it did not measure speech processing stages and must not be cited as the full pipeline cost.
+The pre-existing real 555-second YouTube run ([`observational_555s_perf_smoke_2026-06-14.json`](observational_555s_perf_smoke_2026-06-14.json), `scripts/perf_smoke.py`) remains an `observational: true` reference only, not part of this fixture-based controlled comparison, and not re-run here. Note that in that observational run, `faster_whisper` and `webrtcvad` were missing (`ModuleNotFoundError`), so it did not measure speech processing stages and must not be cited as the full pipeline cost.
 
 ## Not yet covered by this pass
 
