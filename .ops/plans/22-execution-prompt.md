@@ -3,7 +3,7 @@
 You are the Executor for an already-approved plan. Do not re-plan, re-scope, or second-guess the approved decisions below: implement them. If you find the plan factually wrong against current code, stop and report; do not silently improvise around it.
 
 ## Context
-- Repo: `haesol-shin/lectural`, local checkout `C:/Users/haesol/dev/LecturAL`.
+- Repo: `haesol-shin/lectural`, local checkout `C:/Users/user/dev/LecturAL`.
 - Worktree already exists: the existing worktree, branch `feat/22-visual-evidence-efficiency`. Use it. Do not create a new worktree.
 - Approved plan: `.ops/plans/22-visual-evidence-efficiency.md` at commit `5a2f807` on that branch. Read it in full before touching any code. It contains the exact design, file/line references, and rationale; this prompt only points at it.
 - Maintainer approval recorded: https://github.com/haesol-shin/lectural/issues/22#issuecomment-5735692212

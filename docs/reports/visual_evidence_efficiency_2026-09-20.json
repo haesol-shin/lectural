@@ -439,7 +439,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -608,7 +608,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -777,7 +777,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -948,7 +948,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -1117,7 +1117,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -1286,7 +1286,7 @@
                 "provider_exact": true,
                 "provider_present": true,
                 "imported_cv2_version": "4.6.0",
-                "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                 "version_match": true,
                 "distribution_supported": true
               }
@@ -1402,7 +1402,7 @@
     },
     "source": {
       "description": "separately captured 555-second YouTube-derived local video; external behavior evidence, not calibration input",
-      "original_path": "C:\\Users\\haesol\\dev\\LecturAL\\.tmp\\youtube-noPuRPDiY6k-20260918-android\\video.mp4",
+      "original_path": "C:\\Users\\user\\dev\\LecturAL\\.tmp\\youtube-noPuRPDiY6k-20260918-android\\video.mp4",
       "sha256": "693064c0f2d88813c68edff368bdd797dbbf0da2715d85c8d833c7cb0d1973e4",
       "size_bytes": 14475431
     },
@@ -1439,7 +1439,7 @@
     "raw_output": {
       "kept_count": 70,
       "raw_count": 1110,
-      "source": "C:\\Users\\haesol\\dev\\LecturAL\\.tmp\\youtube-noPuRPDiY6k-20260918-android\\video.mp4",
+      "source": "C:\\Users\\user\\dev\\LecturAL\\.tmp\\youtube-noPuRPDiY6k-20260918-android\\video.mp4",
       "window_kept": [
         {
           "name": "frame_00839.png",
@@ -1924,7 +1924,7 @@
   },
   "calibration": {
     "report": "docs/reports/alignment_thresholds_2026-09-20.json",
-    "sha256": "6166600cd1bdb2a2c73c6e6fcee87351eaa153697f516a62b846824ff3fe04d1",
+    "sha256": "b76814034698f4bc58c4e323c763645c9d06fa4c64c9a1cde6c002230cfe754e",
     "manifest_sha256": "945fda123d8145f1e7f0f8c62c1de447f24d0e758642bdb60f7f431a24128af4",
     "generator_version": "issue-22-real-sequence-v26",
     "dev_confusion": {
@@ -1967,7 +1967,7 @@
       },
       "config": {
         "fixtures_dir": "tests/fixtures/benchmark/en_terms_01,tests/fixtures/benchmark/ko_terms_01,tests/fixtures/benchmark/mixed_terms_01",
-        "out": "C:/Users/haesol/dev/LecturAL-worktrees/22-visual-evidence-efficiency/.tmp/benchmark-before-issue22-resources",
+        "out": "C:/Users/user/dev/LecturAL-worktrees/22-visual-evidence-efficiency/.tmp/benchmark-before-issue22-resources",
         "platform_label": "x86_64-win",
         "cache_mode": "warm",
         "reps": 3,
@@ -4142,7 +4142,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -4383,7 +4383,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -4627,7 +4627,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -4871,7 +4871,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -5189,7 +5189,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -5430,7 +5430,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -5674,7 +5674,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -5918,7 +5918,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -6236,7 +6236,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -6477,7 +6477,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -6721,7 +6721,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -6965,7 +6965,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -7321,7 +7321,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -7562,7 +7562,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -7806,7 +7806,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -8050,7 +8050,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -8368,7 +8368,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -8609,7 +8609,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -8853,7 +8853,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -9097,7 +9097,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -9415,7 +9415,7 @@
                   "provider_exact": true,
                   "provider_present": true,
                   "imported_cv2_version": "4.6.0",
-                  "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                  "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                   "version_match": true,
                   "distribution_supported": true
                 }
@@ -9656,7 +9656,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -9900,7 +9900,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }
@@ -10144,7 +10144,7 @@
                       "provider_exact": true,
                       "provider_present": true,
                       "imported_cv2_version": "4.6.0",
-                      "imported_cv2_path": "C:\\Users\\haesol\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
+                      "imported_cv2_path": "C:\\Users\\user\\dev\\LecturAL-worktrees\\22-visual-evidence-efficiency\\.venv\\Lib\\site-packages\\cv2\\__init__.py",
                       "version_match": true,
                       "distribution_supported": true
                     }

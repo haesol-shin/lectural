@@ -6,7 +6,7 @@
 - Research:
   - Reviewer pass (reviewer agent, `reviewer` role) on the first draft: required independent review of rendered fixtures (not just scripts), a caption-path fixture reachable through `acquisition.py`, accurate metric-to-API mapping, an explicit resource protocol, and `jiwer` as a benchmark-only dependency.
   - Web research on lecture-video benchmark practice: LPM (Lecture Presentations Multimodal, ICCV 2023) as an observational reference dataset; Augraphy for synthetic OCR degradation (ink/paper/post-processing phases); audiomentations/pyroomacoustics for synthetic ASR degradation (noise, RIR); jiwer + whisper-normalizer as the standard WER/CER stack.
-  - `pi-server` (Debian 13 trixie, aarch64, 4 cores) verified reachable via `ssh pi-server`; `lectural doctor --fix` then `uv pip install -e ".[run]"` produced a clean `lectural doctor` → `ready (exit 0)`, including a working `paddleocr`/`paddlepaddle==2.6.2` import and engine init (model download succeeded). ARM64 is not a blocker for the current stack. The pi-server checkout is stale (`feat/local-source`, pre-#19) and must be synced to `main` before use.
+  - The ARM64 test host (Debian 13 trixie, aarch64, 4 cores) verified reachable over SSH; `lectural doctor --fix` then `uv pip install -e ".[run]"` produced a clean `lectural doctor` → `ready (exit 0)`, including a working `paddleocr`/`paddlepaddle==2.6.2` import and engine init (model download succeeded). ARM64 is not a blocker for the current stack. The test host checkout is stale (`feat/local-source`, pre-#19) and must be synced to `main` before use.
   - CI (`ci.yml`) already runs the offline suite on `windows-latest`/`ubuntu-latest`/`macos-latest` (x86_64 only); no ARM64 job exists today.
 
 ## Decision drivers
@@ -53,7 +53,7 @@ Option C. Concretely:
   - Adds RTF (`wall_time / fixture_duration_sec`) per run and per stage.
   - Execution matrix: `{caption (mocked fetch), caption-fallback (unusable/fetch-failure), forced-STT} × {OCR-on, OCR-off(--skip-ocr)} × {EN, KO, mixed} × {cold, warm} × 3 reps`. Frame selection (`extract_candidate_frames` + `dedupe_frames`) always runs when the fixture has video, independent of the OCR axis. It is not a separate matrix value. The live 555-second YouTube case is included as one additional `observational: true` row (not repeated 3x, not cold/warm-controlled) alongside a resolution factorial (360p vs 720p source) and an STT model-size factorial (`small` vs `medium`) on one local fixture, isolating what is measurable without changing `lectural/`. OCR preprocessing-effect attribution (raw vs. ROI+upscale+Otsu) is explicitly out of reach for this harness: `ocr.ocr_image` always preprocesses and `ocr.py` is not altered, so the issue's "preprocessing … where measurable" acceptance criterion is knowingly scoped to resolution and model-size, not silently dropped.
   - `--skip-ocr` on/off pair is reported side by side (CPU/time/RTF delta and completeness-coverage delta) to give #22 a resource baseline for OCR-off tradeoffs.
-  - Runs on x86_64 dev/CI hosts and, opt-in, on `pi-server` (ARM64) via `ssh pi-server`, after syncing that checkout to `main` and re-running `lectural doctor`. Platform is recorded in every report; no default profile is set from this issue.
+  - Runs on x86_64 dev/CI hosts and, opt-in, on the ARM64 test host over SSH, after syncing that checkout to `main` and re-running `lectural doctor`. Platform is recorded in every report; no default profile is set from this issue.
 
 - **Report and contract**:
   - `docs/contracts/benchmark.schema.json`: versioned JSON schema for a benchmark report (fixture id, path exercised, language, profile/platform, quality metrics, resource metrics incl. RTF and storage, cold/warm, run count, environment).
@@ -76,23 +76,23 @@ Option C. Concretely:
 5. `docs/contracts/benchmark.schema.json`, `docs/benchmark_definition.md`, report writer producing `docs/reports/benchmark_<date>.{md,json}` covering EN/KO/mixed plus the one `observational: true` live-YouTube 555-second row, with exact commands/fixture ids/environment/raw measurements per row.
 6. `tests/test_benchmark_contract.py` (offline schema/determinism/no-heavy-import-at-parse-time checks).
 7. `pyproject.toml` `bench` extra; `CONTRIBUTING.md` note on when/how to run the benchmark; `CHANGELOG.md` entry.
-8. Sync `pi-server` checkout to `main`, re-run `lectural doctor`, execute the opt-in ARM64 profile once, record its result in the first `docs/reports/benchmark_<date>.md`.
+8. Sync the ARM64 test host checkout to `main`, re-run `lectural doctor`, execute the opt-in ARM64 profile once, record its result in the first `docs/reports/benchmark_<date>.md`.
 
 ## Verification
 - `uv run --with pytest --with numpy pytest -q` stays green (existing Issue #19 suite untouched; new `test_benchmark_contract.py` added and green).
 - `lectural doctor` remains `ready` on the dev host after adding the `bench` extra (extra is optional, not installed by default doctor checks).
-- A real (opt-in) run of `scripts/benchmark.py` covering EN, KO, and mixed local fixture sets plus the one observational live-YouTube 555-second row, on both an x86_64 host and `pi-server`, producing a schema-valid report with cold/warm/3-rep data, the `--skip-ocr` comparison, and exact commands/fixture ids/environment/raw measurements recorded under `docs/reports/`.
+- A real (opt-in) run of `scripts/benchmark.py` covering EN, KO, and mixed local fixture sets plus the one observational live-YouTube 555-second row, on both an x86_64 host and the ARM64 test host, producing a schema-valid report with cold/warm/3-rep data, the `--skip-ocr` comparison, and exact commands/fixture ids/environment/raw measurements recorded under `docs/reports/`.
 - `claude plugin validate .` unaffected (no plugin manifest changes).
 
 ## Rollout
 No production/runtime rollout: this is dev/maintainer tooling. Merges to `main` behind the normal PR gate; `scripts/benchmark.py` and the `bench` extra are inert for ordinary `/lectural:notes` users.
 
 ## Rollback or mitigation
-Revert the PR; no schema or CLI surface used by consumers changes. If `pi-server`'s ARM64 profile proves unreliable (e.g., flaky heavy-dependency install), drop it to a documented "unverified platform" note rather than blocking the rest of the benchmark.
+Revert the PR; no schema or CLI surface used by consumers changes. If the ARM64 test host profile proves unreliable (e.g., flaky heavy-dependency install), drop it to a documented "unverified platform" note rather than blocking the rest of the benchmark.
 
 ## Open decisions
 - Exact Korean CER normalization rule (space-insensitive syllable-level): finalize during metrics implementation with a worked example in `docs/benchmark_definition.md`.
-- Whether `audiomentations` installs cleanly on `pi-server` aarch64 (unverified); fallback is `ffmpeg`-based noise/gap injection only, dropping the RIR-based augmentation.
+- Whether `audiomentations` installs cleanly on the ARM64 test host (aarch64) (unverified); fallback is `ffmpeg`-based noise/gap injection only, dropping the RIR-based augmentation.
 
 ## Pre-mortem
 Not required (risk:medium, not risk:high per issue label); the main credible failure mode (fixtures that look rigorous but are actually tautological) is the reviewer's P0 finding and is addressed structurally in "Chosen approach" (independent review + injected degradation + non-GT-from-own-output rule).

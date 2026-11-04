@@ -97,7 +97,7 @@ The live 555-second YouTube run (`docs/reports/observational_555s_perf_smoke_202
 | Profile | Status |
 |---|---|
 | x86_64 (Windows/Ubuntu/macOS dev + CI) | Supported; CI (`ci.yml`) already runs the *offline* suite here, not the real heavy benchmark. |
-| ARM64 (`pi-server`, Debian 13 trixie, 4 cores) | Verified reachable; `lectural doctor` reports `ready` after `uv pip install -e ".[run]"`, including a working `paddleocr`/`paddlepaddle==2.6.2` import and engine init. Opt-in only; no default profile is set by this benchmark. |
+| ARM64 (test host, Debian 13 trixie, 4 cores) | Verified reachable; `lectural doctor` reports `ready` after `uv pip install -e ".[run]"`, including a working `paddleocr`/`paddlepaddle==2.6.2` import and engine init. Opt-in only; no default profile is set by this benchmark. |
 
 No profile is a product default from this issue. Non-goal: "Production optimization or a mandatory 720p minimum."
 
@@ -116,7 +116,7 @@ uv run --extra run --extra bench python scripts/benchmark.py \
   --observational-perf-smoke docs/reports/observational_555s_perf_smoke_2026-06-14.json
 
 # Repeat with --cold and --skip-ocr for the paired comparisons; repeat on
-# pi-server with --platform-label arm64-pi-server after syncing that
+# the ARM64 test host with --platform-label arm64-test-host after syncing that
 # checkout to main and re-running `lectural doctor`.
 ```
 
@@ -131,8 +131,8 @@ See [`docs/contracts/benchmark.schema.json`](contracts/benchmark.schema.json) (v
 ## Open items
 
 - Exact Korean CER normalization is implemented as a pure-Python fallback in
-`lectural_bench/metrics.py`; if `jiwer`/`whisper_normalizer` prove reliable on `pi-server`'s aarch64, prefer them there too and record which path a given report actually used.
-- `audiomentations` was not verified on `pi-server` aarch64; the `ffmpeg`
+`lectural_bench/metrics.py`; if `jiwer`/`whisper_normalizer` prove reliable on the ARM64 test host (aarch64), prefer them there too and record which path a given report actually used.
+- `audiomentations` was not verified on the ARM64 test host (aarch64); the `ffmpeg`
 fallback is used unconditionally until that is checked.
 
 ### Issue #22 transform-aware alignment calibration
@@ -145,7 +145,7 @@ uv run --isolated --extra alignment python scripts/calibrate_alignment.py \
   --out .tmp/alignment-real-calibration-v26.json
 ```
 
-The promoted artifact is [`docs/reports/alignment_thresholds_2026-09-20.json`](reports/alignment_thresholds_2026-09-20.json), SHA-256 `6166600cd1bdb2a2c73c6e6fcee87351eaa153697f516a62b846824ff3fe04d1`, from manifest SHA-256 `945fda123d8145f1e7f0f8c62c1de447f24d0e758642bdb60f7f431a24128af4` (`issue-22-real-sequence-v26`). It froze with zero development errors (12 TP, 25 TN) and zero fresh held-out errors (4 TP, 13 TN) under the exact production provider set `opencv-contrib-python==4.6.0.66`, `opencv-python==4.6.0.66`, and `opencv-python-headless==4.6.0.66`, importing `cv2==4.6.0`. Ten same-session and two fresh-worker repetitions produced identical threshold-vector, ordered-decision, and full canonical-payload hashes. `lectural.config.ALIGNMENT_THRESHOLDS` is the runtime copy of that artifact's threshold vector; its adjacent report path and SHA-256 bind the copy to this evidence.
+The promoted artifact is [`docs/reports/alignment_thresholds_2026-09-20.json`](reports/alignment_thresholds_2026-09-20.json), SHA-256 `b76814034698f4bc58c4e323c763645c9d06fa4c64c9a1cde6c002230cfe754e`, from manifest SHA-256 `945fda123d8145f1e7f0f8c62c1de447f24d0e758642bdb60f7f431a24128af4` (`issue-22-real-sequence-v26`). It froze with zero development errors (12 TP, 25 TN) and zero fresh held-out errors (4 TP, 13 TN) under the exact production provider set `opencv-contrib-python==4.6.0.66`, `opencv-python==4.6.0.66`, and `opencv-python-headless==4.6.0.66`, importing `cv2==4.6.0`. Ten same-session and two fresh-worker repetitions produced identical threshold-vector, ordered-decision, and full canonical-payload hashes. `lectural.config.ALIGNMENT_THRESHOLDS` is the runtime copy of that artifact's threshold vector; its adjacent report path and SHA-256 bind the copy to this evidence.
 
 The generated held-out split controls threshold-search contamination but is not independent real-world ground truth: development and held-out recipes share the same generator. The pre-existing static-article regression fixture and separately captured YouTube sequence are therefore required external behavior checks after promotion; they are not used to fit the vector. Calibration retires every observed or superseded held-out seed in the manifest rather than reusing it.
 

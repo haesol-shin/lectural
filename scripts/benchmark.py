@@ -1049,7 +1049,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--platform-label",
         type=str,
         default=platform.machine() or "unknown",
-        help="Label for the execution platform (e.g. x86_64, arm64, pi-server) (default: host architecture)",
+        help="Label for the execution platform (e.g. x86_64, arm64) (default: host architecture)",
     )
 
     group = parser.add_mutually_exclusive_group()
