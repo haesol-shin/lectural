@@ -313,10 +313,10 @@ Planning now: after independent review and owner-request compliance check, commi
 
 Implementation later, after owner approval of this plan:
 
-1. `feat(source): prepare public URLs as disposable local inputs` — A/B/C production/dependency work plus corresponding policy/fetch unit coverage; no isolated unused scaffolding commit. Integrate their worktrees before this commit.
-2. `feat(cli): route URL inputs through one fetch pre-step` — D integration and complete mapped test bank, failure/redaction/output lifecycle, working-directory seam; ordinary local/YouTube/bundle behavior unchanged.
-3. `ci: exercise URL runtime tests without skips` — required installed-runtime job, marker manifest and no-skip evidence. Move marker declarations here if not required for preceding test collection; otherwise keep their single definition in commit 1.
-4. `docs: document public URL input and limits` — E docs and short changelog, publish only sanitized verification findings in the future PR's Validation section.
+1. `feat(source): prepare public URLs as disposable local inputs`: A/B/C production/dependency work plus corresponding policy/fetch unit coverage; no isolated unused scaffolding commit. Integrate their worktrees before this commit.
+2. `feat(cli): route URL inputs through one fetch pre-step`: D integration and complete mapped test bank, failure/redaction/output lifecycle, working-directory seam; ordinary local/YouTube/bundle behavior unchanged.
+3. `ci: exercise URL runtime tests without skips`: required installed-runtime job, marker manifest and no-skip evidence. Move marker declarations here if not required for preceding test collection; otherwise keep their single definition in commit 1.
+4. `docs: document public URL input and limits`: E docs and short changelog, publish only sanitized verification findings in the future PR's Validation section.
 
 Each final commit must be reviewable and its relevant tests pass after integration; do not commit temporary adapters, duplicate implementations or compatibility aliases. Rebuild from current sources, not cherry-pick the old implementation. Do not edit the other plan to simulate source-of-truth cleanup.
 

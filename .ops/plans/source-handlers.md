@@ -99,10 +99,10 @@ Call sites changed: `media.py`, `source.py`, `acquisition.py`, `extract.py`, `ev
 
 Each commit leaves the suite green.
 
-1. `refactor(media): move per-kind resolution into source handlers` — add `lectural/sources/`, `media.extract_audio`, delegates; move the completeness test.
-2. `refactor(source): derive source capabilities from handlers` — `InputSource` properties delegate.
-3. `refactor(acquisition): ask the source handler for caption and fallback` — remove kind branches in `acquire_speech`.
-4. `refactor(extract): take source id and fallback from the handler` — `evidence.sha256_file`, drop `_source_id`, citation override, kind guard.
+1. `refactor(media): move per-kind resolution into source handlers`: add `lectural/sources/`, `media.extract_audio`, delegates; move the completeness test.
+2. `refactor(source): derive source capabilities from handlers`: `InputSource` properties delegate.
+3. `refactor(acquisition): ask the source handler for caption and fallback`: remove kind branches in `acquire_speech`.
+4. `refactor(extract): take source id and fallback from the handler`: `evidence.sha256_file`, drop `_source_id`, citation override, kind guard.
 
 Estimated diff: about 9 files, +190 / −130 (new package ~150 lines; `media.py` net about −50).
 

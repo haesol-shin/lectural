@@ -1,4 +1,4 @@
-# WU-6 verification — 2026-06-14
+# WU-6 verification: 2026-06-14
 
 Evidence artifacts:
 
@@ -21,7 +21,7 @@ Heavy generated outputs remain under `output/` (`video.mkv`, `frames/*.png`, tra
 | Focused WU-6 rubric | `uv run python -c "$WU6_RUBRIC_CODE"` | exit 0; `artifacts/wu6-rubric.json` top-level `pass=true` |
 | Focused offline WU tests | `PYTHONUTF8=1 PYTHONIOENCODING=utf-8 uv run --with pytest --with numpy --with psutil pytest -q tests/test_notes.py tests/test_cli.py tests/test_coverage.py tests/test_hook.py tests/test_redteam_notes.py tests/test_redteam_notes_contract.py tests/test_doctor.py tests/test_deps.py tests/test_redteam_packaging.py tests/test_redteam_cli_hook.py tests/test_redteam_readme.py tests/test_redteam_synthesis.py` | exit 0; `175 passed in 5.59s`; evidence in `artifacts/wu6-focused-tests.txt` |
 
-## AC-19 — executor rubric over generated notes.md
+## AC-19: executor rubric over generated notes.md
 
 Passed. `artifacts/wu6-rubric.json` records `pass=true` and individual checks for:
 
@@ -35,7 +35,7 @@ Passed. `artifacts/wu6-rubric.json` records `pass=true` and individual checks fo
 - `coverage.json overall_pass=true` and `scene_coverage.slide_frames_total=4`.
 - focused offline tests across WUs: `175 passed in 5.59s` with `PYTHONUTF8=1` and `PYTHONIOENCODING=utf-8`; evidence in `artifacts/wu6-focused-tests.txt`.
 
-## AC-20 — real-video before/after evidence
+## AC-20: real-video before/after evidence
 
 Passed. `artifacts/wu6-real-video-evidence.json` records the before/after hook and real-video output facts.
 
@@ -58,6 +58,6 @@ Utterance-proportional detail rows:
 | sec-3 | 28 | 28 | 1.0 |
 | sec-4 | 25 | 25 | 1.0 |
 
-## AC-21 — completed enrichment gates
+## AC-21: completed enrichment gates
 
 Passed. The existing real-video CLI run exited 0, `coverage.json` reports `overall_pass=true`, and the post-enrichment Stop hook exits 0. The focused rubric command also exits 0 and wrote `artifacts/wu6-rubric.json` with top-level `pass=true`.

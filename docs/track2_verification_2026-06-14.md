@@ -1,4 +1,4 @@
-# Track-2 Pipeline Quality — Final Verification (2026-06-14)
+# Track-2 Pipeline Quality: Final Verification (2026-06-14)
 
 Verification of the Track-2 work units (WU-1..WU-8) for LecturAL pipeline quality. All commands were run on Windows / CPython 3.10.
 

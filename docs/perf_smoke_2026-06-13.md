@@ -1,4 +1,4 @@
-# LecturAL real-video performance smoke — 2026-06-13
+# LecturAL real-video performance smoke: 2026-06-13
 
 Per-stage runtime and CPU/RAM for one real YouTube lecture, produced by the non-product harness `scripts/perf_smoke.py`. The harness wraps the existing `lectural` pipeline stage functions; it does not modify product logic.
 
@@ -51,7 +51,7 @@ Total wall time (stages, excluding dependency install): ~232 s for a ~367 s vide
 ### Observations
 
 - **`visual_dedupe` is the dominant cost (~153 s, ~1 core saturated).** It runs histogram + SSIM comparisons over 734 raw 2fps keyframes. This is the primary optimization target (e.g. coarser sampling, downscaled SSIM, vectorization).
-- **`ocr` is second (~72 s) and is the most multi-core stage** (CPU avg 291%, peak 626%, RSS peak ~848 MB) — PaddleOCR over the 20 deduped slide frames.
+- **`ocr` is second (~72 s) and is the most multi-core stage** (CPU avg 291%, peak 626%, RSS peak ~848 MB): PaddleOCR over the 20 deduped slide frames.
 - **acquisition/download/extract are negligible** when captions exist (no STT). If captions were absent, STT (faster-whisper medium, int8, CPU) would dominate instead and is expected to scale with audio length.
 - `vad`/`synthesis`/`coverage`/hook are effectively free (deterministic).
 
@@ -64,7 +64,7 @@ Total wall time (stages, excluding dependency install): ~232 s for a ~367 s vide
 
 ## Completeness gate result
 
-`completeness_hook` returned **exit 0** — gate passed. `coverage.json`:
+`completeness_hook` returned **exit 0**: gate passed. `coverage.json`:
 
 - `gap_check.pass`: true
 - `scene_coverage.pass`: true (20/20 slide frames carry OCR text)
