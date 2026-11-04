@@ -32,8 +32,7 @@ After a `/lectural:notes` run exits successfully, enrich the prose of `notes.md`
 Treat any non-zero `lectural` exit code as a hard failure. Do NOT mark the task done on a non-zero exit. `--skip-ocr` does not relax speech, timeline, artifact, or citation gates. Claude Code additionally has a Stop hook, but Codex must rely on the CLI exit code.
 
 ## Pointers
-For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media. Per-host setup (Claude Code, Codex, other skill-aware agents) is in `docs/agents.md`.
-See `README.md`, the [CLI contract](docs/contracts/cli.md), the `commands/` slash commands, and `skills/lectural/references/`.
+For coding-agent use, follow [`skills/lectural/SKILL.md`](skills/lectural/SKILL.md); it routes requests through the public CLI and contract without interpreting media. Per-host setup (Claude Code, Codex, other skill-aware agents) is in `docs/agents.md`. See `README.md`, the [CLI contract](docs/contracts/cli.md), the `commands/` slash commands, and `skills/lectural/references/`.
 
 ## Operations
 

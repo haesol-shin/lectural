@@ -91,12 +91,7 @@ Frame selection (`extract_candidate_frames` + `dedupe_frames`) always runs when 
 
 ### OCR reliability calibration
 
-`OCR_RELIABLE_CONFIDENCE_THRESHOLD` is `0.95`. PaddleOCR's mean line score on
-the three committed L1 slides was 0.994 (EN), 0.963 (KO), and 0.994 (mixed);
-the corresponding severe-L2 values were 0.928, 0.841, and 0.875. This cleanly
-separates the Issue #21 CER anchors (L1: 0.027–0.185; L2: 0.676–0.870) while
-leaving raw OCR text visible in evidence. Tesseract TSV confidence is normalized
-from 0–100 to 0–1 before applying the same threshold.
+`OCR_RELIABLE_CONFIDENCE_THRESHOLD` is `0.95`. PaddleOCR's mean line score on the three committed L1 slides was 0.994 (EN), 0.963 (KO), and 0.994 (mixed); the corresponding severe-L2 values were 0.928, 0.841, and 0.875. This cleanly separates the Issue #21 CER anchors (L1: 0.027–0.185; L2: 0.676–0.870) while leaving raw OCR text visible in evidence. Tesseract TSV confidence is normalized from 0–100 to 0–1 before applying the same threshold.
 
 ### Caption/fallback injection mechanism
 
@@ -134,8 +129,7 @@ uv run --extra run --extra bench python scripts/benchmark.py \
 # checkout to main and re-running `lectural doctor`.
 ```
 
-Each report row records its exact `config` (fixtures dir, cache mode, reps, `skip_ocr`, model), the host `machine` spec and `dependency_versions`, and every per-repetition raw measurement under `runs`, per the issue's "exact commands, fixture identifiers, environment, raw measurements" acceptance criterion.
-The `bench` extra includes `psutil`; without it CPU/RSS samples are unavailable rather than meaningful zero measurements. CPU core-seconds in the Issue #22 comparison are derived as `sum(stage cpu_pct_avg * stage wall_time_sec / 100)`, and the report preserves every raw sample-derived stage measurement.
+Each report row records its exact `config` (fixtures dir, cache mode, reps, `skip_ocr`, model), the host `machine` spec and `dependency_versions`, and every per-repetition raw measurement under `runs`, per the issue's "exact commands, fixture identifiers, environment, raw measurements" acceptance criterion. The `bench` extra includes `psutil`; without it CPU/RSS samples are unavailable rather than meaningful zero measurements. CPU core-seconds in the Issue #22 comparison are derived as `sum(stage cpu_pct_avg * stage wall_time_sec / 100)`, and the report preserves every raw sample-derived stage measurement.
 
 Each controlled run also emits `alignment_observability` from the metadata already produced by `dedupe_frames`; the benchmark does not decode frames again. It records host decode count/pixels, persistent pHash candidates, worker invocations and decode pixels, alignment attempts, bidirectional warp count/pixels, evaluator outcomes and first-failed gates, raw keypoint/match/inlier/coverage/SSIM distributions, and the observed OpenCV version/build/provider plus requested thread/seed settings. The same object is preserved on every raw repetition and copied from the first deterministic repetition to the fixture summary; per-stage CPU/RSS/wall-time remains under `stages.visual_dedupe`.
 

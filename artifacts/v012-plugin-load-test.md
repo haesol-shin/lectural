@@ -1,9 +1,6 @@
 # v0.1.2 plugin-load test (real install path)
 
-The duplicate-hooks failure is a runtime plugin-load error that `claude plugin
-validate .` and the offline suite do NOT catch. Verified by installing the local
-repo as a marketplace into an isolated `CLAUDE_CONFIG_DIR` and reading
-`claude plugin list` status (claude 2.1.177).
+The duplicate-hooks failure is a runtime plugin-load error that `claude plugin validate .` and the offline suite do NOT catch. Verified by installing the local repo as a marketplace into an isolated `CLAUDE_CONFIG_DIR` and reading `claude plugin list` status (claude 2.1.177).
 
 ## Method
 ```
@@ -31,7 +28,4 @@ lectural@lectural
   Status: ✔ enabled
 ```
 
-Fix: removed the `hooks` key from `.claude-plugin/plugin.json` (the standard
-`hooks/hooks.json` Stop hook is auto-loaded). `lectural doctor` now flags a
-manifest `hooks` key that points at the auto-loaded file. Isolated config dirs
-were used so the user's real `~/.claude` install was untouched.
+Fix: removed the `hooks` key from `.claude-plugin/plugin.json` (the standard `hooks/hooks.json` Stop hook is auto-loaded). `lectural doctor` now flags a manifest `hooks` key that points at the auto-loaded file. Isolated config dirs were used so the user's real `~/.claude` install was untouched.
