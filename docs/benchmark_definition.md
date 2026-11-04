@@ -116,7 +116,7 @@ uv run --extra run --extra bench python scripts/benchmark.py \
   --observational-perf-smoke docs/reports/observational_555s_perf_smoke_2026-06-14.json
 
 # Repeat with --cold and --skip-ocr for the paired comparisons; repeat on
-# the ARM64 test host with --platform-label arm64 after syncing that
+# the ARM64 test host with --platform-label arm64-test-host after syncing that
 # checkout to main and re-running `lectural doctor`.
 ```
 
