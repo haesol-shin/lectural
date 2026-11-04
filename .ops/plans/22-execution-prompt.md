@@ -26,7 +26,7 @@ Follow the plan's "Execution slices" section (8 items) in order. Highlights, not
 8. Before/after benchmark run, `scripts/benchmark.py --reps 3 --warm` plus `--skip-ocr` pair. Apply the approved tolerance: CPU/wall-time ≤+5%, peak RAM/storage ≤+10%, recall/duplicate-rate/timestamp-integrity/accepted-OCR metrics 0% regression, all vs. the #21 baseline report's corresponding values.
 
 ## Constraints (from the plan, do not relax)
-- No new runtime dependency (everything needed: `pytesseract.run_and_get_multiple_output`, ffprobe; already ships with existing deps).
+- No new runtime dependency: everything needed (`pytesseract.run_and_get_multiple_output`, ffprobe) already ships with existing deps.
 - Additive schema changes only; `EXTRACTION_CONTRACT_VERSION`/`EXTRACTION_SCHEMA_VERSION` stay at `1`; `synthesis_input.json`'s `SCHEMA_VERSION` stays at `2`.
 - No change to Issue #19's four OCR-state enum values (run-level or per-frame).
 - Skip formatters/linters/full project-wide test suite mid-flight is NOT authorized here. This is solo sequential execution, not a parallel batch; run the normal offline suite (`uv run --with pytest --with numpy pytest -q`) as you go.
