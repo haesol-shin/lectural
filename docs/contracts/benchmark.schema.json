@@ -9,7 +9,7 @@
     "schema_version": {"const": 1},
     "harness": {"const": "scripts/benchmark.py"},
     "started_at": {"type": "string"},
-    "platform_label": {"type": "string", "minLength": 1, "description": "e.g. x86_64, arm64, pi-server. Never a default profile; always recorded per report."},
+    "platform_label": {"type": "string", "minLength": 1, "description": "e.g. x86_64, arm64. Never a default profile; always recorded per report."},
     "machine": {"type": "object", "description": "Host platform/CPU/Python spec, from scripts/perf_smoke.py's _machine_spec()."},
     "dependency_versions": {"type": "object", "description": "Resolved dependency versions at run time, from scripts/perf_smoke.py's _dep_versions()."},
     "config": {

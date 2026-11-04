@@ -26,11 +26,11 @@ $ python scripts/changelog_notes.py 9.9.9
 exit_code: 0
 
 
-$ python scripts/changelog_notes.py 0.1.1 C:\Users\haesol\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-prefix.md
+$ python scripts/changelog_notes.py 0.1.1 C:\Users\user\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-prefix.md
 exit_code: 0
 
 
-$ python scripts/changelog_notes.py 0.1.1 C:\Users\haesol\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-last.md
+$ python scripts/changelog_notes.py 0.1.1 C:\Users\user\AppData\Local\Temp\v011-changelog-_4x1_x87\CHANGELOG-last.md
 exit_code: 0
 ### Added
 - Last body.

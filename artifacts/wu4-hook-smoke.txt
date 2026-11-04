@@ -11,7 +11,7 @@ exit=2
 <empty>
 ### stderr
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\bare]
+[C:\Users\user\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\bare]
   - notes.md에 미보강 마커가 남아 있습니다
 
 ## dangling-anchor
@@ -20,7 +20,7 @@ exit=2
 <empty>
 ### stderr
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\dangling]
+[C:\Users\user\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\dangling]
   - ## 핵심 개념·이론: 전사본에 없는 앵커입니다: transcript.md#t999999
   - ## 핵심 개념·이론: 영상 시간 5s와 전사 앵커 t999999(362439s)가 1초 넘게 다릅니다
 
@@ -30,7 +30,7 @@ exit=2
 <empty>
 ### stderr
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\failed]
+[C:\Users\user\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\failed]
   - 처리 실패한 영상: intentional failure
 
 ## pending-run
@@ -48,8 +48,8 @@ exit=2
 <empty>
 ### stderr
 LecturAL 완전성 게이트 실패 \u2014 아직 '완료'할 수 없습니다:
-[C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\malformed-runstate.json]
-  - 처리 실패한 영상: unreadable run-state: C:\Users\haesol\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\malformed-runstate.json
+[C:\Users\user\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\malformed-runstate.json]
+  - 처리 실패한 영상: unreadable run-state: C:\Users\user\AppData\Local\Temp\pytest-of-haesol\pytest-849\test_real_completeness_hook_su0\malformed-runstate.json
 
 ## fail-closed-import-error-with-runstate
 exit=2

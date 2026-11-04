@@ -12,15 +12,15 @@ First end-to-end validation execution of `scripts/benchmark.py` with real `faste
 uv pip install -e ".[run,bench]"
 uv run --with psutil python scripts/benchmark.py \
   --fixtures-dir tests/fixtures/benchmark/en_terms_01 \
-  --out output/benchmark-run --platform-label <x86_64-win|arm64-pi-server> \
+  --out output/benchmark-run --platform-label <x86_64-win|arm64-test-host> \
   --warm --reps 1 --model small
 ```
 
-Raw reports: [`real_run_x86_64-win_2026-09-19.json`](real_run_x86_64-win_2026-09-19.json), [`real_run_arm64-pi-server_2026-09-19.json`](real_run_arm64-pi-server_2026-09-19.json).
+Raw reports: [`real_run_x86_64-win_2026-09-19.json`](real_run_x86_64-win_2026-09-19.json), [`real_run_arm64-test-host_2026-09-19.json`](real_run_arm64-test-host_2026-09-19.json).
 
 ## Environment
 
-| | x86_64 | ARM64 (`pi-server`) |
+| | x86_64 | ARM64 (test host) |
 |---|---|---|
 | Platform | Windows-10-10.0.26200-SP0 | Linux-6.18.34+rpt-rpi-2712-aarch64 |
 | CPU cores | 8 | 4 |

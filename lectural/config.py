@@ -25,7 +25,7 @@ DEDUP_HIST_THRESHOLD: float = 0.90
 DEDUP_SSIM_THRESHOLD: float = 0.92
 
 # Frozen by docs/reports/alignment_thresholds_2026-09-20.json
-# (SHA-256 6166600cd1bdb2a2c73c6e6fcee87351eaa153697f516a62b846824ff3fe04d1)
+# (SHA-256 b76814034698f4bc58c4e323c763645c9d06fa4c64c9a1cde6c002230cfe754e)
 # under the exactly pinned production OpenCV provider set.
 ALIGNMENT_THRESHOLDS: dict[str, float | int] = {
     "ratio_matches_min": 99.0,
@@ -44,7 +44,7 @@ ALIGNMENT_THRESHOLDS: dict[str, float | int] = {
     "largest_changed_component_fraction_max": 0.011284722222222222,
 }
 ALIGNMENT_CALIBRATION_REPORT = "docs/reports/alignment_thresholds_2026-09-20.json"
-ALIGNMENT_CALIBRATION_REPORT_SHA256 = "6166600cd1bdb2a2c73c6e6fcee87351eaa153697f516a62b846824ff3fe04d1"
+ALIGNMENT_CALIBRATION_REPORT_SHA256 = "b76814034698f4bc58c4e323c763645c9d06fa4c64c9a1cde6c002230cfe754e"
 
 # --- Speech-gap coverage ---------------------------------------------------
 # A completeness FAIL occurs when there is a contiguous span of *speech*

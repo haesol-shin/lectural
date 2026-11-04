@@ -2,17 +2,17 @@
 ## no runstate -> no-op
 exit=0
 ## complete good run -> pass
-LecturAL ¿ÏÀü¼º °ÔÀÌÆ® Åë°ú: 1°³ run ¸ğµÎ ¿ÏÀü.
+LecturAL ì™„ì „ì„± ê²Œì´íŠ¸ í†µê³¼: 1ê°œ run ëª¨ë‘ ì™„ì „.
 exit=0
 ## failed/pending batch -> block (no bypass)
-LecturAL ¿ÏÀü¼º °ÔÀÌÆ® ½ÇÆĞ \u2014 ¾ÆÁ÷ '¿Ï·á'ÇÒ ¼ö ¾ø½À´Ï´Ù:
+LecturAL ì™„ì „ì„± ê²Œì´íŠ¸ ì‹¤íŒ¨ \u2014 ì•„ì§ 'ì™„ë£Œ'í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤:
 [None]
-  - Ã³¸® ½ÇÆĞÇÑ ¿µ»ó: download error
+  - ì²˜ë¦¬ ì‹¤íŒ¨í•œ ì˜ìƒ: download error
 [None]
-  - Ã³¸®µÇÁö ¾ÊÀº ¿µ»ó(pending): u2
+  - ì²˜ë¦¬ë˜ì§€ ì•Šì€ ì˜ìƒ(pending): u2
 exit=2
 ## malformed runstate -> block (fail closed)
-LecturAL ¿ÏÀü¼º °ÔÀÌÆ® ½ÇÆĞ \u2014 ¾ÆÁ÷ '¿Ï·á'ÇÒ ¼ö ¾ø½À´Ï´Ù:
-[C:\Users\haesol\dev\LecturAL/.hs3/bad.json]
-  - Ã³¸® ½ÇÆĞÇÑ ¿µ»ó: unreadable run-state: C:\Users\haesol\dev\LecturAL/.hs3/bad.json
+LecturAL ì™„ì „ì„± ê²Œì´íŠ¸ ì‹¤íŒ¨ \u2014 ì•„ì§ 'ì™„ë£Œ'í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤:
+[C:\Users\user\dev\LecturAL/.hs3/bad.json]
+  - ì²˜ë¦¬ ì‹¤íŒ¨í•œ ì˜ìƒ: unreadable run-state: C:\Users\user\dev\LecturAL/.hs3/bad.json
 exit=2

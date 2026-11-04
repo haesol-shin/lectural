@@ -445,7 +445,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
         "--reps", "5",
         "--skip-ocr",
         "--cold",
-        "--platform-label", "pi-server",
+        "--platform-label", "arm64",
         "--sample-interval", "0.5",
         "--model", "medium",
     ])
@@ -455,7 +455,7 @@ def test_cli_parser_defaults_and_mutual_exclusion() -> None:
     assert custom.reps == 5
     assert custom.skip_ocr is True
     assert custom.cold is True
-    assert custom.platform_label == "pi-server"
+    assert custom.platform_label == "arm64"
     assert custom.sample_interval == 0.5
     assert custom.model == "medium"
 

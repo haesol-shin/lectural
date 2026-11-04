@@ -2,7 +2,7 @@
   "schema_version": 1,
   "harness": "scripts/benchmark.py",
   "started_at": "2026-09-19T01:40:55",
-  "platform_label": "arm64-pi-server",
+  "platform_label": "arm64-test-host",
   "machine": {
     "platform": "Linux-6.18.34+rpt-rpi-2712-aarch64-with-glibc2.41",
     "processor": "",
@@ -23,7 +23,7 @@
   "config": {
     "fixtures_dir": "tests/fixtures/benchmark/en_terms_01",
     "out": "output/benchmark-pi-smoke",
-    "platform_label": "arm64-pi-server",
+    "platform_label": "arm64-test-host",
     "cache_mode": "warm",
     "reps": 1,
     "skip_ocr": false,

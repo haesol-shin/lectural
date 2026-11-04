@@ -5,7 +5,7 @@ The duplicate-hooks failure is a runtime plugin-load error that `claude plugin v
 ## Method
 ```
 $env:CLAUDE_CONFIG_DIR = <isolated temp dir>
-claude plugin marketplace add C:/Users/haesol/dev/LecturAL
+claude plugin marketplace add C:/Users/user/dev/LecturAL
 claude plugin install lectural@lectural --scope user
 claude plugin list
 ```
